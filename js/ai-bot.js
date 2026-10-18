@@ -243,9 +243,15 @@
 
     // Listen to lab switch events
     if (window.PhysicsLabRegistry) {
-      window.PhysicsLabRegistry.addListener('change', () => {
-        updateTelemetryPill();
-      });
+      if (typeof window.PhysicsLabRegistry.on === 'function') {
+        window.PhysicsLabRegistry.on('change', () => {
+          updateTelemetryPill();
+        });
+      } else if (typeof window.PhysicsLabRegistry.addListener === 'function') {
+        window.PhysicsLabRegistry.addListener('change', () => {
+          updateTelemetryPill();
+        });
+      }
     }
 
     // Initial greeting if chat is fresh

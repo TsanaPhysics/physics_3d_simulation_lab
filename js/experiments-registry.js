@@ -436,6 +436,10 @@
       if (listeners[event]) listeners[event].push(fn);
     },
 
+    addListener(event, fn) {
+      this.on(event, fn);
+    },
+
     /**
      * Open the 7-Domain Physics Lab Hub Modal
      */

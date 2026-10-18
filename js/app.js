@@ -309,18 +309,28 @@ if (window.PhysicsLabRegistry) {
   resetCameraView();
 }
 
-// Initialize Main Portal & Agentic AI Bot
-if (typeof initPortal === 'function') {
-  initPortal();
-}
-if (window.AIBot && typeof window.AIBot.init === 'function') {
-  window.AIBot.init();
-}
-
-requestAnimationFrame(animate);
-
 // Export switchExperiment globally
 window.switchExperiment = switchExperiment;
 window.resetCameraView = resetCameraView;
 window.topCameraView = topCameraView;
 window.toggleSolutionModal = toggleSolutionModal;
+
+// Initialize Main Portal & Agentic AI Bot safely
+try {
+  if (typeof initPortal === 'function') {
+    initPortal();
+  }
+} catch (portalErr) {
+  console.warn('[App] Failed to init portal:', portalErr);
+}
+
+try {
+  if (window.AIBot && typeof window.AIBot.init === 'function') {
+    window.AIBot.init();
+  }
+} catch (aiInitErr) {
+  console.error('[App] Failed to init AIBot:', aiInitErr);
+}
+
+// ALWAYS start 3D animation and render loop
+requestAnimationFrame(animate);
