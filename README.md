@@ -1,6 +1,15 @@
 # physics_3d_simulation_lab
 # RBRU NextGen Virtual Physics Lab & AI Ecosystem (2026)
 
+<p align="center">
+  <img src="assets/images/cover_3d_preview.png" alt="RBRU Next Gen Lab 2026 Book Cover" width="420" style="border-radius: 12px; box-shadow: 0 16px 36px rgba(0,0,0,0.6);" />
+</p>
+
+<p align="center">
+  <b>📖 ตำราและคู่มือปฏิบัติการฉบับสมบูรณ์ (54 หน้า):</b> <a href="workshop_manual_3d_ar_ai/main.pdf"><b>workshop_manual_3d_ar_ai/main.pdf</b></a><br>
+  <i>มาตรฐาน Academic Book Cover Architect (สัดส่วน 2:3, Full-Bleed 6x9 นิ้ว, XeLaTeX TikZ Transparent Architecture)</i>
+</p>
+
 ระบบห้องปฏิบัติการฟิสิกส์ 3 มิติเสมือนจริง และผู้ช่วยอัจฉริยะ Co-creation Real-Time Multimodal AI (Mr. Deep_xAI — หนุ่มสุโขทัย สไตล์ Jarvis) ครบครัน 16 ปฏิบัติการใน 7 กลุ่มสาขาวิชาฟิสิกส์ รองรับการปฏิสัมพันธ์แบบ Three.js PBR Shaders, การตรวจจับท่าทางมือไร้สัมผัส AR MediaPipe Hands, การสแกนภาพฉาก 3D Real-time และการตอบสนองด้วยเสียงสำเนียงสุโขทัยแท้ๆ พร้อม KaTeX เวกเตอร์คมชัด 100%
 
 ---
@@ -121,10 +130,26 @@ PhysicsLabRegistry.registerExperiment({
   getRightPanelHTML() {
     return `<div class="section-card">...ตารางและกราฟวิเคราะห์ผล...</div>`;
   },
-  mountUI(leftEl, rightEl) {
-    // ผูก Event Listeners กับปุ่มและสไลเดอร์
-  }
-});
+---
+
+## 📚 ตำราและคู่มือเชิงปฏิบัติการ (Workshop Manual XeLaTeX)
+
+โฟลเดอร์ `workshop_manual_3d_ar_ai/` บรรจุเอกสารทางวิชาการและคู่มือการอบรมเชิงปฏิบัติการฉบับสมบูรณ์ ออกแบบตามข้อกำหนดการขอตำแหน่งทางวิชาการ มหาวิทยาลัยราชภัฏรำไพพรรณี:
+- **รูปแบบเล่ม:** พิมพ์ 6x9 นิ้ว (152.4 x 228.6 มม.), ฟอนต์ TH Sarabun New, กั้นหน้าซ้าย 1.5 นิ้ว หน้าขวา 1 นิ้ว
+- **ปกหนังสือ 3D ล้ำอนาคต:** ผลงาน 3D Hologram Art สัดส่วน 2:3 พร้อมเทคนิค Dual-Layer Micro Drop-Shadow และเวกเตอร์ TikZ Dark-Mode Inner Cover
+- **เนื้อหา 6 บทหลัก (รวม 54 หน้า):**
+  1. ภาพรวมและหลักการออกแบบระบบจำลองฟิสิกส์ 3 มิติ (พร้อมสถาปัตยกรรม 7 กลุ่มวิชา)
+  2. การสร้างและจัดการเนื้อหาฟิสิกส์ด้วย AI (พร้อมเจาะลึก Agentic AI Bot Mr. Deep_xAI & J.A.R.V.I.S.)
+  3. เทคนิค Three.js และการปฏิสัมพันธ์แบบสมจริง (PBR Shaders & Dynamic Lighting)
+  4. ระบบติดตามมือด้วย AR MediaPipe Hands (Zero-GC Loop & 21-Joint Cyber Skeleton)
+  5. การทดสอบ การดีบั๊ก และการแก้ปัญหาประสิทธิภาพ (Web Workers & 60 FPS Profiling)
+  6. การประเมินผลและการประยุกต์ใช้ในชั้นเรียน (Hake's Normalized Learning Gain $\langle g \rangle$)
+
+### คำสั่งคอมไพล์เอกสาร (XeLaTeX):
+```bash
+cd workshop_manual_3d_ar_ai
+/Library/TeX/texbin/xelatex -interaction=nonstopmode main.tex
 ```
-3. เพิ่มแท็ก `<script src="js/experiments/your-lab.js"></script>` ใน `index.html` — ระบบจะเพิ่มการทดลองเข้าสู่แถบเมนูและ Hub Modal ให้โดยอัตโนมัติ!
+ไฟล์ผลลัพธ์จะถูกสร้างเป็น `main.pdf` พร้อมใช้งานทันที
+
 

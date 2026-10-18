@@ -101,6 +101,63 @@
 \section{การตรวจสอบความถูกต้องและป้องกันปัญหาภาพหลอน (AI Hallucination)}
 ปัญหาที่พบบ่อยเมื่อใช้ AI สร้างโค้ดวิทยาศาสตร์ คือ AI มักประมาณค่าทศนิยม หรือสร้างฟังก์ชันจำลองที่มีลักษณะสุ่ม (Random) เพื่อให้เข็มมิเตอร์ขยับได้ โดยไม่ได้คำนวณจากกฎของฟิสิกส์จริง
 
+\section{สถาปัตยกรรมเอเจนต์ปัญญาประดิษฐ์ผู้ช่วยอัจฉริยะ (Mr. Deep\_xAI \& J.A.R.V.I.S. Protocol)}
+ในระบบ RBRU Next Gen Lab 2026 ผู้เรียนไม่ได้ทำการทดลองเพียงลำพัง แต่มี **Mr. Deep\_xAI** ซึ่งเป็น Agentic AI Co-Creation Bot ประจำห้องแล็บ ทำหน้าที่เป็นผู้ช่วยอัจฉริยะแบบเรียลไทม์ โดยมีคุณลักษณะเด่นเชิงสถาปัตยกรรมดังนี้:
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[scale=0.85, every node/.style={scale=0.85}]
+    % Agentic AI Core Architecture Diagram
+    \node[draw=rbruNavy, fill=blue!15, rounded corners=8pt, text width=3.4cm, align=center, minimum height=2.6cm] (VISION) at (0,3) {
+        \bfseries\color{rbruNavy} 📷 Multi-Modal Vision\\
+        \footnotesize WebGL Viewport Snapshot\\
+        ตรวจจับอุปกรณ์ในฉาก 3 มิติ\\
+        พิกัด 3 มิติ \& สถานะสายไฟ
+    };
+
+    \node[draw=rbruEmerald, fill=green!15, rounded corners=8pt, text width=3.4cm, align=center, minimum height=2.6cm] (BRAIN) at (5.5,3) {
+        \bfseries\color{rbruEmerald} 🧠 Agentic Co-Creation\\
+        \footnotesize Gemini 2.5 Flash LLM\\
+        วิเคราะห์ผลการทดลอง\\
+        แนะนำสมการและตรวจแบบทดสอบ
+    };
+
+    \node[draw=rbruGold, fill=amber!15, rounded corners=8pt, text width=3.4cm, align=center, minimum height=2.6cm] (VOICE) at (11,3) {
+        \bfseries\color{rbruGold!80!black} 🎙️ Neural Male TTS\\
+        \footnotesize Formant Pitch (0.44 / 0.58)\\
+        J.A.R.V.I.S. Iron Man Protocol\\
+        เสียงหนุ่มสุโขทัยธรรมชาติ
+    };
+
+    \node[draw=cyan!80!black, fill=cyan!15, rounded corners=8pt, text width=8.5cm, align=center, minimum height=1.6cm] (HUD) at (5.5,-0.2) {
+        \bfseries\color{cyan!80!black} ⚡ Web Audio API Iron Man Communicator DSP Filter\\
+        \footnotesize High-Pass (120 Hz) + Peaking Presence (3400 Hz, +2.6 dB) + Dynamics Compressor + HUD Blip Chime
+    };
+
+    \draw[-{Stealth[scale=1.2]}, line width=1.5pt, gray] (VISION) -- (BRAIN);
+    \draw[-{Stealth[scale=1.2]}, line width=1.5pt, gray] (BRAIN) -- (VOICE);
+    \draw[-{Stealth[scale=1.2]}, line width=1.5pt, cyan] (VOICE) -- (HUD);
+\end{tikzpicture}
+\caption{สถาปัตยกรรมระบบปัญญาประดิษฐ์เอเจนต์ Mr. Deep\_xAI (J.A.R.V.I.S. Protocol)}
+\label{fig:ai_agent_arch}
+\end{figure}
+
+\subsection{การมองเห็นฉาก 3 มิติ (3D Scene Vision Audit)}
+Mr. Deep\_xAI สามารถ "มองเห็น" สิ่งที่เกิดขึ้นบนหน้าจอการทดลองของผู้เรียนได้ทันที โดยเมื่อผู้เรียนกดปุ่ม \textbf{📷 สแกน 3D} ระบบจะดึงเฟรมเรนเดอร์สดจาก WebGL Viewport แปลงเป็นภาพ Base64 JPEG ส่งเข้าสู่ Multimodal Vision Engine เพื่อตรวจสอบ:
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item ตำแหน่งของโพรบวัด $P$ และ $Q$ ว่าต่ออยู่ที่ขั้วใดของวงจร 6 เหลี่ยม
+    \item สภาวะของสวิตช์เปิด-ปิด และค่าแรงดันที่ตั้งไว้บนแหล่งจ่ายไฟ DC
+    \item ความยาวเชือกลูกตุ้ม $L$ และการแกว่งมุม $\theta$ ในปฏิบัติการเพนดูลัม
+\end{enumerate}
+
+\subsection{ระบบเสียงสังเคราะห์ชายแท้และฟิลเตอร์ชุดเกราะไอรอนแมน (Iron Man Communicator DSP)}
+เพื่อให้เสียงบรรยายมีบุคลิกน่าเชื่อถือ สุภาพ และเหมือนผู้ช่วย AI ระดับไฮเอนด์ ระบบได้ออกแบบกลไกเสียง 2 รูปแบบ:
+\begin{itemize}[leftmargin=1.5em, itemsep=3pt]
+    \item \textbf{โปรโตคอล J.A.R.V.I.S. (เสียงผู้ชายทุ้มลึก):} ปรับจูนระดับเสียงหลักลงสู่ย่านเสียงหน้าอก (\textbf{Pitch: $0.44$}, \textbf{Rate: $0.90$}) เพื่อให้ได้น้ำเสียงทุ้ม สุขุม หนักแน่น เหมือน Paul Bettany ในภาพยนตร์ Iron Man พร้อมสำเนียงการตอบรับแบบสุภาพบุรุษ (เช่น ``ครับท่าน (Sir)'', ``ยินดีรับใช้ครับท่าน'')
+    \item \textbf{โปรโตคอลหนุ่มสุโขทัย (เสียงผู้ชายวัยรุ่นเป็นกันเอง):} ปรับระดับเสียง (\textbf{Pitch: $0.58$}, \textbf{Rate: $0.96$}) ผสานคำลงท้ายสำเนียงสุโขทัย (เช่น ``เน้อครับเน้อ'')
+    \item \textbf{วงจร DSP จำลองสัญญาณสื่อสารในชุดเกราะ (Web Audio API):} สัญญาณเสียงสังเคราะห์จะถูกส่งผ่านตัวกรองย่านความถี่ต่ำ \textbf{High-Pass Filter ($120\text{ Hz}$)}, ตัวเสริมความคมชัดประกายเสียง \textbf{Peaking Presence Filter ($3400\text{ Hz}$, Gain $+2.6\text{ dB}$)} และ \textbf{Dynamics Compressor} พร้อมเสียงสังเคราะห์แจ้งเตือน \textbf{HUD Blip Chime ($880\text{ Hz} \rightarrow 1320\text{ Hz}$)} ก่อนการพูดทุกครั้ง
+\end{itemize}
+
 \begin{tipbox}{เทคนิคการตรวจสอบความถูกต้องทางฟิสิกส์ (Physics Sanity Check)}
 \begin{itemize}[leftmargin=1.5em, itemsep=2pt]
     \item \textbf{ตรวจสอบกฎการอนุรักษ์พลังงานและประจุ (KCL \& KVL):} กระแสที่ไหลเข้าจุดต่อ $P$ ต้องเท่ากับผลรวมกระแสในกิ่งที่ 1 และกิ่งที่ 2 เสมอ ($I_{\text{รวม}} = I_1 + I_2$)

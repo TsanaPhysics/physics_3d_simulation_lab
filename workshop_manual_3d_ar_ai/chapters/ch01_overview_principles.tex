@@ -108,17 +108,27 @@ CL_{\text{Total}} = CL_{\text{Intrinsic}} + CL_{\text{Extraneous}} + CL_{\text{G
 ในสื่อ 3 มิติเสมือนจริง อย่าให้ข้อความอธิบายทับซ้อนกับอุปกรณ์ทดลองเด็ดขาด ในระบบ RBRU Next Gen Lab เราออกแบบให้แถบด้านข้าง (Sidebars) ใช้คุณสมบัติ \texttt{backdrop-filter: blur(14px)} โปร่งแสง และมีปุ่มพับเก็บ (Collapse) เพื่อให้ผู้เรียนมองเห็นพฤติกรรมของอุปกรณ์ 3D ที่พื้นหลังได้ตลอดเวลา
 \end{tipbox}
 
-\section{สถาปัตยกรรมระบบ RBRU Next Gen Lab 2026}
-ระบบห้องปฏิบัติการเสมือนจริง RBRU Next Gen Lab 2026 ได้รับการออกแบบให้ทำงานในรูปแบบ **Standalone Client-Side Web Application** กล่าวคือ รันได้ทันทีบนเว็บเบราว์เซอร์มาตรฐานสากล (Chrome, Safari, Edge, Firefox) โดยไม่ต้องติดตั้งโปรแกรมเสริม ไม่ต้องใช้เซิร์ฟเวอร์หลังบ้านราคาแพง และสามารถโฮสต์ผ่านระบบ **GitHub Pages Global CDN** ได้ฟรีทั่วโลก
+\section{สถาปัตยกรรมระบบ RBRU Next Gen Lab 2026 และ 7 กลุ่มวิชาฟิสิกส์}
+ระบบห้องปฏิบัติการเสมือนจริง RBRU Next Gen Lab 2026 ได้รับการออกแบบให้ทำงานในรูปแบบ **Standalone Client-Side Web Application** กล่าวคือ รันได้ทันทีบนเว็บเบราว์เซอร์มาตรฐานสากล (Chrome, Safari, Edge, Firefox) โดยไม่ต้องติดตั้งโปรแกรมเสริม และได้รับการขยายขอบเขตการทดลองครอบคลุม **7 กลุ่มวิชาฟิสิกส์พื้นฐาน (7 Fundamental Physics Domains)** อย่างเป็นระบบ:
+
+\begin{enumerate}[leftmargin=1.5em, itemsep=3pt]
+    \item \textbf{ไฟฟ้าและวงจรไฟฟ้า (Electricity \& Circuits):} ศึกษาทฤษฎีวงจรไฟฟ้ากระแสตรง กฎของโอห์ม กฎของเคอร์ชอฟฟ์ วงจรลดรูป 6 เหลี่ยม วงจรบริดจ์ และวงจรตัวเก็บประจุ RC
+    \item \textbf{แม่เหล็กไฟฟ้าและการเหนี่ยวนำ (Electromagnetism \& Induction):} ศึกษาการเหนี่ยวนำแม่เหล็กไฟฟ้า กฎของฟาราเดย์และเลนซ์ สนามแม่เหล็กในขดลวดโซเลนอยด์ และขดลวดเฮล์มโฮลทซ์
+    \item \textbf{กลศาสตร์และการเคลื่อนที่ (Mechanics \& Dynamics):} ศึกษาการเคลื่อนที่แบบฮาร์มอนิกอย่างง่าย ลูกตุ้มเพนดูลัม รางลมไร้แรงเสียดทาน และการตกอิสระวัดค่าความเร่ง $g$
+    \item \textbf{คลื่นและเสียง (Waves \& Acoustics):} ศึกษาปรากฏการณ์การสั่นพ้องในหลอดเรโซแนนซ์ คลื่นนิ่งในเส้นเชือก และความเร็วเสียงในอากาศ
+    \item \textbf{ทัศนศาสตร์และแสง (Optics \& Wave Optics):} ศึกษาการเกิดภาพบนรางทัศนศาสตร์ กฎของสเนลล์ การแทรกสอด และการเลี้ยวเบนของแสงผ่านเกรตติง
+    \item \textbf{อุณหพลศาสตร์และสสาร (Thermodynamics \& Matter):} ศึกษากฎของก๊าซอุดมคติ แคลอริมิเตอร์หาความจุความร้อนจำเพาะ และการขยายตัวเชิงเส้นของโลหะ
+    \item \textbf{ฟิสิกส์ยุคใหม่และควอนตัม (Modern \& Quantum Physics):} ศึกษาปรากฏการณ์โฟโตอิเล็กทริก ครึ่งชีวิตการสลายตัวของกัมมันตรังสี และการทดลองของฟรองค์-เฮิร์ตซ์
+\end{enumerate}
 
 \begin{activitybox}{การสำรวจโครงสร้างโค้ดและการเปิดใช้งานระบบ}
 เปิดดูโฟลเดอร์โครงงาน \texttt{nextgen\_lab2026/} จะพบว่าโครงสร้างไฟล์ถูกแบ่งออกเป็นโมดูลอิสระ:
 \begin{itemize}[leftmargin=1.5em, itemsep=2pt]
     \item \texttt{index.html}: จุดเริ่มต้นของระบบ โครงสร้าง Semantic และแผง UI
-    \item \texttt{css/}: โมดูลสไตล์ชีตแยกย่อย 5 ไฟล์ (\texttt{main}, \texttt{panels}, \texttt{meters}, \texttt{ar}, \texttt{modal})
-    \item \texttt{js/}: ตรรกะฟิสิกส์และการเรนเดอร์ 8 โมดูล ปราศจากการเขียนโค้ดรวมในไฟล์เดียว
+    \item \texttt{css/}: โมดูลสไตล์ชีตแยกย่อย 7 ไฟล์ (\texttt{main}, \texttt{panels}, \texttt{meters}, \texttt{ar}, \texttt{modal}, \texttt{portal}, \texttt{ai-bot})
+    \item \texttt{js/}: ตรรกะฟิสิกส์และการเรนเดอร์แยกโมดูลตามการทดลอง และทะเบียน \texttt{experiments-registry.js}
 \end{itemize}
-ทดลองเปิดไฟล์ \texttt{index.html} ผ่านเบราว์เซอร์ แล้วทดสอบสลับโหมดมิเตอร์ระหว่างเข็มอนาล็อกและตัวเลขดิจิทัล
+ทดลองเปิดไฟล์ \texttt{index.html} ผ่านเบราว์เซอร์ แล้วทดสอบสลับโหมดมิเตอร์ และคลิกเปิดแผง \textbf{Mr. Deep\_xAI Co-creation Assistant}
 \end{activitybox}
 
 \section*{คำถามทบทวนและใบงานปฏิบัติการท้ายบทที่ 1}
