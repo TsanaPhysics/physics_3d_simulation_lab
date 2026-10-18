@@ -117,24 +117,107 @@
     }
   };
 
-  // Sukhothai Voice & Dialect Expressions
-  const SUKHOTHAI_PHRASES = {
-    greeting: 'สวัสดีครับเน้อ! ผมชื่อ **Mr. Deep_xAI** หนุ่มสุโขทัย ผู้ช่วยฟิสิกส์และ Co-creation อัจฉริยะประจำห้องแล็บ RBRU 2026 เน้อ',
-    co_create: 'มาเน้ออาจารย์! วันนี้เรามาร่วมสร้างสรรค์ (Co-creation) ออกแบบการทดลอง หรือวิเคราะห์ข้อมูลเชิงลึกไปด้วยกันเน้อ มีอะไรให้ผมช่วยบอกมาได้เลยเน้อ',
-    ack: 'รับทราบเน้อ! เดี๋ยวผมจัดให้เดี๋ยวนี้เลยเน้อ',
-    thinking: 'กำลังวิเคราะห์สมการและสภาวะในแล็บให้อย่างละเอียดเน้อ...',
-    success: 'เรียบร้อยแล้วเน้อ! ผลการทดลองออกมาสวยงามและแม่นยำมากเน้อ',
-    vision_scanned: 'ผมสแกนภาพฉาก 3D ในห้องแล็บให้เรียบร้อยแล้วเน้อ! จากภาพที่เห็นในสายตาผมตอนนี้เน้อ:'
+  // Active Persona ('jarvis' or 'sukhothai')
+  let currentPersona = 'jarvis';
+
+  const PERSONA_DATA = {
+    jarvis: {
+      id: 'jarvis',
+      name: 'J.A.R.V.I.S.',
+      title: 'Iron Man AI Protocol',
+      badgeLabel: '🤖 J.A.R.V.I.S.',
+      launcherLabel: 'J.A.R.V.I.S. AI',
+      voiceStatus: '🎙️ J.A.R.V.I.S. Iron Man AI',
+      pitch: -2.6, // Deep, calm, British gentleman resonance (Paul Bettany)
+      rate: 0.95,  // Dignified, composed pace
+      honorific: 'ท่าน',
+      moods: {
+        idle: { icon: '⚡', label: 'All systems online, sir.', badgeClass: 'mood-jarvis' },
+        thinking: { icon: '🔮', label: 'Processing algorithms, sir...', badgeClass: 'mood-thinking' },
+        speaking: { icon: '🎙️', label: 'Transmitting audio, sir...', badgeClass: 'mood-speaking' },
+        excited: { icon: '💡', label: 'Optimal vector identified, sir!', badgeClass: 'mood-excited' },
+        vision: { icon: '📷', label: 'Scanning 3D HUD optics, sir...', badgeClass: 'mood-thinking' }
+      },
+      phrases: {
+        greeting: 'สวัสดีครับท่าน ผม **J.A.R.V.I.S.** (Just A Rather Very Intelligent System) ในโปรโตคอล **Mr. Deep_xAI** ยินดีรับใช้ครับท่าน (At your service, sir)',
+        co_create: 'ระบบจำลองฟิสิกส์ 3 มิติ และโมดูล Co-creation อัจฉริยะออนไลน์พร้อมปฏิบัติการ 100% แล้วครับท่าน (All systems operational, sir)',
+        ack: 'รับทราบคำสั่งครับท่าน กำลังจัดการให้ทันทีครับ (Right away, sir)',
+        thinking: 'กำลังคำนวณเวกเตอร์และวิเคราะห์โครงสร้างข้อมูลให้ครับท่าน...',
+        success: 'การจำลองและปรับเทียบพารามิเตอร์เสร็จสมบูรณ์เรียบร้อยครับท่าน',
+        vision_scanned: 'สแกนภาพฉากแล็บ 3 มิติผ่านระบบ HUD Optics เรียบร้อยครับท่าน ข้อมูลพิกัดอุปกรณ์ในฉากมีดังนี้ครับ:'
+      }
+    },
+    sukhothai: {
+      id: 'sukhothai',
+      name: 'หนุ่มสุโขทัย',
+      title: 'Digital Bot หนุ่มสุโขทัย',
+      badgeLabel: '🌾 หนุ่มสุโขทัย',
+      launcherLabel: 'หนุ่มสุโขทัย',
+      voiceStatus: '🎙️ Google Neural2-C HD',
+      pitch: -0.5,
+      rate: 1.02,
+      honorific: 'อาจารย์',
+      moods: {
+        idle: { icon: '😊', label: 'พร้อมร่วมงานเน้อ', badgeClass: '' },
+        thinking: { icon: '🤔', label: 'กำลังคิดวิเคราะห์เน้อ...', badgeClass: 'mood-thinking' },
+        speaking: { icon: '🎙️', label: 'กำลังบรรยายเน้อ...', badgeClass: 'mood-speaking' },
+        excited: { icon: '💡', label: 'ไอเดียแจ่มมากเน้อ!', badgeClass: 'mood-excited' },
+        vision: { icon: '📷', label: 'กำลังตรวจภาพ 3D เน้อ...', badgeClass: 'mood-thinking' }
+      },
+      phrases: {
+        greeting: 'สวัสดีครับเน้อ! ผมชื่อ **Mr. Deep_xAI** หนุ่มสุโขทัย ผู้ช่วยฟิสิกส์และ Co-creation อัจฉริยะประจำห้องแล็บ RBRU 2026 เน้อ',
+        co_create: 'มาเน้ออาจารย์! วันนี้เรามาร่วมสร้างสรรค์ (Co-creation) ออกแบบการทดลอง หรือวิเคราะห์ข้อมูลเชิงลึกไปด้วยกันเน้อ มีอะไรให้ผมช่วยบอกมาได้เลยเน้อ',
+        ack: 'รับทราบเน้อ! เดี๋ยวผมจัดให้เดี๋ยวนี้เลยเน้อ',
+        thinking: 'กำลังวิเคราะห์สมการและสภาวะในแล็บให้อย่างละเอียดเน้อ...',
+        success: 'เรียบร้อยแล้วเน้อ! ผลการทดลองออกมาสวยงามและแม่นยำมากเน้อ',
+        vision_scanned: 'ผมสแกนภาพฉาก 3D ในห้องแล็บให้เรียบร้อยแล้วเน้อ! จากภาพที่เห็นในสายตาผมตอนนี้เน้อ:'
+      }
+    }
   };
 
-  // Emotional Moods
-  const MOOD_DATA = {
-    idle: { icon: '😊', label: 'พร้อมร่วมงานเน้อ', badgeClass: '' },
-    thinking: { icon: '🤔', label: 'กำลังคิดวิเคราะห์เน้อ...', badgeClass: 'mood-thinking' },
-    speaking: { icon: '🎙️', label: 'กำลังบรรยายเน้อ...', badgeClass: 'mood-speaking' },
-    excited: { icon: '💡', label: 'ไอเดียแจ่มมากเน้อ!', badgeClass: 'mood-excited' },
-    vision: { icon: '📷', label: 'กำลังตรวจภาพ 3D เน้อ...', badgeClass: 'mood-thinking' }
-  };
+  /**
+   * Iron Man JARVIS High-Tech HUD Chime Synthesizer (Web Audio API)
+   * 880Hz (A5) -> 1320Hz (E6) futuristic dual-blip chime
+   */
+  function playJarvisChime() {
+    try {
+      if (!botAudioContext) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) botAudioContext = new AudioCtx();
+      }
+      if (botAudioContext && botAudioContext.state === 'suspended') {
+        botAudioContext.resume().catch(() => {});
+      }
+      if (!botAudioContext) return;
+
+      const now = botAudioContext.currentTime;
+      // Blip 1: 880Hz
+      const osc1 = botAudioContext.createOscillator();
+      const gain1 = botAudioContext.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(880, now);
+      gain1.gain.setValueAtTime(0.0001, now);
+      gain1.gain.exponentialRampToValueAtTime(0.05, now + 0.015);
+      gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.065);
+      osc1.connect(gain1);
+      gain1.connect(botAudioContext.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.07);
+
+      // Blip 2: 1320Hz
+      const osc2 = botAudioContext.createOscillator();
+      const gain2 = botAudioContext.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(1320, now + 0.045);
+      gain2.gain.setValueAtTime(0.0001, now + 0.045);
+      gain2.gain.exponentialRampToValueAtTime(0.06, now + 0.06);
+      gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.13);
+      osc2.connect(gain2);
+      gain2.connect(botAudioContext.destination);
+      osc2.start(now + 0.045);
+      osc2.stop(now + 0.135);
+    } catch (e) {}
+  }
 
   /**
    * Initialize Mr. Deep_xAI Engine
@@ -142,6 +225,7 @@
   function init() {
     updateTelemetryPill();
     setupSpeechRecognition();
+    applyPersonaUI();
 
     // Setup input Enter key listener
     const input = document.getElementById('ai-chat-input');
@@ -166,17 +250,60 @@
     }
   }
 
+  function togglePersona() {
+    currentPersona = (currentPersona === 'jarvis') ? 'sukhothai' : 'jarvis';
+    applyPersonaUI();
+    playJarvisChime();
+
+    if (currentPersona === 'jarvis') {
+      const msg = 'ระบบ J.A.R.V.I.S. เปิดใช้งานเต็มพิกัดแล้วครับท่าน ยินดีรับใช้ครับ (At your service, sir)';
+      appendBotMessage(msg);
+      speakBotVoice(msg);
+    } else {
+      const msg = 'สลับมาเป็นโหมดหนุ่มสุโขทัยเรียบร้อยแล้วเน้อ มีอะไรให้ผมช่วยบอกมาได้เลยเน้อครับเน้อ!';
+      appendBotMessage(msg);
+      speakBotVoice(msg);
+    }
+  }
+
+  function setPersona(personaKey) {
+    if (PERSONA_DATA[personaKey]) {
+      currentPersona = personaKey;
+      applyPersonaUI();
+      playJarvisChime();
+    }
+  }
+
+  function applyPersonaUI() {
+    const p = PERSONA_DATA[currentPersona] || PERSONA_DATA.jarvis;
+    const toggleBtn = document.getElementById('ai-persona-toggle-btn');
+    if (toggleBtn) {
+      toggleBtn.textContent = p.badgeLabel;
+      toggleBtn.className = (currentPersona === 'jarvis') ? 'ai-jarvis-pill' : 'ai-sukhothai-pill';
+    }
+    const launcherStatus = document.getElementById('ai-launcher-status-text');
+    if (launcherStatus) {
+      launcherStatus.textContent = p.launcherLabel;
+    }
+    const voiceBadge = document.getElementById('ai-voice-status-indicator');
+    if (voiceBadge) {
+      voiceBadge.textContent = p.voiceStatus;
+    }
+    setMood('idle');
+  }
+
   function setMood(mood) {
     currentMood = mood;
     const container = document.getElementById('mr-deep-avatar-container');
     const badge = document.getElementById('jarvis-mood-badge');
     const waveform = document.getElementById('ai-waveform-box');
+    const pMoods = (PERSONA_DATA[currentPersona] || PERSONA_DATA.jarvis).moods;
 
     if (container) {
-      container.className = `jarvis-avatar-container ${MOOD_DATA[mood]?.badgeClass || ''}`;
+      container.className = `jarvis-avatar-container ${pMoods[mood]?.badgeClass || ''}`;
     }
     if (badge) {
-      badge.textContent = MOOD_DATA[mood]?.icon || '😊';
+      badge.textContent = pMoods[mood]?.icon || '⚡';
     }
     if (waveform) {
       waveform.classList.toggle('active', mood === 'speaking');
@@ -382,7 +509,32 @@
 
           const source = botAudioContext.createBufferSource();
           source.buffer = audioBuffer;
-          source.connect(botAudioContext.destination);
+
+          const pConfig = PERSONA_DATA[currentPersona] || PERSONA_DATA.jarvis;
+
+          if (currentPersona === 'jarvis') {
+            // Iron Man Holographic HUD Audio DSP Filter Chain
+            const highpass = botAudioContext.createBiquadFilter();
+            highpass.type = 'highpass';
+            highpass.frequency.setValueAtTime(120, botAudioContext.currentTime);
+
+            const presence = botAudioContext.createBiquadFilter();
+            presence.type = 'peaking';
+            presence.frequency.setValueAtTime(3400, botAudioContext.currentTime);
+            presence.Q.setValueAtTime(1.4, botAudioContext.currentTime);
+            presence.gain.setValueAtTime(2.6, botAudioContext.currentTime);
+
+            const comp = botAudioContext.createDynamicsCompressor();
+            comp.threshold.setValueAtTime(-16, botAudioContext.currentTime);
+            comp.ratio.setValueAtTime(3, botAudioContext.currentTime);
+
+            source.connect(highpass);
+            highpass.connect(presence);
+            presence.connect(comp);
+            comp.connect(botAudioContext.destination);
+          } else {
+            source.connect(botAudioContext.destination);
+          }
 
           source.onended = () => {
             stopVoiceAudio();
@@ -394,7 +546,7 @@
           setMood('speaking');
           startWaveformSimulation();
           const voiceBadge = document.getElementById('ai-voice-status-indicator');
-          if (voiceBadge) voiceBadge.textContent = '🎙️ Google Neural2-C HD';
+          if (voiceBadge) voiceBadge.textContent = pConfig.voiceStatus;
           return true;
         }
       }
@@ -434,7 +586,8 @@
         setMood('speaking');
         startWaveformSimulation();
         const voiceBadge = document.getElementById('ai-voice-status-indicator');
-        if (voiceBadge) voiceBadge.textContent = '🎙️ Google Neural2-C HD';
+        const pConf = PERSONA_DATA[currentPersona] || PERSONA_DATA.jarvis;
+        if (voiceBadge) voiceBadge.textContent = pConf.voiceStatus;
       };
 
       activeAudioElement.onended = () => {
@@ -462,14 +615,20 @@
   }
 
   /**
-   * Google Studio Human Voice Engine (Tone matched to globe2027: th-TH-Neural2-C with Sukhothai Dialect)
+   * Google Studio Human Voice Engine (Tone matched: J.A.R.V.I.S. Iron Man AI / Sukhothai)
    */
-  async function speakSukhothaiVoice(text) {
+  async function speakBotVoice(text) {
     if (!isTTSVoiceEnabled) return;
 
     // Stop previous voice playback
     stopVoiceAudio();
     unlockAudioContext();
+
+    const pConfig = PERSONA_DATA[currentPersona] || PERSONA_DATA.jarvis;
+
+    if (currentPersona === 'jarvis') {
+      playJarvisChime();
+    }
 
     // 1. Phrasing and phonetic cleanup for natural human speech
     let cleanText = text
@@ -500,11 +659,23 @@
       .replace(/\b3D\b/g, 'สามมิติ')
       .replace(/\bAI\b/g, 'เอไอ')
       .replace(/\bMr\.\s*Deep_xAI\b/g, 'มิสเตอร์ดีฟเอไอ')
+      .replace(/\bJ\.A\.R\.V\.I\.S\.\b/gi, 'จาวิส')
+      .replace(/\bJARVIS\b/gi, 'จาวิส')
       .trim();
 
-    // Authentic Sukhothai dialect sentence ending
-    if (!cleanText.includes('เน้อ')) {
-      cleanText += ' เน้อครับเน้อ';
+    // Persona-specific sentence ending & phrasing
+    if (currentPersona === 'jarvis') {
+      cleanText = cleanText
+        .replace(/เน้อครับเน้อ/g, 'ครับท่าน')
+        .replace(/เน้ออาจารย์/g, 'ครับท่าน')
+        .replace(/เน้อ/g, 'ครับ');
+      if (!cleanText.includes('ครับท่าน') && !cleanText.includes('ครับ') && !cleanText.includes('sir')) {
+        cleanText += ' ครับท่าน';
+      }
+    } else {
+      if (!cleanText.includes('เน้อ')) {
+        cleanText += ' เน้อครับเน้อ';
+      }
     }
 
     // 2. Try Studio Neural2-C HD Audio from globe2027 / local tts.php
@@ -521,9 +692,9 @@
           body: JSON.stringify({
             text: cleanText,
             lang: 'th-TH',
-            voice: 'th-TH-Neural2-C', // Exact Google Cloud Studio Male Voice from globe2027
-            rate: 1.0,
-            pitch: -0.5 // Warm masculine tone
+            voice: 'th-TH-Neural2-C',
+            rate: pConfig.rate,
+            pitch: pConfig.pitch
           })
         });
         clearTimeout(timeoutId);
@@ -556,9 +727,11 @@
 
     if (playedStudio) return;
 
-    // 3. Fallback to Browser Speech Synthesis with Sukhothai Sentence Queue
+    // 3. Fallback to Browser Speech Synthesis
     fallbackToBrowserSpeech(cleanText);
   }
+
+  const speakSukhothaiVoice = speakBotVoice;
 
   function fallbackToBrowserSpeech(cleanText) {
     const sentences = cleanText
@@ -763,35 +936,38 @@
     // Append user message with vision snapshot card
     appendUserMessageWithVision('📷 สแกนภาพฉากแล็บ 3D ปัจจุบัน', dataUrl);
 
-    // Mr. Deep_xAI analyzes the vision frame
+    // AI analyzes the vision frame
     setMood('thinking');
     setTimeout(() => {
       let analysisText = '';
+      const p = PERSONA_DATA[currentPersona] || PERSONA_DATA.jarvis;
+      const isJarvis = (currentPersona === 'jarvis');
+
       if (activeExp && activeExp.id === 'elec_hex_loop') {
         const pPin = window.labState?.exp1?.connectedPinP || 'f';
         const qPin = window.labState?.exp1?.connectedPinQ || 'a';
         const sw = window.labState?.exp1?.knifeSwitchClosed ? 'สับลง (วงจรปิด กระแสไหล)' : 'ยกขึ้น (วงจรเปิด)';
         const vs = window.labState?.exp1?.supplyVoltage || 10.0;
-        analysisText = `${SUKHOTHAI_PHRASES.vision_scanned}
-- **อุปกรณ์ในฉาก:** ตรวจพบแผงตัวต้านทาน 6 เหลี่ยม IJSO, แหล่งจ่ายไฟ DC HY-3005D, สวิตช์ใบมีด และโวลต์มิเตอร์/แอมมิเตอร์หน้าปัดคู่เน้อ
+        analysisText = `${p.phrases.vision_scanned}
+- **อุปกรณ์ในฉาก:** แผงตัวต้านทาน 6 เหลี่ยม IJSO, แหล่งจ่ายไฟ DC HY-3005D, สวิตช์ใบมีด และมิเตอร์วัดหน้าปัดคู่
 - **สถานะการเชื่อมต่อ:** ขั้วต่อ P ต่ออยู่ที่จุด **${pPin}**, ขั้วต่อ Q ต่ออยู่ที่จุด **${qPin}**
 - **สวิตช์ใบมีด:** อยู่ในสถานะ **${sw}**
 - **แรงดันไฟฟ้า $V_s$:** จ่ายอยู่ที่ **${vs.toFixed(2)}\\text{ V}**
-- **ผลการวิเคราะห์ทางฟิสิกส์:** การจัดวางสายและอุปกรณ์ถูกต้องตามระเบียบแล็บ IJSO ข้อ 7 เน้อ ค่าความต้านทานสมมูลต่ำสุดอยู่ที่คู่จุด f-a เท่ากับ $\\frac{20}{21}\\,\\Omega$ สมบูรณ์แบบมากเน้อ!`;
+- **ผลการวิเคราะห์ทางฟิสิกส์:** ${isJarvis ? 'การจัดวางอุปกรณ์สอดคล้องตามข้อกำหนด IJSO ข้อ 7 อย่างสมบูรณ์แบบครับท่าน ค่าความต้านทานสมมูลต่ำสุดที่จุด f-a เท่ากับ $\\frac{20}{21}\\,\\Omega$' : 'การจัดวางสายและอุปกรณ์ถูกต้องตามระเบียบแล็บ IJSO ข้อ 7 เน้อ ค่าความต้านทานสมมูลต่ำสุดอยู่ที่คู่จุด f-a เท่ากับ $\\frac{20}{21}\\,\\Omega$ สมบูรณ์แบบมากเน้อ!'}`;
       } else if (activeExp && activeExp.id === 'mech_pendulum') {
         const len = window.labState?.exp2?.lengthCm || 50;
-        analysisText = `${SUKHOTHAI_PHRASES.vision_scanned}
-- **อุปกรณ์ในฉาก:** ตรวจพบเสาขาตั้ง Retort Stand, เชือกแขวนลูกตุ้มทองเหลือง, ไม้บรรทัดเมตร และแผ่นสเกลวัดมุมโปรแทรกเตอร์เน้อ
+        analysisText = `${p.phrases.vision_scanned}
+- **อุปกรณ์ในฉาก:** เสาขาตั้ง Retort Stand, เชือกแขวนลูกตุ้มทองเหลือง, ไม้บรรทัดเมตร และสเกลวัดมุมโปรแทรกเตอร์
 - **พารามิเตอร์ปัจจุบัน:** ความยาวเชือก $L = ${len}\\text{ cm}$ ($(0.${len}\\text{ m})$)
-- **ผลการวิเคราะห์เชิงสายตา:** ลูกตุ้มถูกจัดวางในแนวดิ่งได้ระนาบอย่างดีเน้อ พร้อมสำหรับการแกว่งมุมเล็ก $\\theta < 10^\\circ$ เพื่อวัดคาบ $T$ หาค่า $g$ ครับเน้อ!`;
+- **ผลการวิเคราะห์เชิงสายตา:** ${isJarvis ? 'ลูกตุ้มอยู่ในแนวดิ่งสมบูรณ์แบบครับท่าน พร้อมสำหรับการแกว่งมุมเล็ก $\\theta < 10^\\circ$ เพื่อวัดคาบ $T$ และคำนวณค่า $g$' : 'ลูกตุ้มถูกจัดวางในแนวดิ่งได้ระนาบอย่างดีเน้อ พร้อมสำหรับการแกว่งมุมเล็ก $\\theta < 10^\\circ$ เพื่อวัดคาบ $T$ หาค่า $g$ ครับเน้อ!'}`;
       } else {
-        analysisText = `${SUKHOTHAI_PHRASES.vision_scanned}
+        analysisText = `${p.phrases.vision_scanned}
 - **ปฏิบัติการที่ตรวจพบ:** ${expTitle}
-- **การจัดวางอุปกรณ์ 3D:** เมชอุปกรณ์และอุปกรณ์วัดถูกจัดวางบนโต๊ะแล็บฟิสิกส์อย่างถูกต้อง พร้อมสำหรับการรันการทดลองและการวัดค่า Telemetry ร่วมกัน (Co-creation) เน้อ!`;
+- **การจัดวางอุปกรณ์ 3D:** เมชอุปกรณ์และเซ็นเซอร์วัดถูกจัดวางบนโต๊ะแล็บอย่างถูกต้อง พร้อมสำหรับการจำลองร่วมกันแบบ Co-creation ${isJarvis ? 'ครับท่าน' : 'เน้อ!'}`;
       }
 
       appendBotMessage(analysisText);
-      speakSukhothaiVoice(analysisText);
+      speakBotVoice(analysisText);
     }, 1200);
   }
 
@@ -808,9 +984,12 @@
       appendUserMessageWithVision(`📎 แนบภาพ: ${file.name}`, dataUrl);
       setMood('thinking');
       setTimeout(() => {
-        const reply = `ผมได้รับภาพของอาจารย์แล้วเน้อ! ภาพคมชัดมากเน้อ กำลังตรวจโครงสร้างวงจรและแผนภาพเวกเตอร์ทางฟิสิกส์ให้ หากต้องการให้ผมคำนวณหรือเปรียบเทียบกับทฤษฎีจุดไหน บอกผมได้เลยเน้อครับเน้อ!`;
+        const isJarvis = (currentPersona === 'jarvis');
+        const reply = isJarvis 
+          ? `ได้รับไฟล์ภาพเรียบร้อยครับท่าน กำลังประมวลผลโครงสร้างทางฟิสิกส์และแผนภาพเวกเตอร์จากเซ็นเซอร์ออปติคัลให้ หากท่านต้องการให้รันการคำนวณส่วนใด แจ้งผมได้ทันทีครับ (At your service, sir)`
+          : `ผมได้รับภาพของอาจารย์แล้วเน้อ! ภาพคมชัดมากเน้อ กำลังตรวจโครงสร้างวงจรและแผนภาพเวกเตอร์ทางฟิสิกส์ให้ หากต้องการให้ผมคำนวณหรือเปรียบเทียบกับทฤษฎีจุดไหน บอกผมได้เลยเน้อครับเน้อ!`;
         appendBotMessage(reply);
-        speakSukhothaiVoice(reply);
+        speakBotVoice(reply);
       }, 1000);
     };
     reader.readAsDataURL(file);
@@ -818,16 +997,18 @@
   }
 
   function pushBotGreeting() {
-    const welcome = `${SUKHOTHAI_PHRASES.greeting}
+    const p = PERSONA_DATA[currentPersona] || PERSONA_DATA.jarvis;
+    const isJarvis = (currentPersona === 'jarvis');
+    const welcome = `${p.phrases.greeting}
 
-${SUKHOTHAI_PHRASES.co_create}
+${p.phrases.co_create}
+- 🤖 **J.A.R.V.I.S. Iron Man AI Protocol (เสียงจาวิสทุ้มนุ่มสุขุม หรือสลับเสียงสุโขทัยได้)**
 - 💡 **ร่วมตั้งสมมติฐาน & ออกแบบการทดลอง (Co-Design)**
-- 📷 **สแกนภาพฉาก 3D ตรวจสอบสายตา (Vision Real-time)**
+- 📷 **สแกนภาพฉาก 3D ตรวจสอบสายตา (HUD Optics Vision)**
 - 🔍 **ตรวจสอบค่าเซ็นเซอร์จริงในแล็บ (Telemetry Inspection)**
 - ⚡ **สั่งการอุปกรณ์แทนคุณ (Agentic Auto-Pilot)**
-- 🎙️ **พูดคุยด้วยเสียงเน้อๆ ชาวสุโขทัย (Voice Input & TTS)**
 
-อาจารย์อยากให้ผมช่วยอะไรในการทดลองนี้ก่อนดีเน้อ?`;
+${isJarvis ? 'ท่านต้องการให้ผมเริ่มจำลอง หรือตรวจสอบพารามิเตอร์ส่วนใดก่อนดีครับท่าน?' : 'อาจารย์อยากให้ผมช่วยอะไรในการทดลองนี้ก่อนดีเน้อ?'}`;
     appendBotMessage(welcome);
   }
 
@@ -853,8 +1034,38 @@ ${SUKHOTHAI_PHRASES.co_create}
       removeTypingIndicator();
       const response = generateDeepxAIResponse(text);
       appendBotMessage(response.content, response.actionFeedback);
-      speakSukhothaiVoice(response.speechText || response.content);
+      speakBotVoice(response.speechText || response.content);
     }, 850);
+  }
+
+  function formatPersonaText(content, speechText) {
+    if (currentPersona === 'jarvis') {
+      const adaptedContent = content
+        .replace(/เน้อครับเน้อ/g, 'ครับท่าน')
+        .replace(/เน้ออาจารย์/g, 'ครับท่าน')
+        .replace(/อาจารย์/g, 'ท่าน')
+        .replace(/เน้อ!/g, 'ครับท่าน!')
+        .replace(/เน้อ\?/g, 'ครับท่าน?')
+        .replace(/เน้อ/g, 'ครับ')
+        .replace(/จัดให้ตามคำขอ/g, 'รับทราบและดำเนินการให้ทันทีครับท่าน')
+        .replace(/ไอเดียแจ่มมาก/g, 'ข้อเสนอแนะยอดเยี่ยมมากครับท่าน');
+
+      const adaptedSpeech = (speechText || content)
+        .replace(/เน้อครับเน้อ/g, 'ครับท่าน')
+        .replace(/เน้ออาจารย์/g, 'ครับท่าน')
+        .replace(/อาจารย์/g, 'ท่าน')
+        .replace(/เน้อ!/g, 'ครับท่าน')
+        .replace(/เน้อ/g, 'ครับ');
+
+      return {
+        content: adaptedContent,
+        speechText: adaptedSpeech
+      };
+    }
+    return {
+      content: content,
+      speechText: speechText || content
+    };
   }
 
   function generateDeepxAIResponse(prompt) {
@@ -862,6 +1073,29 @@ ${SUKHOTHAI_PHRASES.co_create}
     const activeExpId = window.PhysicsLabRegistry ? window.PhysicsLabRegistry.getActiveExperimentId() : 'elec_hex_loop';
     const activeExp = window.PhysicsLabRegistry ? window.PhysicsLabRegistry.getActiveExperiment() : null;
     const currentLab = LAB_KNOWLEDGE[activeExpId] || LAB_KNOWLEDGE.elec_hex_loop;
+    const isJarvis = (currentPersona === 'jarvis');
+
+    // 0. Persona Switch intent via Natural Chat!
+    if (text.includes('จาวิส') || text.includes('jarvis') || text.includes('ไอรอนแมน') || text.includes('iron man')) {
+      currentPersona = 'jarvis';
+      applyPersonaUI();
+      playJarvisChime();
+      return {
+        content: `**J.A.R.V.I.S. Protocol Engaged.**\n\nสวัสดีครับท่าน ระบบปัญญาประดิษฐ์ J.A.R.V.I.S. (Just A Rather Very Intelligent System) ในโปรโตคอล Mr. Deep_xAI เปิดใช้งานเต็มพิกัดแล้วครับท่าน ระบบเสียงสตูดิโอ HD พร้อมฟิลเตอร์ HUD Hologram และอัลกอริทึมวิเคราะห์ฟิสิกส์ออนไลน์ 100% แล้วครับ (At your service, sir)\n\nท่านต้องการให้ผมตรวจสอบพารามิเตอร์ หรือดำเนินการจำลองส่วนใดก่อนดีครับท่าน?`,
+        speechText: `สวัสดีครับท่าน ระบบจาวิสเปิดใช้งานเต็มพิกัดแล้วครับ ยินดีรับใช้ครับท่าน แอด ยัวร์ เซอร์วิส เซอร์`,
+        actionFeedback: `⚡ J.A.R.V.I.S. Protocol Online`
+      };
+    }
+
+    if (text.includes('สุโขทัย') || text.includes('เสียงเน้อ') || text.includes('คนสุโขทัย')) {
+      currentPersona = 'sukhothai';
+      applyPersonaUI();
+      return {
+        content: `สลับมาเป็นโหมดหนุ่มสุโขทัยเรียบร้อยแล้วเน้ออาจารย์! พูดคุยด้วยเสียงเน้อๆ อบอุ่นเป็นกันเอง มีอะไรให้ช่วยในการทดลองบอกผมได้เลยเน้อครับเน้อ!`,
+        speechText: `สลับมาเป็นโหมดหนุ่มสุโขทัยเรียบร้อยแล้วเน้ออาจารย์ มีอะไรให้ช่วยบอกผมได้เลยเน้อ`,
+        actionFeedback: `🌾 โหมดหนุ่มสุโขทัย Online`
+      };
+    }
 
     // 1. Check for lab switching intent
     const switchIntent = detectSwitchLabIntent(text);
@@ -870,74 +1104,72 @@ ${SUKHOTHAI_PHRASES.co_create}
         window.PhysicsLabRegistry.switchExperiment(switchIntent.id);
       }
       setMood('excited');
-      return {
-        content: `จัดให้ตามคำขอเน้อ! ผมสลับห้องทดลองไปยัง **${switchIntent.name}** ให้เรียบร้อยแล้วเน้อ\n\n📌 **สูตรสำคัญ:**\n${switchIntent.formula}\n\n💡 **คำแนะนำจาก Mr. Deep_xAI:**\n${switchIntent.tips}`,
-        speechText: `จัดให้ตามคำขอเน้อ สลับห้องทดลองไปยัง ${switchIntent.name} ให้เรียบร้อยแล้วเน้ออาจารย์`,
-        actionFeedback: `🚀 สลับเข้าสู่ ${switchIntent.name} อัตโนมัติเรียบร้อย`
-      };
+      return formatPersonaText(
+        `จัดให้ตามคำขอเน้อ! ผมสลับห้องทดลองไปยัง **${switchIntent.name}** ให้เรียบร้อยแล้วเน้อ\n\n📌 **สูตรสำคัญ:**\n${switchIntent.formula}\n\n💡 **คำแนะนำจาก AI Copilot:**\n${switchIntent.tips}`,
+        `จัดให้ตามคำขอเน้อ สลับห้องทดลองไปยัง ${switchIntent.name} ให้เรียบร้อยแล้วเน้ออาจารย์`
+      );
     }
 
     // 2. Telemetry Inspection
     if (text.includes('ตรวจสอบ') || text.includes('สถานะ') || text.includes('ค่าปัจจุบัน') || text.includes('อ่านค่า') || text.includes('telemetry')) {
       const stateSummary = inspectCurrentLabState(activeExpId);
       setMood('excited');
-      return {
-        content: `นี่คือผลการตรวจสอบค่า Telemetry จริงจากอุปกรณ์ในแล็บเน้ออาจารย์:\n\n${stateSummary}\n\nทุกระบบทำงานปกติ สัญญาณนิ่งมากเน้ออาจารย์!`,
-        speechText: `ตรวจสอบค่าปัจจุบันในห้องทดลองให้เรียบร้อยแล้วเน้อ ทุกระบบทำงานปกติ สัญญาณนิ่งมากเน้ออาจารย์`,
-        actionFeedback: `🔍 ดึงค่า Telemetry จากเซ็นเซอร์ฮาร์ดแวร์ 3D สำเร็จ`
-      };
+      return formatPersonaText(
+        `นี่คือผลการตรวจสอบค่า Telemetry จริงจากอุปกรณ์ในแล็บเน้ออาจารย์:\n\n${stateSummary}\n\nทุกระบบทำงานปกติ สัญญาณนิ่งมากเน้ออาจารย์!`,
+        `ตรวจสอบค่าปัจจุบันในห้องทดลองให้เรียบร้อยแล้วเน้อ ทุกระบบทำงานปกติ สัญญาณนิ่งมากเน้ออาจารย์`
+      );
     }
 
     // 3. Auto-Pilot Actions
     if (text.includes('ดำเนินการ') || text.includes('แทนฉัน') || text.includes('กด') || text.includes('สับสวิตช์') || text.includes('auto') || text.includes('ปล่อย')) {
       const actionResult = triggerLabAction(activeExpId);
       setMood('excited');
-      return {
-        content: `${SUKHOTHAI_PHRASES.ack}\n\n${actionResult.message}\n\nเรียบร้อยแล้วเน้ออาจารย์ ลองดูผลการตอบสนองที่หน้าปัดและกราฟ 3D ได้เลยเน้อ!`,
-        speechText: `ดำเนินการให้เรียบร้อยแล้วเน้ออาจารย์ ลองดูผลที่หน้าปัดและกราฟได้เลยเน้อ`,
-        actionFeedback: actionResult.badge
-      };
+      const ack = (PERSONA_DATA[currentPersona] || PERSONA_DATA.jarvis).phrases.ack;
+      return formatPersonaText(
+        `${ack}\n\n${actionResult.message}\n\nเรียบร้อยแล้วเน้ออาจารย์ ลองดูผลการตอบสนองที่หน้าปัดและกราฟ 3D ได้เลยเน้อ!`,
+        `ดำเนินการให้เรียบร้อยแล้วเน้ออาจารย์ ลองดูผลที่หน้าปัดและกราฟได้เลยเน้อ`
+      );
     }
 
     // 4. Formula Explanation
     if (text.includes('สูตร') || text.includes('คำนวณ') || text.includes('ทฤษฎี') || text.includes('สมการ')) {
       setMood('speaking');
-      return {
-        content: `สำหรับปฏิบัติการ **${currentLab.name}** มีสูตรและหลักคิดสำคัญดังนี้เน้อ:\n\n${currentLab.formula}\n\n💡 **เทคนิคการคำนวณและทริค:**\n${currentLab.tips}\n\nเข้าใจง่ายไหมเน้ออาจารย์ ถ้าอยากให้ผมช่วยคำนวณตัวเลขไหน บอกมาได้เลยเน้อ!`,
-        speechText: `สำหรับแล็บ ${currentLab.name} มีสูตรหลักและหลักคิดสำคัญตามนี้เน้อ เข้าใจง่ายมากๆ เน้ออาจารย์`
-      };
+      return formatPersonaText(
+        `สำหรับปฏิบัติการ **${currentLab.name}** มีสูตรและหลักคิดสำคัญดังนี้เน้อ:\n\n${currentLab.formula}\n\n💡 **เทคนิคการคำนวณและทริค:**\n${currentLab.tips}\n\nเข้าใจง่ายไหมเน้ออาจารย์ ถ้าอยากให้ผมช่วยคำนวณตัวเลขไหน บอกมาได้เลยเน้อ!`,
+        `สำหรับแล็บ ${currentLab.name} มีสูตรหลักและหลักคิดสำคัญตามนี้เน้อ เข้าใจง่ายมากๆ เน้ออาจารย์`
+      );
     }
 
     // 5. Co-creation & Hypothesis Design
     if (text.includes('ร่วมคิด') || text.includes('co-creation') || text.includes('ออกแบบ') || text.includes('สมมติฐาน') || text.includes('วิจัย')) {
       setMood('excited');
-      return {
-        content: `ไอเดียแจ่มมากเน้ออาจารย์! ในการทำ Co-creation สำหรับแล็บ **${currentLab.name}** ผมขอเสนอแนวทางดังนี้เน้อ:
+      return formatPersonaText(
+        `ไอเดียแจ่มมากเน้ออาจารย์! ในการทำ Co-creation สำหรับแล็บ **${currentLab.name}** ผมขอเสนอแนวทางดังนี้เน้อ:
 1. **การตั้งสมมติฐานใหม่:** ลองปรับตัวแปรต้นเพื่อสังเกตผลกระทบแบบ Non-linear
 2. **การลดความคลาดเคลื่อน (Systematic Error):** ตรวจสอบจุดต่อสายไฟและระยะศูนย์ของอุปกรณ์
 3. **การประยุกต์สู่เทคโนโลยีจริง:** นำสมการของแล็บนี้ไปเชื่อมโยงกับเซ็นเซอร์ IoT และปัญญาประดิษฐ์ Edge AI เน้อ!
 
 อาจารย์ชอบแนวทางไหนเป็นพิเศษเน้อ เดี๋ยวเราลุยต่อยอดด้วยกันเลยเน้อ!`,
-        speechText: `ไอเดียแจ่มมากเน้ออาจารย์ ผมเสนอแนวคิดการร่วมสร้างสรรค์ทั้งสามข้อ ลองพิจารณาดูเน้อ`
-      };
+        `ไอเดียแจ่มมากเน้ออาจารย์ ผมเสนอแนวคิดการร่วมสร้างสรรค์ทั้งสามข้อ ลองพิจารณาดูเน้อ`
+      );
     }
 
     // 6. Physics Quiz
     if (text.includes('quiz') || text.includes('คำถาม') || text.includes('ทดสอบ') || text.includes('ทาย')) {
       const quiz = generateLabQuiz(activeExpId);
       setMood('speaking');
-      return {
-        content: `มาทดสอบความเข้าใจกันหน่อยเน้ออาจารย์!\n\n${quiz.question}\n\nก) ${quiz.optA}\nข) ${quiz.optB}\nค) ${quiz.optC}\nง) ${quiz.optD}\n\nลองตอบมาดูเน้อว่าข้อไหนถูก!`,
-        speechText: `มาทดสอบความเข้าใจกันหน่อยเน้ออาจารย์ ลองทายดูว่าข้อไหนถูกต้องเน้อ`
-      };
+      return formatPersonaText(
+        `มาทดสอบความเข้าใจกันหน่อยเน้ออาจารย์!\n\n${quiz.question}\n\nก) ${quiz.optA}\nข) ${quiz.optB}\nค) ${quiz.optC}\nง) ${quiz.optD}\n\nลองตอบมาดูเน้อว่าข้อไหนถูก!`,
+        `มาทดสอบความเข้าใจกันหน่อยเน้ออาจารย์ ลองทายดูว่าข้อไหนถูกต้องเน้อ`
+      );
     }
 
     // 7. General Lab Guidance (Default)
     setMood('speaking');
-    return {
-      content: `เกี่ยวกับปฏิบัติการ **${currentLab.name}** เน้ออาจารย์:\n\n${currentLab.tips}\n\n📌 **สมการที่ใช้:**\n${currentLab.formula}\n\nต้องการให้ผมช่วยกดสั่งการอุปกรณ์ สแกนภาพฉาก 3D หรืออธิบายขั้นตอนตรงไหนเพิ่มเติม บอกผมได้เลยเน้อครับเน้อ!`,
-      speechText: `เกี่ยวกับแล็บนี้ มีรายละเอียดและสูตรสำคัญตามนี้เน้ออาจารย์ มีอะไรให้ช่วยบอกได้เลยเน้อ`
-    };
+    return formatPersonaText(
+      `เกี่ยวกับปฏิบัติการ **${currentLab.name}** เน้ออาจารย์:\n\n${currentLab.tips}\n\n📌 **สมการที่ใช้:**\n${currentLab.formula}\n\nต้องการให้ผมช่วยกดสั่งการอุปกรณ์ สแกนภาพฉาก 3D หรืออธิบายขั้นตอนตรงไหนเพิ่มเติม บอกผมได้เลยเน้อครับเน้อ!`,
+      `เกี่ยวกับแล็บนี้ มีรายละเอียดและสูตรสำคัญตามนี้เน้ออาจารย์ มีอะไรให้ช่วยบอกได้เลยเน้อ`
+    );
   }
 
   function detectSwitchLabIntent(text) {
@@ -1142,6 +1374,10 @@ ${SUKHOTHAI_PHRASES.co_create}
     closeChat,
     toggleTTS,
     toggleSpeechInput,
+    togglePersona,
+    setPersona,
+    playJarvisChime,
+    speakBotVoice,
     captureSceneVision,
     handleImageUpload,
     handleSend,

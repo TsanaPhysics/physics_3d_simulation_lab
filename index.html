@@ -25,7 +25,7 @@
   <link rel="stylesheet" href="css/ar.css?v=20261018_65" />
   <link rel="stylesheet" href="css/modal.css?v=20261018_65" />
   <link rel="stylesheet" href="css/portal.css?v=20261018_65" />
-  <link rel="stylesheet" href="css/ai-bot.css?v=20261018_65" />
+  <link rel="stylesheet" href="css/ai-bot.css?v=20261018_100" />
 
   <!-- KaTeX Academic Typesetting via CDN -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
@@ -768,14 +768,14 @@
   </div>
 
   <!-- ================= MR. DEEP_XAI CO-CREATION AGENTIC AI BOT ================= -->
-  <button id="ai-bot-launcher" onclick="AIBot.toggleChat()" title="เปิด Mr. Deep_xAI ผู้ช่วยฟิสิกส์ Co-creation (หนุ่มสุโขทัย)">
+  <button id="ai-bot-launcher" onclick="AIBot.toggleChat()" title="เปิด Mr. Deep_xAI (J.A.R.V.I.S. Iron Man AI Protocol)">
     <div class="ai-launcher-avatar">
       <div class="launcher-holo-ring"></div>
       <img src="assets/images/mr_deep_xai_bot_square.png?v=20261018_65" alt="Mr. Deep_xAI" class="launcher-avatar-img" />
     </div>
     <div class="ai-launcher-text">
       <span class="ai-launcher-title">Mr. Deep_xAI</span>
-      <span class="ai-launcher-status">Digital Bot (เสียงเน้อ)</span>
+      <span class="ai-launcher-status" id="ai-launcher-status-text">J.A.R.V.I.S. AI</span>
     </div>
   </button>
 
@@ -787,16 +787,16 @@
           <div class="jarvis-ring-middle"></div>
           <div class="jarvis-ring-glow"></div>
           <img src="assets/images/mr_deep_xai_bot_square.png?v=20261018_65" alt="Mr. Deep_xAI Portrait" class="jarvis-portrait-img" />
-          <div id="jarvis-mood-badge" class="jarvis-mood-badge" title="อารมณ์/สถานะ">😊</div>
+          <div id="jarvis-mood-badge" class="jarvis-mood-badge" title="อารมณ์/สถานะ">⚡</div>
         </div>
         <div class="ai-bot-meta">
           <div class="ai-bot-name-row">
             <h4>Mr. Deep_xAI</h4>
-            <span class="ai-bot-badge">Digital Bot</span>
+            <span class="ai-bot-badge">JARVIS Protocol</span>
           </div>
           <p class="ai-bot-subtitle">
-            <span class="ai-sukhothai-pill">หนุ่มสุโขทัย</span>
-            <span id="ai-voice-status-indicator" class="ai-voice-pill">🎙️ Google Natural TTS</span>
+            <span id="ai-persona-toggle-btn" class="ai-jarvis-pill" onclick="AIBot.togglePersona()" title="คลิกเพื่อสลับระหว่างเสียง J.A.R.V.I.S. ไอรอนแมน และ เสียงหนุ่มสุโขทัย">🤖 J.A.R.V.I.S.</span>
+            <span id="ai-voice-status-indicator" class="ai-voice-pill">🎙️ J.A.R.V.I.S. Iron Man AI</span>
             <span id="ai-waveform-box" class="ai-waveform-box" title="กำลังพูดบรรยาย">
               <span class="waveform-bar"></span>
               <span class="waveform-bar"></span>
@@ -870,7 +870,7 @@
   <script src="js/ui-exp2.js?v=20261018_65"></script>
   <script src="js/ar-mediapipe.js?v=20261018_65"></script>
   <script src="js/portal.js?v=20261018_65"></script>
-  <script src="js/ai-bot.js?v=20261018_99"></script>
+  <script src="js/ai-bot.js?v=20261018_100"></script>
   <script src="js/app.js?v=20261018_99"></script>
 
 </body>
