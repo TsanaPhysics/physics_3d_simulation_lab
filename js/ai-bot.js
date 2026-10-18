@@ -247,6 +247,30 @@
   let cachedGoogleThaiVoice = null;
   let voiceQueue = [];
   let isPlayingVoiceQueue = false;
+  let isAudioUnlocked = false;
+
+  // Studio TTS Endpoints from globe2027 and local project
+  const STUDIO_TTS_ENDPOINTS = [
+    'api/tts.php',
+    'http://localhost/G4_Environment_Climate_Energy/globe2027/api/tts.php',
+    'http://127.0.0.1/G4_Environment_Climate_Energy/globe2027/api/tts.php'
+  ];
+
+  function unlockAudioContext() {
+    if (isAudioUnlocked) return;
+    try {
+      if (!activeAudioElement) {
+        activeAudioElement = new Audio();
+        activeAudioElement.crossOrigin = 'anonymous';
+        activeAudioElement.preload = 'auto';
+      }
+      isAudioUnlocked = true;
+    } catch (e) {}
+  }
+
+  // Pre-unlock audio on user interaction
+  document.addEventListener('click', unlockAudioContext, { once: true, passive: true });
+  document.addEventListener('touchstart', unlockAudioContext, { once: true, passive: true });
 
   function updateVoices() {
     if (!('speechSynthesis' in window)) return;
@@ -281,7 +305,7 @@
       cachedGoogleThaiVoice = found;
       console.info('Mr. Deep_xAI Natural Voice ready:', found.name, found.lang);
       const voiceBadge = document.getElementById('ai-voice-status-indicator');
-      if (voiceBadge) {
+      if (voiceBadge && !voiceBadge.textContent.includes('Studio')) {
         voiceBadge.textContent = found.name.includes('Google') ? '🎙️ Google Neural' : '🎙️ ' + found.name;
       }
     }
@@ -293,13 +317,14 @@
   }
 
   /**
-   * Google Natural Human Voice Engine (Google Neural TTS + Human Prosody)
+   * Google Studio Human Voice Engine (Tone matched to globe2027: th-TH-Neural2-C with Sukhothai Dialect)
    */
-  function speakSukhothaiVoice(text) {
+  async function speakSukhothaiVoice(text) {
     if (!isTTSVoiceEnabled) return;
 
     // Stop previous voice playback
     stopVoiceAudio();
+    unlockAudioContext();
 
     // 1. Phrasing and phonetic cleanup for natural human speech
     let cleanText = text
@@ -332,11 +357,92 @@
       .replace(/\bMr\.\s*Deep_xAI\b/g, 'มิสเตอร์ดีฟเอไอ')
       .trim();
 
+    // Authentic Sukhothai dialect sentence ending
     if (!cleanText.includes('เน้อ')) {
       cleanText += ' เน้อครับเน้อ';
     }
 
-    // Split into natural sentences for human breathing pauses & prevent Chrome timeout
+    // 2. Try Studio Neural2-C HD Audio from globe2027 / local tts.php
+    let playedStudio = false;
+    for (const endpoint of STUDIO_TTS_ENDPOINTS) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+        const resp = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            text: cleanText,
+            lang: 'th-TH',
+            voice: 'th-TH-Neural2-C', // Exact Google Cloud Studio Male Voice from globe2027
+            rate: 1.0,
+            pitch: -0.5 // Warm masculine tone
+          })
+        });
+        clearTimeout(timeoutId);
+
+        if (resp.ok) {
+          const ttsData = await resp.json();
+          if (ttsData.success && ttsData.audio_url) {
+            // Resolve relative audio URL against endpoint origin if needed
+            let fullAudioUrl = ttsData.audio_url;
+            if (endpoint.startsWith('http')) {
+              const urlObj = new URL(endpoint);
+              const basePath = urlObj.pathname.substring(0, urlObj.pathname.lastIndexOf('/') + 1);
+              fullAudioUrl = urlObj.origin + basePath + '../' + ttsData.audio_url;
+            }
+
+            if (!activeAudioElement) {
+              activeAudioElement = new Audio();
+              activeAudioElement.crossOrigin = 'anonymous';
+            }
+
+            activeAudioElement.src = fullAudioUrl;
+            activeAudioElement.playbackRate = 1.0;
+            activeAudioElement.preload = 'auto';
+
+            activeAudioElement.onplay = () => {
+              setMood('speaking');
+              startWaveformSimulation();
+              const voiceBadge = document.getElementById('ai-voice-status-indicator');
+              if (voiceBadge) voiceBadge.textContent = '🎙️ Google Neural2-C HD';
+            };
+
+            activeAudioElement.onended = () => {
+              stopVoiceAudio();
+            };
+
+            activeAudioElement.onerror = (err) => {
+              console.warn('[Studio Voice] Audio playback failed, fallback to Browser Neural:', err);
+              fallbackToBrowserSpeech(cleanText);
+            };
+
+            const playProm = activeAudioElement.play();
+            if (playProm !== undefined) {
+              playProm.catch((err) => {
+                console.warn('[Studio Voice] Play promise error, fallback to Browser Neural:', err);
+                fallbackToBrowserSpeech(cleanText);
+              });
+            }
+
+            playedStudio = true;
+            break;
+          }
+        }
+      } catch (err) {
+        // Try next endpoint or fallback
+      }
+    }
+
+    if (playedStudio) return;
+
+    // 3. Fallback to Browser Speech Synthesis with Sukhothai Sentence Queue
+    fallbackToBrowserSpeech(cleanText);
+  }
+
+  function fallbackToBrowserSpeech(cleanText) {
     const sentences = cleanText
       .split(/[\n\r]+|[!?。]+|(?<=[ครับเน้อ|ค่ะ|ครับ|จ้ะ|เน้อ])\s+/)
       .map(s => s.trim())
@@ -362,7 +468,7 @@
     }
 
     if (!('speechSynthesis' in window)) {
-      playGoogleAudioFallback(chunk);
+      stopVoiceAudio();
       return;
     }
 
@@ -370,7 +476,7 @@
 
     const utterance = new SpeechSynthesisUtterance(chunk);
     utterance.lang = 'th-TH';
-    // Tuned for authentic natural human male warmth
+    // Tuned to match the exact pitch and rate profile of globe2027
     utterance.pitch = 0.95;
     utterance.rate = 0.98;
     utterance.volume = 1.0;
@@ -404,36 +510,6 @@
     window.speechSynthesis.speak(utterance);
   }
 
-  function playGoogleAudioFallback(text) {
-    const spokenChunk = text.slice(0, 190);
-    const googleTTSUrl = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=th&client=tw-ob&q=' + encodeURIComponent(spokenChunk);
-
-    activeAudioElement = new Audio();
-    activeAudioElement.crossOrigin = 'anonymous';
-    activeAudioElement.src = googleTTSUrl;
-
-    activeAudioElement.onplay = () => {
-      setMood('speaking');
-      startWaveformSimulation();
-    };
-
-    activeAudioElement.onended = () => {
-      if (isPlayingVoiceQueue && voiceQueue.length > 0) {
-        setTimeout(() => playNextVoiceChunk(), 60);
-      } else {
-        stopVoiceAudio();
-      }
-    };
-
-    activeAudioElement.onerror = () => {
-      stopVoiceAudio();
-    };
-
-    activeAudioElement.play().catch(() => {
-      stopVoiceAudio();
-    });
-  }
-
   function stopVoiceAudio() {
     isPlayingVoiceQueue = false;
     voiceQueue = [];
@@ -443,7 +519,6 @@
         activeAudioElement.pause();
         activeAudioElement.src = '';
       } catch (e) {}
-      activeAudioElement = null;
     }
     if ('speechSynthesis' in window) {
       try {
