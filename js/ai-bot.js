@@ -15,7 +15,7 @@
   let currentMood = 'idle'; // 'idle', 'thinking', 'speaking', 'excited', 'vision'
   let messageHistory = [];
 
-  const PORTRAIT_SRC = 'assets/images/mr_deep_xai_real.jpg';
+  const PORTRAIT_SRC = 'assets/images/mr_deep_xai_bot_square.png?v=20261018_65';
 
   // Comprehensive Knowledgebase for all 16 experiments
   const LAB_KNOWLEDGE = {
@@ -219,16 +219,16 @@
     }
   }
 
+  let activeAudioElement = null;
+  let audioWaveformTimer = null;
+
   function closeChat() {
     isChatOpen = false;
     const drawer = document.getElementById('ai-bot-drawer');
     if (drawer) {
       drawer.classList.remove('open');
     }
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-    setMood('idle');
+    stopVoiceAudio();
   }
 
   function toggleTTS() {
@@ -236,62 +236,244 @@
     const btn = document.getElementById('btn-ai-tts');
     if (btn) {
       btn.textContent = isTTSVoiceEnabled ? '🔊' : '🔇';
-      btn.title = isTTSVoiceEnabled ? 'ปิดเสียงบรรยายสุโขทัย' : 'เปิดเสียงบรรยายสุโขทัย';
+      btn.title = isTTSVoiceEnabled ? 'ปิดเสียงบรรยาย Google TTS' : 'เปิดเสียงบรรยาย Google TTS';
       btn.classList.toggle('active', isTTSVoiceEnabled);
     }
-    if (!isTTSVoiceEnabled && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      setMood('idle');
+    if (!isTTSVoiceEnabled) {
+      stopVoiceAudio();
     }
   }
 
+  let cachedGoogleThaiVoice = null;
+  let voiceQueue = [];
+  let isPlayingVoiceQueue = false;
+
+  function updateVoices() {
+    if (!('speechSynthesis' in window)) return;
+    const voices = window.speechSynthesis.getVoices();
+    if (!voices || voices.length === 0) return;
+
+    // 1. First priority: Google official neural Thai voice ("Google ภาษาไทย")
+    let found = voices.find(v => 
+      (v.name.includes('Google') || v.name.includes('Chrome')) && 
+      (v.lang === 'th-TH' || v.lang.startsWith('th'))
+    );
+
+    // 2. Second priority: Any Neural / Natural Thai voice
+    if (!found) {
+      found = voices.find(v => 
+        (v.name.includes('Neural') || v.name.includes('Natural') || v.name.includes('Online')) && 
+        (v.lang === 'th-TH' || v.lang.startsWith('th'))
+      );
+    }
+
+    // 3. Third priority: Platform Thai voice (Siri, Kanya, Narisa, etc.)
+    if (!found) {
+      found = voices.find(v => (v.lang === 'th-TH' || v.lang.startsWith('th')) && (v.name.includes('Kanya') || v.name.includes('Narisa') || v.name.includes('Siri')));
+    }
+
+    // 4. Fallback to any Thai voice
+    if (!found) {
+      found = voices.find(v => v.lang === 'th-TH' || v.lang.startsWith('th'));
+    }
+
+    if (found) {
+      cachedGoogleThaiVoice = found;
+      console.info('Mr. Deep_xAI Natural Voice ready:', found.name, found.lang);
+      const voiceBadge = document.getElementById('ai-voice-status-indicator');
+      if (voiceBadge) {
+        voiceBadge.textContent = found.name.includes('Google') ? '🎙️ Google Neural' : '🎙️ ' + found.name;
+      }
+    }
+  }
+
+  if ('speechSynthesis' in window) {
+    updateVoices();
+    window.speechSynthesis.onvoiceschanged = updateVoices;
+  }
+
   /**
-   * Sukhothai Male Voice Speech Synthesis
+   * Google Natural Human Voice Engine (Google Neural TTS + Human Prosody)
    */
   function speakSukhothaiVoice(text) {
-    if (!isTTSVoiceEnabled || !('speechSynthesis' in window)) return;
+    if (!isTTSVoiceEnabled) return;
 
-    window.speechSynthesis.cancel();
+    // Stop previous voice playback
+    stopVoiceAudio();
 
-    // Clean markdown and latex for pleasant natural speech
+    // 1. Phrasing and phonetic cleanup for natural human speech
     let cleanText = text
-      .replace(/\$\$(.*?)\$\$/gs, 'สมการคณิตศาสตร์')
-      .replace(/\$(.*?)\$/g, 'ตัวแปร')
+      .replace(/\$\$(.*?)\$\$/gs, ' สมการคณิตศาสตร์ ')
+      .replace(/\\Omega/g, ' โอห์ม ')
+      .replace(/\\text\{V\}/g, ' โวลต์ ')
+      .replace(/\\text\{A\}/g, ' แอมแปร์ ')
+      .replace(/\\text\{m\/s\}\^2/g, ' เมตรต่อวินาทียกกำลังสอง ')
+      .replace(/\\text\{m\/s\}/g, ' เมตรต่อวินาที ')
+      .replace(/\\text\{s\}/g, ' วินาที ')
+      .replace(/\\text\{cm\}/g, ' เซนติเมตร ')
+      .replace(/\\text\{m\}/g, ' เมตร ')
+      .replace(/\\text\{Hz\}/g, ' เฮิรตซ์ ')
+      .replace(/\\mu_0/g, ' มิวศูนย์ ')
+      .replace(/\\pi/g, ' พาย ')
+      .replace(/\\Delta/g, ' เดลต้า ')
+      .replace(/\\theta/g, ' ทีต้า ')
+      .replace(/\\lambda/g, ' แลมบ์ดา ')
+      .replace(/\\approx/g, ' ประมาณ ')
+      .replace(/\\times/g, ' คูณ ')
+      .replace(/\$(.*?)\$/g, ' $1 ')
       .replace(/\*\*(.*?)\*\*/g, '$1')
       .replace(/[\#\*\_\`]/g, '')
       .replace(/https?:\/\/\S+/g, '')
+      .replace(/\bIJSO\b/g, 'ไอเจเอสโอ')
+      .replace(/\bDC\b/g, 'ดีซี')
+      .replace(/\bAC\b/g, 'เอซี')
+      .replace(/\b3D\b/g, 'สามมิติ')
+      .replace(/\bAI\b/g, 'เอไอ')
+      .replace(/\bMr\.\s*Deep_xAI\b/g, 'มิสเตอร์ดีฟเอไอ')
       .trim();
 
-    // Ensure authentic Sukhothai sentence ending if not present
     if (!cleanText.includes('เน้อ')) {
       cleanText += ' เน้อครับเน้อ';
     }
 
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = 'th-TH';
-    utterance.pitch = 0.95; // Masculine natural pitch
-    utterance.rate = 1.0;   // Friendly, natural Sukhothai pace
+    // Split into natural sentences for human breathing pauses & prevent Chrome timeout
+    const sentences = cleanText
+      .split(/[\n\r]+|[!?。]+|(?<=[ครับเน้อ|ค่ะ|ครับ|จ้ะ|เน้อ])\s+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
 
-    // Find Thai voice if available
-    const voices = window.speechSynthesis.getVoices();
-    const thaiVoice = voices.find(v => v.lang === 'th-TH' || v.lang.startsWith('th'));
-    if (thaiVoice) {
-      utterance.voice = thaiVoice;
+    if (sentences.length === 0) return;
+
+    voiceQueue = [...sentences];
+    isPlayingVoiceQueue = true;
+    playNextVoiceChunk();
+  }
+
+  function playNextVoiceChunk() {
+    if (!isPlayingVoiceQueue || voiceQueue.length === 0) {
+      stopVoiceAudio();
+      return;
+    }
+
+    const chunk = voiceQueue.shift();
+    if (!chunk) {
+      playNextVoiceChunk();
+      return;
+    }
+
+    if (!('speechSynthesis' in window)) {
+      playGoogleAudioFallback(chunk);
+      return;
+    }
+
+    updateVoices();
+
+    const utterance = new SpeechSynthesisUtterance(chunk);
+    utterance.lang = 'th-TH';
+    // Tuned for authentic natural human male warmth
+    utterance.pitch = 0.95;
+    utterance.rate = 0.98;
+    utterance.volume = 1.0;
+
+    if (cachedGoogleThaiVoice) {
+      utterance.voice = cachedGoogleThaiVoice;
     }
 
     utterance.onstart = () => {
       setMood('speaking');
+      startWaveformSimulation();
     };
 
     utterance.onend = () => {
-      setMood('idle');
+      if (isPlayingVoiceQueue && voiceQueue.length > 0) {
+        setTimeout(() => playNextVoiceChunk(), 60);
+      } else {
+        stopVoiceAudio();
+      }
     };
 
-    utterance.onerror = () => {
-      setMood('idle');
+    utterance.onerror = (e) => {
+      console.warn('Speech synthesis chunk error:', e);
+      if (isPlayingVoiceQueue && voiceQueue.length > 0) {
+        setTimeout(() => playNextVoiceChunk(), 50);
+      } else {
+        stopVoiceAudio();
+      }
     };
 
     window.speechSynthesis.speak(utterance);
+  }
+
+  function playGoogleAudioFallback(text) {
+    const spokenChunk = text.slice(0, 190);
+    const googleTTSUrl = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=th&client=tw-ob&q=' + encodeURIComponent(spokenChunk);
+
+    activeAudioElement = new Audio();
+    activeAudioElement.crossOrigin = 'anonymous';
+    activeAudioElement.src = googleTTSUrl;
+
+    activeAudioElement.onplay = () => {
+      setMood('speaking');
+      startWaveformSimulation();
+    };
+
+    activeAudioElement.onended = () => {
+      if (isPlayingVoiceQueue && voiceQueue.length > 0) {
+        setTimeout(() => playNextVoiceChunk(), 60);
+      } else {
+        stopVoiceAudio();
+      }
+    };
+
+    activeAudioElement.onerror = () => {
+      stopVoiceAudio();
+    };
+
+    activeAudioElement.play().catch(() => {
+      stopVoiceAudio();
+    });
+  }
+
+  function stopVoiceAudio() {
+    isPlayingVoiceQueue = false;
+    voiceQueue = [];
+
+    if (activeAudioElement) {
+      try {
+        activeAudioElement.pause();
+        activeAudioElement.src = '';
+      } catch (e) {}
+      activeAudioElement = null;
+    }
+    if ('speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (e) {}
+    }
+    stopWaveformSimulation();
+    setMood('idle');
+  }
+
+  function startWaveformSimulation() {
+    stopWaveformSimulation();
+    const bars = document.querySelectorAll('#ai-waveform-box .waveform-bar');
+    if (!bars.length) return;
+
+    audioWaveformTimer = setInterval(() => {
+      bars.forEach(bar => {
+        const h = Math.floor(Math.random() * 12) + 3;
+        bar.style.height = `${h}px`;
+      });
+    }, 110);
+  }
+
+  function stopWaveformSimulation() {
+    if (audioWaveformTimer) {
+      clearInterval(audioWaveformTimer);
+      audioWaveformTimer = null;
+    }
+    const bars = document.querySelectorAll('#ai-waveform-box .waveform-bar');
+    bars.forEach(b => b.style.height = '3px');
   }
 
   /**
