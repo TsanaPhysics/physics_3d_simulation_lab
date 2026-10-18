@@ -1,0 +1,73 @@
+\chapter{คลังรหัสและกฎเกณฑ์สกิลการวิจัยวิชาการ การสังเคราะห์ และการเขียน}
+
+ภาคผนวกนี้รวบรวมข้อมูลจำเพาะ กฎเกณฑ์อัลกอริทึม และพรอมต์สถาปัตยกรรมของสกิลด้านการวิจัย การทบทวนวรรณกรรม และการขัดเกลาสำนวนวิชาการประจำเล่มที่ 2
+
+\section{สกิล: anti-ai-slop}
+
+\begin{teachingplan}{ข้อมูลจำเพาะและเมทาดาทาของสกิล}
+\textbf{ชื่อสกิล:} \texttt{anti-ai-slop}\\
+\textbf{วัตถุประสงค์:} ตรวจจับและขจัดคำฟุ่มเฟือยของ AI ปรับจังหวะประโยค และรักษาน้ำเสียงมนุษย์\\
+\textbf{กลไกควบคุม:} Vocabulary Denylist, Burstiness Calibration, Warranted Uncertainty
+\end{teachingplan}
+
+\subsection{กฎเกณฑ์บัญชีดำคำศัพท์ AI (Denylist Rules)}
+
+\begin{lstlisting}[language=bash, caption={Anti-AI Slop Denylist Dictionary Configuration}]
+DENYLIST_WORDS = [
+  "delve", "tapestry", "crucial", "pivotal", "seamless", 
+  "robust", "leverage", "elevate", "navigate", "testament",
+  "beacon", "transformative", "game-changer", "foster"
+]
+
+SYMMETRIC_PATTERNS = [
+  "Not only X, but also Y",
+  "It is important to note that",
+  "In today's fast-paced digital world"
+]
+\end{lstlisting}
+
+\section{สกิล: research-synthesis}
+
+\begin{teachingplan}{ข้อมูลจำเพาะและเมทาดาทาของสกิล}
+\textbf{ชื่อสกิล:} \texttt{research-synthesis}\\
+\textbf{วัตถุประสงค์:} สังเคราะห์หลักฐานงานวิจัยระดับ Peer-Review ด้วยตาราง 7 คอลัมน์\\
+\textbf{มิติการวิเคราะห์:} Claim, Method, Evidence, Limitations, Authority, Recency, Network
+\end{teachingplan}
+
+\subsection{โครงสร้างชุดข้อมูลเมทริกซ์ 7 คอลัมน์ (JSON Schema)}
+
+\begin{lstlisting}[language=JavaScript, caption={7-Column Synthesis Matrix Schema}]
+const ResearchMatrixSchema = {
+  paper_id: "string",
+  authors: "array",
+  year: "number",
+  claim: "string",        // Primary asserted finding
+  method: "string",       // Experimental setup & sample size
+  evidence: "object",     // Metrics: p-value, effect size, std
+  limitations: "array",   // Uncontrolled variables & biases
+  authority: "string",    // Author citation index & affiliation
+  recency_score: "number",// 1 to 5 scale
+  citation_network: "array" // Key foundational papers cited
+};
+\end{lstlisting}
+
+\section{สกิล: citation-formatter}
+
+\begin{teachingplan}{ข้อมูลจำเพาะและเมทาดาทาของสกิล}
+\textbf{ชื่อสกิล:} \texttt{citation-formatter}\\
+\textbf{วัตถุประสงค์:} จัดรูปแบบบรรณานุกรมอัตโนมัติตามมาตรฐานสากล (APA 7th, IEEE, Harvard)\\
+\textbf{ฟังก์ชันการทำงาน:} DOI Verification, Author Name Inversion, Journal Title Formatting
+\end{teachingplan}
+
+\subsection{อัลกอริทึมจัดรูปแบบ APA 7th Edition}
+
+\begin{lstlisting}[language=JavaScript, caption={APA 7th Reference Generator}]
+function formatAPA7(entry) {
+  // entry: { authors: [{first, last}], year, title, journal, volume, issue, pages, doi }
+  const authorStr = entry.authors.map(a => `${a.last}, ${a.first[0]}.`).join(", ");
+  const issueStr = entry.issue ? `(${entry.issue})` : "";
+  const doiStr = entry.doi ? ` https://doi.org/${entry.doi}` : "";
+  
+  return `${authorStr} (${entry.year}). ${entry.title}. ${entry.journal}, ${entry.volume}${issueStr}, ${entry.pages}.${doiStr}`;
+}
+\end{lstlisting}

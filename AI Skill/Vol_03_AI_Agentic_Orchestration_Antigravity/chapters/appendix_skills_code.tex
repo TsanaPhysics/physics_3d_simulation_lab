@@ -1,0 +1,91 @@
+\chapter{คลังรหัสและองค์ประกอบสกิลระบบเอเจนต์และ Antigravity}
+
+ภาคผนวกนี้รวบรวมพิมพ์เขียวโครงสร้าง โค้ดประกาศการทำงานของเอเจนต์ (Agent Declarations) และคำสั่งสถาปัตยกรรมของสกิลระดับ J.A.R.V.I.S. และ Google Antigravity ประจำเล่มที่ 3
+
+\section{สกิล: futuristic-agentic-ai-bot-architect}
+
+\begin{teachingplan}{ข้อมูลจำเพาะและเมทาดาทาของสกิล}
+\textbf{ชื่อสกิล:} \texttt{futuristic-agentic-ai-bot-architect}\\
+\textbf{วัตถุประสงค์:} พัฒนาบอท AI คู่หูอัจฉริยะ (Mr. Deep\_xAI) สไตล์ J.A.R.V.I.S. รองรับภาพ เสียง และข้อความแบบเรียลไทม์\\
+\textbf{ฟังก์ชันการทำงาน:} 3D Vision Scene Audit, Sukhothai Neural TTS, Communicator DSP Filter
+\end{teachingplan}
+
+\subsection{โค้ดแกนกลาง: วงจรตัวกรองเสียงสื่อสารอวกาศ DSP Audio Chain}
+
+\begin{lstlisting}[language=JavaScript, caption={Web Audio API Communicator DSP Filter}]
+function createJarvisAudioChain(audioCtx, sourceStream) {
+  const source = audioCtx.createMediaStreamSource(sourceStream);
+  
+  // 1. Bandpass Filter (Radio Comm Profile 450 - 3500 Hz)
+  const bandpass = audioCtx.createBiquadFilter();
+  bandpass.type = "bandpass";
+  bandpass.frequency.value = 1800;
+  bandpass.Q.value = 1.2;
+  
+  // 2. High-Frequency Peaking for Cyber Presence
+  const highPeak = audioCtx.createBiquadFilter();
+  highPeak.type = "peaking";
+  highPeak.frequency.value = 3200;
+  highPeak.gain.value = 4.5;
+  
+  // 3. Output Dynamics Compressor
+  const compressor = audioCtx.createDynamicsCompressor();
+  compressor.threshold.setValueAtTime(-24, audioCtx.currentTime);
+  compressor.ratio.setValueAtTime(8, audioCtx.currentTime);
+
+  source.connect(bandpass);
+  bandpass.connect(highPeak);
+  highPeak.connect(compressor);
+  compressor.connect(audioCtx.destination);
+  
+  return { bandpass, highPeak, compressor };
+}
+\end{lstlisting}
+
+\section{สกิล: google-antigravity-sdk}
+
+\begin{teachingplan}{ข้อมูลจำเพาะและเมทาดาทาของสกิล}
+\textbf{ชื่อสกิล:} \texttt{google-antigravity-sdk}\\
+\textbf{วัตถุประสงค์:} ออกแบบและควบคุมระบบ Autonomous AI Multi-Agent ด้วย Google Antigravity SDK\\
+\textbf{ฟังก์ชันการทำงาน:} Agent Declarations, Subagent Delegation, Shared State Channels
+\end{teachingplan}
+
+\subsection{โค้ดแกนกลาง: การประกาศตัวแทนทำงานเฉพาะทาง (Subagent Declaration)}
+
+\begin{lstlisting}[language=JavaScript, caption={Agent Blueprint Declaration}]
+const PhysicsAuditorAgent = {
+  agentName: "Physics3DAuditor",
+  instructions: "You audit Three.js scene meshes, calculate circuit balances, and check Kirchhoff laws.",
+  tools: [
+    "inspect_scene_hierarchy",
+    "calculate_equivalent_resistance",
+    "verify_mesh_coordinates"
+  ],
+  capabilities: {
+    canUseTerminal: true,
+    canInspectDOM: true,
+    sandboxIsolation: "strict"
+  }
+};
+\end{lstlisting}
+
+\section{สกิล: workflow-skill-creator}
+
+\begin{teachingplan}{ข้อมูลจำเพาะและเมทาดาทาของสกิล}
+\textbf{ชื่อสกิล:} \texttt{workflow-skill-creator}\\
+\textbf{วัตถุประสงค์:} ถอดบทเรียนกระบวนการทำงานที่ซับซ้อนให้กลายเป็น Reusable Agent Skill\\
+\textbf{โครงสร้างผลลัพธ์:} YAML Frontmatter, Constraints, Examples, Execution Triggers
+\end{teachingplan}
+
+\subsection{โครงสร้างแม่แบบ SKILL.md อัตโนมัติ}
+
+\begin{lstlisting}[language=bash, caption={Master SKILL.md Blueprint}]
+---
+name: my-new-specialized-skill
+description: Comprehensive instruction set for domain-specific automation
+---
+# Operational Workflow
+1. Execute Step 0 pre-flight validation
+2. Run core domain logic without placeholders
+3. Verify output with static analysis before final reporting
+\end{lstlisting}

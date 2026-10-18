@@ -1,0 +1,94 @@
+\chapter{คลังรหัสและองค์ประกอบสกิลคลาวด์ฟูลสแตกและ Firebase}
+
+ภาคผนวกนี้รวบรวมข้อมูลจำเพาะ โค้ดต้นแบบ และสถาปัตยกรรมระดับองค์กรของสกิล Firebase AI Logic, Data Connect (PostgreSQL), และ Security Rules Auditor ประจำเล่มที่ 6
+
+\section{สกิล: firebase-ai-logic-basics}
+
+\begin{teachingplan}{ข้อมูลจำเพาะและเมทาดาทาของสกิล}
+\textbf{ชื่อสกิล:} \texttt{firebase-ai-logic-basics}\\
+\textbf{วัตถุประสงค์:} ผสาน Gemini Multimodal AI เข้าสู่เว็บแอปพลิเคชันอย่างปลอดภัย โดยไม่ต้องเปิดเผย API Key\\
+\textbf{ฟังก์ชันการทำงาน:} Streaming Responses, JSON Schema Structured Output, Multimodal Ingestion
+\end{teachingplan}
+
+\subsection{โค้ดแกนกลาง: การเรียกใช้งาน Multimodal Inference ผ่าน Firebase SDK}
+
+\begin{lstlisting}[language=JavaScript, caption={Client-Side Firebase AI Logic Integration}]
+import { getAI, getGenerativeModel } from "firebase/ai";
+
+const ai = getAI(app);
+const model = getGenerativeModel(ai, {
+  model: "gemini-1.5-flash",
+  generationConfig: {
+    responseMimeType: "application/json"
+  }
+});
+
+async function analyzeLabImage(imageFile, contextPrompt) {
+  const imagePart = await fileToGenerativePart(imageFile);
+  const result = await model.generateContent([
+    contextPrompt, 
+    imagePart
+  ]);
+  return JSON.parse(result.response.text());
+}
+\end{lstlisting}
+
+\section{สกิล: firebase-data-connect}
+
+\begin{teachingplan}{ข้อมูลจำเพาะและเมทาดาทาของสกิล}
+\textbf{ชื่อสกิล:} \texttt{firebase-data-connect}\\
+\textbf{วัตถุประสงค์:} ออกแบบและเชื่อมต่อฐานข้อมูล Relational PostgreSQL บน Firebase ผ่าน GraphQL\\
+\textbf{ฟังก์ชันการทำงาน:} Schema Definition, Table Relations, Auto-generated Type-Safe SDKs
+\end{teachingplan}
+
+\subsection{โค้ดแกนกลาง: การประกาศ Schema ด้วย GraphQL}
+
+\begin{lstlisting}[language=JavaScript, caption={Data Connect GraphQL Schema Blueprint}]
+# schema.gql
+type Experiment @table {
+  id: UUID! @default(expr: "uuidV4()")
+  title: String!
+  description: String
+  domain: String!
+  createdAt: Timestamp! @default(expr: "requestTime()")
+  records: [Record!]! @ref(fields: "id", references: "experimentId")
+}
+
+type Record @table {
+  id: UUID! @default(expr: "uuidV4()")
+  experimentId: UUID!
+  measuredValue: Float!
+  uncertainty: Float
+  timestamp: Timestamp! @default(expr: "requestTime()")
+}
+\end{lstlisting}
+
+\section{สกิล: firebase-security-rules-auditor}
+
+\begin{teachingplan}{ข้อมูลจำเพาะและเมทาดาทาของสกิล}
+\textbf{ชื่อสกิล:} \texttt{firebase-security-rules-auditor}\\
+\textbf{วัตถุประสงค์:} ตรวจสอบและประเมินความปลอดภัยของ Firestore Security Rules แบบ Zero-Trust\\
+\textbf{ขอบเขตการตรวจสอบ:} Public Write Vulnerability, User Impersonation, Missing Field Validation
+\end{teachingplan}
+
+\subsection{โค้ดแกนกลาง: กฎความปลอดภัยระดับองค์กร}
+
+\begin{lstlisting}[language=bash, caption={Production-Grade Firestore Rules}]
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // User Profiles
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Physics Lab Data
+    match /experiments/{expId} {
+      allow read: if true; // Public view
+      allow write: if request.auth != null && 
+                      request.resource.data.size() < 50000;
+    }
+  }
+}
+\end{lstlisting}

@@ -1,0 +1,88 @@
+\chapter{คลังรหัสและองค์ประกอบสกิลชีวสารสนเทศและวิทยาศาสตร์ชีวภาพ}
+
+ภาคผนวกนี้รวบรวมข้อมูลจำเพาะ โค้ดต้นแบบ และสถาปัตยกรรมระดับองค์กรของสกิล AlphaFold DB, AlphaGenome, Foldseek, ChEMBL, และ PyMOL ประจำเล่มที่ 7
+
+\section{สกิล: alphafold-database-fetch-and-analyze}
+
+\begin{teachingplan}{ข้อมูลจำเพาะและเมทาดาทาของสกิล}
+\textbf{ชื่อสกิล:} \texttt{alphafold-database-fetch-and-analyze}\\
+\textbf{วัตถุประสงค์:} ดึงและประเมินความเชื่อมั่นโครงสร้างโปรตีน 3 มิติจาก UniProt Accession ID\\
+\textbf{ตัวชี้วัดสำคัญ:} pLDDT Scores, Predicted Alignment Error (PAE), Domain Boundaries
+\end{teachingplan}
+
+\subsection{โค้ดแกนกลาง: สคริปต์วิเคราะห์โครงสร้าง 3 มิติและคะแนน pLDDT}
+
+\begin{lstlisting}[language=Python, caption={AlphaFold DB API Structure Fetcher and Analyzer}]
+import requests
+
+def fetch_alphafold_structure(uniprot_id):
+    url = f"https://alphafold.ebi.ac.uk/api/prediction/{uniprot_id}"
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise ValueError(f"UniProt ID {uniprot_id} not found in AlphaFold DB")
+    
+    data = response.json()[0]
+    cif_url = data["cifUrl"]
+    pdb_url = data["pdbUrl"]
+    bcif_url = data["bcifUrl"]
+    
+    return {
+        "uniprot_id": uniprot_id,
+        "entry_id": data["entryId"],
+        "gene": data.get("gene", "N/A"),
+        "cif_url": cif_url,
+        "pdb_url": pdb_url
+    }
+\end{lstlisting}
+
+\section{สกิล: alphagenome-single-variant-analysis}
+
+\begin{teachingplan}{ข้อมูลจำเพาะและเมทาดาทาของสกิล}
+\textbf{ชื่อสกิล:} \texttt{alphagenome-single-variant-analysis}\\
+\textbf{วัตถุประสงค์:} ทำนายผลกระทบของการกลายพันธุ์ระดับเบสต่อการแสดงออกของยีนและโครมาติน\\
+\textbf{ฟังก์ชันการทำงาน:} RNA-seq Effect, Chromatin Accessibility (DNASE), Histone Marks
+\end{teachingplan}
+
+\subsection{โครงสร้างคำขอวิเคราะห์การกลายพันธุ์ (Payload Specification)}
+
+\begin{lstlisting}[language=JavaScript, caption={AlphaGenome Variant Query Payload}]
+const VariantQuery = {
+  chromosome: "chr7",
+  position: 117199646,
+  reference_allele: "C",
+  alternate_allele: "A",
+  genome_assembly: "GRCh38",
+  target_assays: ["RNA_SEQ", "DNASE", "CHIP_H3K27AC"],
+  tissue_ontology: "UBERON:0002048" // Lung tissue
+};
+\end{lstlisting}
+
+\section{สกิล: chembl-database}
+
+\begin{teachingplan}{ข้อมูลจำเพาะและเมทาดาทาของสกิล}
+\textbf{ชื่อสกิล:} \texttt{chembl-database}\\
+\textbf{วัตถุประสงค์:} ค้นหาโมเลกุลยาเป้าหมาย ค่าการยับยั้งเอนไซม์ (IC50, Ki) และโครงสร้างเคมี\\
+\textbf{ขอบเขตเทคโนโลยี:} ChEMBL REST API, SMILES Substructure Search, Bioactivity Assays
+\end{teachingplan}
+
+\subsection{โค้ดแกนกลาง: การดึงค่าความสัมพันธ์ IC50 ของเป้าหมายยา}
+
+\begin{lstlisting}[language=Python, caption={ChEMBL Bioactivity Query Script}]
+import requests
+
+def get_target_ic50(target_chembl_id):
+    endpoint = "https://www.ebi.ac.uk/chembl/api/data/activity.json"
+    params = {
+        "target_chembl_id": target_chembl_id,
+        "standard_type": "IC50",
+        "limit": 10
+    }
+    res = requests.get(endpoint, params=params)
+    activities = res.json().get("activities", [])
+    
+    return [{
+        "molecule_chembl_id": a["molecule_chembl_id"],
+        "standard_value": a["standard_value"],
+        "standard_units": a["standard_units"]
+    } for a in activities if a.get("standard_value")]
+\end{lstlisting}

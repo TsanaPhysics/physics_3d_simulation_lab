@@ -1,0 +1,85 @@
+\chapter{คลังรหัสและองค์ประกอบสกิลเว็บสมัยใหม่ Flutter และ DevTools}
+
+ภาคผนวกนี้รวบรวมข้อมูลจำเพาะ โค้ดต้นแบบ และสถาปัตยกรรมระดับองค์กรของสกิลการพัฒนาเว็บสมัยใหม่ แอปพลิเคชันมือถือ Flutter และเครื่องมือดีบั๊กประจำเล่มที่ 4
+
+\section{สกิล: flutter-app-architect}
+
+\begin{teachingplan}{ข้อมูลจำเพาะและเมทาดาทาของสกิล}
+\textbf{ชื่อสกิล:} \texttt{flutter-app-architect}\\
+\textbf{วัตถุประสงค์:} วางโครงสร้างแอปพลิเคชัน Flutter แบบ Clean Architecture (MVVM/Provider) ปราศจากข้อผิดพลาด Static Linter\\
+\textbf{มาตรฐานการประเมิน:} Multi-Screen Responsive, 0 Errors, 0 Warnings, Custom App Icon Pipeline
+\end{teachingplan}
+
+\subsection{โค้ดแกนกลาง: แม่แบบ ViewModel และ State Management}
+
+\begin{lstlisting}[language=JavaScript, caption={Flutter ViewModel Architecture Blueprint}]
+class PhysicsExperimentViewModel extends ChangeNotifier {
+  double _stringLength = 1.0; // meters
+  double _gravity = 9.80665;  // m/s^2
+  bool _isRunning = false;
+
+  double get stringLength => _stringLength;
+  double get period => 2 * 3.14159265 * Math.sqrt(_stringLength / _gravity);
+  bool get isRunning => _isRunning;
+
+  void updateLength(double newLength) {
+    if (newLength > 0.1 && newLength <= 3.0) {
+      _stringLength = newLength;
+      notifyListeners(); // Triggers atomic UI re-render
+    }
+  }
+
+  void toggleSimulation() {
+    _isRunning = !_isRunning;
+    notifyListeners();
+  }
+}
+\end{lstlisting}
+
+\section{สกิล: modern-web-guidance}
+
+\begin{teachingplan}{ข้อมูลจำเพาะและเมทาดาทาของสกิล}
+\textbf{ชื่อสกิล:} \texttt{modern-web-guidance}\\
+\textbf{วัตถุประสงค์:} กำหนดแนวปฏิบัติและมาตรฐาน API เว็บฟรอนต์เอนด์ยุคใหม่เพื่อประสิทธิภาพสูงสุด\\
+\textbf{ขอบเขตเทคโนโลยี:} CSS Container Queries, View Transitions, Zero-GC RequestAnimationFrame
+\end{teachingplan}
+
+\subsection{โค้ดแกนกลาง: สถาปัตยกรรม CSS Container Queries}
+
+\begin{lstlisting}[language=JavaScript, caption={Responsive Card Component Style}]
+/* Container Definition */
+.lab-card-container {
+  container-type: inline-size;
+  container-name: labCard;
+}
+
+/* Dynamic Layout Adaptation */
+@container labCard (min-width: 450px) {
+  .lab-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    padding: 1.25rem;
+  }
+}
+\end{lstlisting}
+
+\section{สกิล: memory-leak-debugging}
+
+\begin{teachingplan}{ข้อมูลจำเพาะและเมทาดาทาของสกิล}
+\textbf{ชื่อสกิล:} \texttt{memory-leak-debugging}\\
+\textbf{วัตถุประสงค์:} วิเคราะห์ Heap Snapshot ตรวจจับหน่วยความจำรั่วไหลและระบุ Retainer Trees\\
+\textbf{ขอบเขตเทคโนโลยี:} Chrome DevTools MCP, Heap Profiler, WeakMap Management
+\end{teachingplan}
+
+\subsection{โค้ดแกนกลาง: การจัดเก็บตัวแปรอ้างอิงแบบอัตโนมัติด้วย WeakMap}
+
+\begin{lstlisting}[language=JavaScript, caption={Leak-Proof DOM Reference Cache}]
+// Prevents Detached DOM Node Leaks
+const nodeMetadataCache = new WeakMap();
+
+function registerElementData(element, metadata) {
+  // If element is removed from DOM, GC reclaims metadata automatically
+  nodeMetadataCache.set(element, metadata);
+}
+\end{lstlisting}

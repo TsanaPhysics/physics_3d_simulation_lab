@@ -1,0 +1,143 @@
+\chapter{คลังรหัสต้นฉบับและองค์ประกอบสกิลจำลองฟิสิกส์ 3 มิติ และ AIoT}
+
+ภาคผนวกนี้รวบรวมข้อมูลจำเพาะ โครงสร้างเมทาดาทา และโค้ดอัลกอริทึมของสกิลปัญญาประดิษฐ์ (Agent Skills) ประจำเล่มที่ 1 อย่างละเอียด เพื่อเป็นคู่มืออ้างอิงเชิงวิศวกรรมซอฟต์แวร์
+
+\section{สกิล: nextgen-physics-virtual-lab-architect}
+
+\begin{teachingplan}{ข้อมูลจำเพาะและเมทาดาทาของสกิล}
+\textbf{ชื่อสกิล:} \texttt{nextgen-physics-virtual-lab-architect}\\
+\textbf{วัตถุประสงค์:} ออกแบบและสร้างห้องปฏิบัติการฟิสิกส์ 3 มิติเสมือนจริงตามมาตรฐานโอลิมปิกวิชาการ (IJSO Standard)\\
+\textbf{ขอบเขตเทคโนโลยี:} Three.js PBR Shaders, Raycasting, SVG Vector Engine, Euclidean GCD
+\end{teachingplan}
+
+\subsection{โค้ดแกนกลาง: เอนจินคำนวณเศษส่วนแท้ Euclidean GCD}
+
+\begin{lstlisting}[language=JavaScript, caption={Euclidean GCD Engine สำหรับรักษาความแม่นยำทางฟิสิกส์}]
+function gcd(a, b) {
+  a = Math.abs(Math.round(a));
+  b = Math.abs(Math.round(b));
+  while (b > 0) {
+    const t = b;
+    b = a % b;
+    a = t;
+  }
+  return a;
+}
+
+function simplifyFraction(numerator, denominator) {
+  if (denominator === 0) return { num: 0, den: 1 };
+  const common = gcd(numerator, denominator);
+  return {
+    num: numerator / common,
+    den: denominator / common,
+    str: `${numerator / common}/${denominator / common}`
+  };
+}
+\end{lstlisting}
+
+\subsection{โค้ดแกนกลาง: การคำนวณความต้านทานสมมูลวงจรหกเหลี่ยม}
+
+\begin{lstlisting}[language=JavaScript, caption={Hexagonal Circuit Reduction Algorithm}]
+function calculateHexEquivalentResistance(nodeP, nodeQ, resistors) {
+  // nodeP, nodeQ: Indices 0 to 5 (Nodes a, b, c, d, e, f)
+  const totalR = resistors.reduce((sum, val) => sum + val, 0);
+  
+  // Calculate direct path resistance (r1)
+  let r1 = 0;
+  let curr = nodeP;
+  while (curr !== nodeQ) {
+    r1 += resistors[curr];
+    curr = (curr + 1) % 6;
+  }
+  
+  // Calculate indirect path resistance (r2)
+  const r2 = totalR - r1;
+  
+  // Parallel equivalence: Req = (r1 * r2) / (r1 + r2)
+  const req = (r1 * r2) / totalR;
+  const fraction = simplifyFraction(r1 * r2, totalR);
+  
+  return { r1, r2, req, fraction };
+}
+\end{lstlisting}
+
+\section{สกิล: ar-simulation-builder}
+
+\begin{teachingplan}{ข้อมูลจำเพาะและเมทาดาทาของสกิล}
+\textbf{ชื่อสกิล:} \texttt{ar-simulation-builder}\\
+\textbf{วัตถุประสงค์:} สร้างระบบโต้ตอบ 3 มิติไร้สัมผัสผ่านการตรวจจับท่าทางมือด้วย MediaPipe Hands 60 FPS\\
+\textbf{ขอบเขตเทคโนโลยี:} MediaPipe Vision, Web Audio API Acoustic Synthesizer, Zero-GC Vector Math
+\end{teachingplan}
+
+\subsection{โค้ดแกนกลาง: ระบบตรวจจับการจีบนิ้วและการสังเคราะห์เสียง}
+
+\begin{lstlisting}[language=JavaScript, caption={Pinch Gesture Detection and Web Audio Feedback}]
+class TouchlessHandController {
+  constructor(audioCtx) {
+    this.audioCtx = audioCtx;
+    this.isPinching = false;
+    this.threshold = 0.05; // Normalized screen space distance
+  }
+
+  detectPinch(landmarks) {
+    const thumb = landmarks[4];
+    const index = landmarks[8];
+    const dist = Math.hypot(
+      thumb.x - index.x, 
+      thumb.y - index.y, 
+      thumb.z - index.z
+    );
+
+    if (dist < this.threshold && !this.isPinching) {
+      this.isPinching = true;
+      this.playHapticSound(880, 0.05); // High-pitch click
+      return 'PINCH_START';
+    } else if (dist >= this.threshold && this.isPinching) {
+      this.isPinching = false;
+      this.playHapticSound(440, 0.04); // Release click
+      return 'PINCH_END';
+    }
+    return this.isPinching ? 'PINCHING' : 'IDLE';
+  }
+
+  playHapticSound(freq, duration) {
+    const osc = this.audioCtx.createOscillator();
+    const gain = this.audioCtx.createGain();
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.15, this.audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(this.audioCtx.destination);
+    osc.start();
+    osc.stop(this.audioCtx.currentTime + duration);
+  }
+}
+\end{lstlisting}
+
+\section{สกิล: soil-pht-aiot-architect}
+
+\begin{teachingplan}{ข้อมูลจำเพาะและเมทาดาทาของสกิล}
+\textbf{ชื่อสกิล:} \texttt{soil-pht-aiot-architect}\\
+\textbf{วัตถุประสงค์:} ควบคุมการรับส่งข้อมูลผ่านฮาร์ดแวร์ RS485 Modbus RTU และฝึกสอนโมเดล Edge AI OLS\\
+\textbf{ขอบเขตเทคโนโลยี:} Dart/Flutter Serial Port, Modbus CRC16, Ordinary Least Squares
+\end{teachingplan}
+
+\subsection{โค้ดแกนกลาง: การคำนวณผลรวมตรวจสอบ Modbus CRC16}
+
+\begin{lstlisting}[language=JavaScript, caption={Modbus CRC16 Verification Function}]
+function calculateCRC16(buffer) {
+  let crc = 0xFFFF;
+  for (let pos = 0; pos < buffer.length; pos++) {
+    crc ^= buffer[pos];
+    for (let i = 8; i !== 0; i--) {
+      if ((crc & 0x0001) !== 0) {
+        crc >>= 1;
+        crc ^= 0xA001;
+      } else {
+        crc >>= 1;
+      }
+    }
+  }
+  return crc; // 16-bit CRC Checksum
+}
+\end{lstlisting}

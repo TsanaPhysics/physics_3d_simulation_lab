@@ -1,0 +1,99 @@
+\chapter{คลังรหัสและองค์ประกอบสกิลวิศวกรรมข้อมูลคลาวด์และแมชชีนเลิร์นนิง}
+
+ภาคผนวกนี้รวบรวมข้อมูลจำเพาะ โค้ดต้นแบบ และสถาปัตยกรรมระดับองค์กรของสกิล BigQuery, Dataform, dbt, Spark Serverless และการสร้างโมเดลการเรียนรู้ของเครื่องประจำเล่มที่ 5
+
+\section{สกิล: bigquery-sql}
+
+\begin{teachingplan}{ข้อมูลจำเพาะและเมทาดาทาของสกิล}
+\textbf{ชื่อสกิล:} \texttt{bigquery-sql}\\
+\textbf{วัตถุประสงค์:} ออกแบบและปรับแต่งคิวรี SQL บน BigQuery เพื่อลดค่าใช้จ่ายและเร่งความเร็วประมวลผล\\
+\textbf{เทคนิคสำคัญ:} Partition Pruning, Cluster Filtering, Window Functions over Self-Joins
+\end{teachingplan}
+
+\subsection{โค้ดแกนกลาง: แม่แบบการสร้างตาราง Partitioned และ Clustered}
+
+\begin{lstlisting}[language=SQL, caption={BigQuery DDL Optimized Table Creation}]
+CREATE OR REPLACE TABLE `my_project.soil_analytics.sensor_telemetry`
+(
+  device_id STRING NOT NULL,
+  timestamp TIMESTAMP NOT NULL,
+  ph_value FLOAT64,
+  moisture_percent FLOAT64,
+  temperature_celsius FLOAT64,
+  battery_level FLOAT64
+)
+PARTITION BY DATE(timestamp)
+CLUSTER BY device_id
+OPTIONS(
+  description = "Partitioned daily & clustered by device_id to minimize slot scan costs"
+);
+\end{lstlisting}
+
+\section{สกิล: dataform-bigquery}
+
+\begin{teachingplan}{ข้อมูลจำเพาะและเมทาดาทาของสกิล}
+\textbf{ชื่อสกิล:} \texttt{dataform-bigquery}\\
+\textbf{วัตถุประสงค์:} พัฒนา Data Transformation Pipeline ด้วย Dataform SQLX พร้อม Assertion Tests\\
+\textbf{สถาปัตยกรรม:} Medallion Layers (Bronze $\rightarrow$ Silver $\rightarrow$ Gold)
+\end{teachingplan}
+
+\subsection{โค้ดแกนกลาง: โมเดล Dataform SQLX พร้อมการตรวจสอบคุณภาพ}
+
+\begin{lstlisting}[language=SQL, caption={Dataform SQLX Table with Assertion Constraints}]
+config {
+  type: "table",
+  schema: "silver_layer",
+  description: "Cleaned and calibrated soil measurement data",
+  assertions: {
+    nonNull: ["device_id", "timestamp"],
+    rowConditions: [
+      "ph_value >= 0.0 AND ph_value <= 14.0",
+      "moisture_percent >= 0.0 AND moisture_percent <= 100.0"
+    ]
+  }
+}
+
+SELECT
+  device_id,
+  timestamp,
+  ROUND(ph_value, 2) AS ph_value,
+  ROUND(moisture_percent, 1) AS moisture_percent,
+  temperature_celsius
+FROM
+  ${ref("raw_sensor_telemetry")}
+WHERE
+  ph_value IS NOT NULL
+\end{lstlisting}
+
+\section{สกิล: gcp-spark}
+
+\begin{teachingplan}{ข้อมูลจำเพาะและเมทาดาทาของสกิล}
+\textbf{ชื่อสกิล:} \texttt{gcp-spark}\\
+\textbf{วัตถุประสงค์:} พัฒนาโค้ด PySpark บน Dataproc Serverless สำหรับประมวลผล Big Data และ ML\\
+\textbf{เทคนิคสำคัญ:} Broadcast Joins, Off-Heap Memory Configuration, Spark ML Pipeline
+\end{teachingplan}
+
+\subsection{โค้ดแกนกลาง: PySpark MLlib Pipeline บน Dataproc Serverless}
+
+\begin{lstlisting}[language=Python, caption={PySpark Random Forest Regression Pipeline}]
+from pyspark.sql import SparkSession
+from pyspark.ml.feature import VectorAssembler
+from pyspark.ml.regression import RandomForestRegressor
+from pyspark.ml import Pipeline
+
+spark = SparkSession.builder.appName("SoilMoisturePrediction").getOrCreate()
+
+# Load cleaned telemetry from BigQuery connector
+df = spark.read.format("bigquery") \
+    .option("table", "my_project.silver_layer.sensor_telemetry") \
+    .load()
+
+feature_cols = ["ph_value", "temperature_celsius", "battery_level"]
+assembler = VectorAssembler(inputCols=feature_cols, outputCol="features")
+
+rf = RandomForestRegressor(featuresCol="features", labelCol="moisture_percent", numTrees=50)
+pipeline = Pipeline(stages=[assembler, rf])
+
+model = pipeline.fit(df)
+spark.stop()
+\end{lstlisting}
