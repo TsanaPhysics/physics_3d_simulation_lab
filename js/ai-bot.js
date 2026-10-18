@@ -127,7 +127,9 @@
       title: 'Iron Man AI Protocol',
       badgeLabel: '🤖 J.A.R.V.I.S.',
       launcherLabel: 'J.A.R.V.I.S. AI',
-      voiceStatus: '🎙️ J.A.R.V.I.S. Iron Man AI',
+      voiceStatus: '🎙️ J.A.R.V.I.S. (เสียงผู้ชายทุ้มลึก)',
+      browserPitch: 0.44, // Masculine deep baritone / J.A.R.V.I.S. gentleman voice
+      browserRate: 0.90,  // Dignified, composed pace
       pitch: -2.6, // Deep, calm, British gentleman resonance (Paul Bettany)
       rate: 0.95,  // Dignified, composed pace
       honorific: 'ท่าน',
@@ -139,7 +141,7 @@
         vision: { icon: '📷', label: 'Scanning 3D HUD optics, sir...', badgeClass: 'mood-thinking' }
       },
       phrases: {
-        greeting: 'สวัสดีครับท่าน ผม **J.A.R.V.I.S.** (Just A Rather Very Intelligent System) ในโปรโตคอล **Mr. Deep_xAI** ยินดีรับใช้ครับท่าน (At your service, sir)',
+        greeting: 'สวัสดีครับท่าน ผม **J.A.R.V.I.S.** ในโปรโตคอล **Mr. Deep_xAI** ยินดีรับใช้ครับท่าน (At your service, sir)',
         co_create: 'ระบบจำลองฟิสิกส์ 3 มิติ และโมดูล Co-creation อัจฉริยะออนไลน์พร้อมปฏิบัติการ 100% แล้วครับท่าน (All systems operational, sir)',
         ack: 'รับทราบคำสั่งครับท่าน กำลังจัดการให้ทันทีครับ (Right away, sir)',
         thinking: 'กำลังคำนวณเวกเตอร์และวิเคราะห์โครงสร้างข้อมูลให้ครับท่าน...',
@@ -153,7 +155,9 @@
       title: 'Digital Bot หนุ่มสุโขทัย',
       badgeLabel: '🌾 หนุ่มสุโขทัย',
       launcherLabel: 'หนุ่มสุโขทัย',
-      voiceStatus: '🎙️ Google Neural2-C HD',
+      voiceStatus: '🎙️ หนุ่มสุโขทัย (เสียงผู้ชาย)',
+      browserPitch: 0.58, // Warm natural young Thai man pitch
+      browserRate: 0.96,
       pitch: -0.5,
       rate: 1.02,
       honorific: 'อาจารย์',
@@ -435,36 +439,32 @@
     const voices = window.speechSynthesis.getVoices();
     if (!voices || voices.length === 0) return;
 
-    // 1. First priority: Google official neural Thai voice ("Google ภาษาไทย")
+    // 1. First priority: Explicit Male Thai voices if installed (e.g., Niwat, Male, ชาย)
     let found = voices.find(v => 
-      (v.name.includes('Google') || v.name.includes('Chrome')) && 
-      (v.lang === 'th-TH' || v.lang.startsWith('th'))
+      (v.lang === 'th-TH' || v.lang.startsWith('th')) && 
+      (v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('niwat') || v.name.includes('ชาย') || v.name.toLowerCase().includes('man'))
     );
 
-    // 2. Second priority: Any Neural / Natural Thai voice
+    // 2. Second priority: Google Thai Voice
     if (!found) {
       found = voices.find(v => 
-        (v.name.includes('Neural') || v.name.includes('Natural') || v.name.includes('Online')) && 
+        (v.name.includes('Google') || v.name.includes('Chrome')) && 
         (v.lang === 'th-TH' || v.lang.startsWith('th'))
       );
     }
 
-    // 3. Third priority: Platform Thai voice (Siri, Kanya, Narisa, etc.)
-    if (!found) {
-      found = voices.find(v => (v.lang === 'th-TH' || v.lang.startsWith('th')) && (v.name.includes('Kanya') || v.name.includes('Narisa') || v.name.includes('Siri')));
-    }
-
-    // 4. Fallback to any Thai voice
+    // 3. Third priority: Any other Thai platform voice (e.g. Kanya/Siri, pitch-shifted to masculine register)
     if (!found) {
       found = voices.find(v => v.lang === 'th-TH' || v.lang.startsWith('th'));
     }
 
     if (found) {
       cachedGoogleThaiVoice = found;
-      console.info('Mr. Deep_xAI Natural Voice ready:', found.name, found.lang);
+      console.info('Mr. Deep_xAI Male Voice Engine ready:', found.name, found.lang);
       const voiceBadge = document.getElementById('ai-voice-status-indicator');
-      if (voiceBadge && !voiceBadge.textContent.includes('Studio') && !voiceBadge.textContent.includes('HD')) {
-        voiceBadge.textContent = found.name.includes('Google') ? '🎙️ Google Neural' : '🎙️ ' + found.name;
+      const pConfig = PERSONA_DATA[currentPersona] || PERSONA_DATA.jarvis;
+      if (voiceBadge) {
+        voiceBadge.textContent = pConfig.voiceStatus;
       }
     }
   }
@@ -678,56 +678,12 @@
       }
     }
 
-    // 2. Try Studio Neural2-C HD Audio from globe2027 / local tts.php
-    let playedStudio = false;
-    for (const endpoint of STUDIO_TTS_ENDPOINTS) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4000);
-
-        const resp = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: controller.signal,
-          body: JSON.stringify({
-            text: cleanText,
-            lang: 'th-TH',
-            voice: 'th-TH-Neural2-C',
-            rate: pConfig.rate,
-            pitch: pConfig.pitch
-          })
-        });
-        clearTimeout(timeoutId);
-
-        if (resp.ok) {
-          const ttsData = await resp.json();
-          if (ttsData.success && (ttsData.audio_data || ttsData.audio_url)) {
-            let fullAudioUrl = ttsData.audio_data;
-            if (!fullAudioUrl && ttsData.audio_url) {
-              if (endpoint.startsWith('http')) {
-                const urlObj = new URL(endpoint);
-                const basePath = urlObj.pathname.substring(0, urlObj.pathname.lastIndexOf('/') + 1);
-                fullAudioUrl = urlObj.origin + basePath + '../' + ttsData.audio_url;
-              } else {
-                fullAudioUrl = ttsData.audio_url;
-              }
-            }
-
-            const success = await playStudioBase64Audio(fullAudioUrl, cleanText);
-            if (success) {
-              playedStudio = true;
-              break;
-            }
-          }
-        }
-      } catch (err) {
-        // Try next endpoint
-      }
+    // 2. Dispatch to Male Neural Voice Engine (JARVIS Deep Male Pitch: 0.44 / Sukhothai Male Pitch: 0.58)
+    const voiceBadge = document.getElementById('ai-voice-status-indicator');
+    if (voiceBadge) {
+      voiceBadge.textContent = pConfig.voiceStatus;
     }
 
-    if (playedStudio) return;
-
-    // 3. Fallback to Browser Speech Synthesis
     fallbackToBrowserSpeech(cleanText);
   }
 
@@ -765,11 +721,12 @@
 
     updateVoices();
 
+    const pConfig = PERSONA_DATA[currentPersona] || PERSONA_DATA.jarvis;
     const utterance = new SpeechSynthesisUtterance(chunk);
     utterance.lang = 'th-TH';
-    // Tuned to match the exact pitch and rate profile of globe2027
-    utterance.pitch = 0.95;
-    utterance.rate = 0.98;
+    // Calibrated male voice pitch: 0.44 for J.A.R.V.I.S. deep baritone, 0.58 for Sukhothai young male
+    utterance.pitch = (pConfig.browserPitch !== undefined) ? pConfig.browserPitch : (currentPersona === 'jarvis' ? 0.44 : 0.58);
+    utterance.rate = (pConfig.browserRate !== undefined) ? pConfig.browserRate : 0.92;
     utterance.volume = 1.0;
 
     if (cachedGoogleThaiVoice) {
