@@ -85,8 +85,8 @@
         <span class="stat-card-lbl">AR MediaPipe Tracking</span>
       </div>
       <div class="portal-stat-card">
-        <span class="stat-card-val" style="color:#f59e0b;">Agentic</span>
-        <span class="stat-card-lbl">Dr. Newton AI Copilot</span>
+        <span class="stat-card-val" style="color:#f59e0b;">Co-creation</span>
+        <span class="stat-card-lbl">Mr. Deep_xAI Copilot</span>
       </div>
     `;
   }
@@ -194,8 +194,8 @@
             <button class="btn-card-launch" onclick="window.launchLabFromPortal('${exp.id}')">
               <span>🚀 เข้าสู่ปฏิบัติการ 3D</span>
             </button>
-            <button class="btn-card-ai-ask" onclick="window.askAIAboutLab('${exp.id}')" title="ปรึกษา Dr. Newton AI เกี่ยวกับแล็บนี้">
-              <span>🤖 ถาม AI</span>
+            <button class="btn-card-ai-ask" onclick="window.askAIAboutLab('${exp.id}')" title="ปรึกษา Mr. Deep_xAI เกี่ยวกับแล็บนี้">
+              <span>🤖 ถาม Mr. Deep_xAI</span>
             </button>
           </div>
         </div>
@@ -221,7 +221,7 @@
     launchLabFromPortal(expId);
     if (window.AIBot) {
       window.AIBot.openChat();
-      window.AIBot.sendUserMessage(`ช่วยแนะนำและสรุปแนวคิดของปฏิบัติการนี้ (${expId}) รวมถึงขั้นตอนการทดลองอย่างละเอียด`);
+      window.AIBot.sendUserMessage(`สวัสดีเน้อ Mr. Deep_xAI ช่วยแนะนำและสรุปแนวคิดของแล็บนี้ (${expId}) พร้อมสูตรและการคำนวณให้หน่อยเน้อ`);
     }
   }
 

@@ -1,7 +1,7 @@
 # physics_3d_simulation_lab
 # RBRU NextGen Virtual Physics Lab & AI Ecosystem (2026)
 
-ระบบห้องปฏิบัติการฟิสิกส์ 3 มิติเสมือนจริง และผู้ช่วยอัจฉริยะ Agentic AI (Dr. Newton Copilot) ครบครัน 16 ปฏิบัติการใน 7 กลุ่มสาขาวิชาฟิสิกส์ รองรับการปฏิสัมพันธ์แบบ Three.js PBR Shaders, การตรวจจับท่าทางมือไร้สัมผัส AR MediaPipe Hands, และการคำนวณสมการเวกเตอร์คณิตศาสตร์ KaTeX อย่างแม่นยำ
+ระบบห้องปฏิบัติการฟิสิกส์ 3 มิติเสมือนจริง และผู้ช่วยอัจฉริยะ Co-creation Real-Time Multimodal AI (Mr. Deep_xAI — หนุ่มสุโขทัย สไตล์ Jarvis) ครบครัน 16 ปฏิบัติการใน 7 กลุ่มสาขาวิชาฟิสิกส์ รองรับการปฏิสัมพันธ์แบบ Three.js PBR Shaders, การตรวจจับท่าทางมือไร้สัมผัส AR MediaPipe Hands, การสแกนภาพฉาก 3D Real-time และการตอบสนองด้วยเสียงสำเนียงสุโขทัยแท้ๆ พร้อม KaTeX เวกเตอร์คมชัด 100%
 
 ---
 

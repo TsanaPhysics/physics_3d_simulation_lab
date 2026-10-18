@@ -19,13 +19,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
   
   <!-- Modular Stylesheets -->
-  <link rel="stylesheet" href="css/main.css?v=20261018_30" />
-  <link rel="stylesheet" href="css/panels.css?v=20261018_30" />
-  <link rel="stylesheet" href="css/meters.css?v=20261018_30" />
-  <link rel="stylesheet" href="css/ar.css?v=20261018_30" />
-  <link rel="stylesheet" href="css/modal.css?v=20261018_30" />
-  <link rel="stylesheet" href="css/portal.css?v=20261018_30" />
-  <link rel="stylesheet" href="css/ai-bot.css?v=20261018_30" />
+  <link rel="stylesheet" href="css/main.css?v=20261018_50" />
+  <link rel="stylesheet" href="css/panels.css?v=20261018_50" />
+  <link rel="stylesheet" href="css/meters.css?v=20261018_50" />
+  <link rel="stylesheet" href="css/ar.css?v=20261018_50" />
+  <link rel="stylesheet" href="css/modal.css?v=20261018_50" />
+  <link rel="stylesheet" href="css/portal.css?v=20261018_50" />
+  <link rel="stylesheet" href="css/ai-bot.css?v=20261018_50" />
 
   <!-- KaTeX Academic Typesetting via CDN -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
@@ -122,8 +122,8 @@
     </div>
 
     <div class="top-actions">
-      <button id="btn-topbar-ai" class="action-btn" onclick="AIBot.toggleChat()" style="background: rgba(139, 92, 246, 0.25); border-color: #8b5cf6; color: #c4b5fd; font-weight: 600;" title="เปิด Dr. Newton ผู้ช่วยอัจฉริยะ Agentic AI">
-        🤖 Dr. Newton AI
+      <button id="btn-topbar-ai" class="action-btn" onclick="AIBot.toggleChat()" style="background: rgba(14, 165, 233, 0.25); border-color: #38bdf8; color: #7dd3fc; font-weight: 600;" title="เปิด Mr. Deep_xAI ผู้ช่วยอัจฉริยะ Co-creation (หนุ่มสุโขทัย)">
+        🤖 Mr. Deep_xAI
       </button>
       <button id="btn-toggle-left-panel" class="action-btn" onclick="toggleSidePanel('left')" title="ย่อ/กาง แผงควบคุมด้านซ้าย">
         <span id="btn-toggle-left-icon">◀</span> <span>แผงซ้าย</span>
@@ -744,7 +744,7 @@
       </div>
       <h1 class="portal-hero-title">ศูนย์รวมห้องปฏิบัติการฟิสิกส์เสมือนจริง 3 มิติ</h1>
       <p class="portal-hero-subtitle">
-        จำลองปรากฏการณ์ฟิสิกส์ตามกฎธรรมชาติอย่างสมจริงด้วย Three.js PBR Shaders, การตรวจจับท่าทางมือไร้สัมผัส AR MediaPipe, การประมวลผลสมการคณิตศาสตร์เวกเตอร์ และผู้ช่วยอัจฉริยะ <b>Dr. Newton Agentic AI</b>
+        จำลองปรากฏการณ์ฟิสิกส์ตามกฎธรรมชาติอย่างสมจริงด้วย Three.js PBR Shaders, การตรวจจับท่าทางมือไร้สัมผัส AR MediaPipe, การประมวลผลสมการคณิตศาสตร์เวกเตอร์ และผู้ช่วยอัจฉริยะ <b>Mr. Deep_xAI Co-creation Copilot</b>
       </p>
 
       <div id="portal-stats-bar" class="portal-stats-bar">
@@ -767,41 +767,64 @@
     </div>
   </div>
 
-  <!-- ================= AGENTIC AI BOT LAUNCHER & DRAWER ================= -->
-  <button id="ai-bot-launcher" onclick="AIBot.toggleChat()" title="เปิด Dr. Newton ผู้ช่วยอัจฉริยะ Agentic AI">
-    <div class="ai-launcher-avatar">🤖</div>
+  <!-- ================= MR. DEEP_XAI CO-CREATION AGENTIC AI BOT ================= -->
+  <button id="ai-bot-launcher" onclick="AIBot.toggleChat()" title="เปิด Mr. Deep_xAI ผู้ช่วยฟิสิกส์ Co-creation (หนุ่มสุโขทัย)">
+    <div class="ai-launcher-avatar">
+      <div class="launcher-holo-ring"></div>
+      <img src="assets/images/mr_deep_xai_real.jpg" alt="Mr. Deep_xAI" class="launcher-avatar-img" />
+    </div>
     <div class="ai-launcher-text">
-      <span class="ai-launcher-title">Dr. Newton AI</span>
-      <span class="ai-launcher-status">● Agentic Copilot</span>
+      <span class="ai-launcher-title">Mr. Deep_xAI</span>
+      <span class="ai-launcher-status">Co-creation (เสียงเน้อ)</span>
     </div>
   </button>
 
   <aside id="ai-bot-drawer">
     <div class="ai-drawer-header">
       <div class="ai-bot-info">
-        <div class="ai-bot-avatar-box">🤖</div>
+        <div id="mr-deep-avatar-container" class="jarvis-avatar-container">
+          <div class="jarvis-ring-outer"></div>
+          <div class="jarvis-ring-middle"></div>
+          <div class="jarvis-ring-glow"></div>
+          <img src="assets/images/mr_deep_xai_real.jpg" alt="Mr. Deep_xAI Portrait" class="jarvis-portrait-img" />
+          <div id="jarvis-mood-badge" class="jarvis-mood-badge" title="อารมณ์/สถานะ">😊</div>
+        </div>
         <div class="ai-bot-meta">
-          <h4>Dr. Newton <span class="ai-bot-badge">Agentic AI</span></h4>
-          <p><span>●</span> ผู้ช่วยฟิสิกส์อัจฉริยะ</p>
+          <div class="ai-bot-name-row">
+            <h4>Mr. Deep_xAI</h4>
+            <span class="ai-bot-badge">Co-creation</span>
+          </div>
+          <p class="ai-bot-subtitle">
+            <span class="ai-sukhothai-pill">หนุ่มสุโขทัย</span>
+            <span>ผู้ช่วยฟิสิกส์ & ร่วมวิจัย</span>
+            <span id="ai-waveform-box" class="ai-waveform-box" title="กำลังพูดบรรยาย">
+              <span class="waveform-bar"></span>
+              <span class="waveform-bar"></span>
+              <span class="waveform-bar"></span>
+              <span class="waveform-bar"></span>
+            </span>
+          </p>
         </div>
       </div>
       <div class="ai-drawer-actions">
-        <button id="btn-ai-tts" class="ai-tts-btn" onclick="AIBot.toggleTTS()" title="เปิด/ปิด เสียงบรรยาย AI">🔊</button>
-        <button class="ai-header-btn" onclick="AIBot.closeChat()" title="ปิดหน้าต่าง AI">✕</button>
+        <button id="btn-ai-vision-top" class="ai-header-btn" onclick="AIBot.captureSceneVision()" title="สแกนภาพฉากแล็บ 3D ปัจจุบัน (Vision Scan)">📷 สแกน 3D</button>
+        <button id="btn-ai-tts" class="ai-header-btn active" onclick="AIBot.toggleTTS()" title="เปิด/ปิด เสียงบรรยายหนุ่มสุโขทัย">🔊</button>
+        <button class="ai-header-btn" onclick="AIBot.closeChat()" title="ปิดหน้าต่าง">✕</button>
       </div>
     </div>
 
     <div class="ai-telemetry-pill">
       <span id="ai-telemetry-text">กำลังโหลดสถานะ...</span>
-      <span style="font-size:0.68rem; color:#94a3b8;">Telemetry Active</span>
+      <span style="font-size:0.68rem; color:#94a3b8;">Real-Time Multi-Modal</span>
     </div>
 
     <div class="ai-quick-pills">
-      <button class="ai-pill-btn" onclick="AIBot.sendUserMessage('ช่วยแนะนำขั้นตอนและวัตถุประสงค์ของแล็บนี้อย่างละเอียด')">💡 แนะนำแล็บนี้</button>
-      <button class="ai-pill-btn" onclick="AIBot.sendUserMessage('ตรวจสอบค่าปัจจุบันในห้องทดลองให้ฉันหน่อย')">🔍 ตรวจสอบค่าปัจจุบัน</button>
-      <button class="ai-pill-btn" onclick="AIBot.sendUserMessage('อธิบายสูตรและการคำนวณของแล็บนี้')">📊 สูตรและการคำนวณ</button>
-      <button class="ai-pill-btn" onclick="AIBot.sendUserMessage('ช่วยดำเนินการหรือกดสลับอุปกรณ์แทนฉัน (Auto-Pilot)')">⚡ ดำเนินการแทนฉัน</button>
-      <button class="ai-pill-btn" onclick="AIBot.sendUserMessage('ถามคำถามวัดความเข้าใจในแล็บนี้หน่อย (Quiz)')">🧪 ทดสอบความรู้ (Quiz)</button>
+      <button class="ai-pill-btn pill-highlight" onclick="AIBot.captureSceneVision()">📷 สแกนภาพ 3D ปัจจุบัน</button>
+      <button class="ai-pill-btn" onclick="AIBot.sendUserMessage('ช่วยแนะนำแล็บนี้และร่วมตั้งสมมติฐานการทดลองกับฉันเน้อ')">💡 แนะนำ & ร่วมตั้งสมมติฐาน</button>
+      <button class="ai-pill-btn" onclick="AIBot.sendUserMessage('ตรวจสอบค่าเซ็นเซอร์จริงในแล็บนี้ให้หน่อยเน้อ')">🔍 ตรวจสอบค่าปัจจุบัน</button>
+      <button class="ai-pill-btn" onclick="AIBot.sendUserMessage('อธิบายสูตรและการคำนวณของแล็บนี้ให้ละเอียดเน้อ')">📊 สูตรและการคำนวณ</button>
+      <button class="ai-pill-btn" onclick="AIBot.sendUserMessage('ช่วยดำเนินการหรือกดสลับอุปกรณ์แทนฉัน (Auto-Pilot) เน้อ')">⚡ สั่งการแทนฉัน (Auto-Pilot)</button>
+      <button class="ai-pill-btn" onclick="AIBot.sendUserMessage('ถามคำถาม Quiz วัดความเข้าใจแบบชาวสุโขทัยหน่อยเน้อ')">🧪 Quiz สุโขทัย</button>
     </div>
 
     <div id="ai-messages-list" class="ai-messages-area">
@@ -809,40 +832,46 @@
     </div>
 
     <div class="ai-input-bar">
-      <input type="text" id="ai-chat-input" class="ai-text-input" placeholder="พิมพ์คำถามหรือสั่งการ Dr. Newton เช่น 'อธิบายกฎของเลนซ์', 'ตรวจสอบค่า'..." />
+      <div class="ai-input-tools">
+        <input type="file" id="ai-img-upload-input" accept="image/*" style="display:none;" onchange="AIBot.handleImageUpload(event)" />
+        <button class="ai-tool-btn" onclick="document.getElementById('ai-img-upload-input').click()" title="แนบภาพเพื่อวิเคราะห์ (Attach Image)">📎</button>
+        <button class="ai-tool-btn" onclick="AIBot.captureSceneVision()" title="สแกนภาพฉากแล็บ 3D ปัจจุบัน (Vision Snapshot)">📷</button>
+        <button id="btn-ai-mic" class="ai-tool-btn" onclick="AIBot.toggleSpeechInput()" title="กดเพื่อพูดด้วยเสียงภาษาไทย (Voice Speech Recognition)">🎙️</button>
+      </div>
+      <input type="text" id="ai-chat-input" class="ai-text-input" placeholder="พิมพ์หรือกดไมค์สั่งการ Mr. Deep_xAI เช่น 'ตรวจภาพฉากนี้ให้เน้อ', 'อธิบายกฎของเลนส์'..." />
       <button class="ai-send-btn" onclick="AIBot.handleSend()" title="ส่งข้อความ">➤</button>
     </div>
   </aside>
 
   <!-- ================= MODULAR JAVASCRIPT APPLICATION ================= -->
-  <script src="js/state.js?v=20261018_30"></script>
-  <script src="js/panels-controller.js?v=20261018_30"></script>
-  <script src="js/scene.js?v=20261018_30"></script>
-  <script src="js/experiments-registry.js?v=20261018_30"></script>
-  <script src="js/exp1-circuit.js?v=20261018_30"></script>
-  <script src="js/exp2-pendulum.js?v=20261018_30"></script>
-  <script src="js/experiments/optics-bench.js?v=20261018_30"></script>
-  <script src="js/experiments/waves-resonance.js?v=20261018_30"></script>
-  <script src="js/experiments/elec-wheatstone.js?v=20261018_30"></script>
-  <script src="js/experiments/em-faraday.js?v=20261018_30"></script>
-  <script src="js/experiments/em-solenoid.js?v=20261018_30"></script>
-  <script src="js/experiments/em-helmholtz.js?v=20261018_30"></script>
-  <script src="js/experiments/mech-air-track.js?v=20261018_30"></script>
-  <script src="js/experiments/mech-free-fall.js?v=20261018_30"></script>
-  <script src="js/experiments/thermo-gas.js?v=20261018_30"></script>
-  <script src="js/experiments/thermo-calorimeter.js?v=20261018_30"></script>
-  <script src="js/experiments/thermo-expansion.js?v=20261018_30"></script>
-  <script src="js/experiments/modern-photoelectric.js?v=20261018_30"></script>
-  <script src="js/experiments/modern-half-life.js?v=20261018_30"></script>
-  <script src="js/experiments/modern-frank-hertz.js?v=20261018_30"></script>
-  <script src="js/experiments/catalog-planned.js?v=20261018_30"></script>
-  <script src="js/labels-raycaster.js?v=20261018_30"></script>
-  <script src="js/ui-exp1.js?v=20261018_30"></script>
-  <script src="js/ui-exp2.js?v=20261018_30"></script>
-  <script src="js/ar-mediapipe.js?v=20261018_30"></script>
-  <script src="js/portal.js?v=20261018_30"></script>
-  <script src="js/ai-bot.js?v=20261018_30"></script>
-  <script src="js/app.js?v=20261018_30"></script>
+  <script src="js/state.js?v=20261018_50"></script>
+  <script src="js/panels-controller.js?v=20261018_50"></script>
+  <script src="js/scene.js?v=20261018_50"></script>
+  <script src="js/experiments-registry.js?v=20261018_50"></script>
+  <script src="js/exp1-circuit.js?v=20261018_50"></script>
+  <script src="js/exp2-pendulum.js?v=20261018_50"></script>
+  <script src="js/experiments/optics-bench.js?v=20261018_50"></script>
+  <script src="js/experiments/waves-resonance.js?v=20261018_50"></script>
+  <script src="js/experiments/elec-wheatstone.js?v=20261018_50"></script>
+  <script src="js/experiments/em-faraday.js?v=20261018_50"></script>
+  <script src="js/experiments/em-solenoid.js?v=20261018_50"></script>
+  <script src="js/experiments/em-helmholtz.js?v=20261018_50"></script>
+  <script src="js/experiments/mech-air-track.js?v=20261018_50"></script>
+  <script src="js/experiments/mech-free-fall.js?v=20261018_50"></script>
+  <script src="js/experiments/thermo-gas.js?v=20261018_50"></script>
+  <script src="js/experiments/thermo-calorimeter.js?v=20261018_50"></script>
+  <script src="js/experiments/thermo-expansion.js?v=20261018_50"></script>
+  <script src="js/experiments/modern-photoelectric.js?v=20261018_50"></script>
+  <script src="js/experiments/modern-half-life.js?v=20261018_50"></script>
+  <script src="js/experiments/modern-frank-hertz.js?v=20261018_50"></script>
+  <script src="js/experiments/catalog-planned.js?v=20261018_50"></script>
+  <script src="js/labels-raycaster.js?v=20261018_50"></script>
+  <script src="js/ui-exp1.js?v=20261018_50"></script>
+  <script src="js/ui-exp2.js?v=20261018_50"></script>
+  <script src="js/ar-mediapipe.js?v=20261018_50"></script>
+  <script src="js/portal.js?v=20261018_50"></script>
+  <script src="js/ai-bot.js?v=20261018_50"></script>
+  <script src="js/app.js?v=20261018_50"></script>
 
 </body>
 </html>
