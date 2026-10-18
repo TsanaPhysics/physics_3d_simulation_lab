@@ -196,6 +196,7 @@
   }
 
   function toggleChat() {
+    unlockAudioContext();
     isChatOpen = !isChatOpen;
     const drawer = document.getElementById('ai-bot-drawer');
     if (drawer) {
@@ -210,6 +211,7 @@
   }
 
   function openChat() {
+    unlockAudioContext();
     isChatOpen = true;
     const drawer = document.getElementById('ai-bot-drawer');
     if (drawer) {
@@ -248,29 +250,58 @@
   let voiceQueue = [];
   let isPlayingVoiceQueue = false;
   let isAudioUnlocked = false;
+  let botAudioContext = null;
+  let activeBufferSource = null;
 
   // Studio TTS Endpoints from globe2027 and local project
+  const currentHost = window.location.hostname || 'localhost';
   const STUDIO_TTS_ENDPOINTS = [
-    'api/tts.php',
+    `http://${currentHost}/G4_Environment_Climate_Energy/globe2027/api/tts.php`,
     'http://localhost/G4_Environment_Climate_Energy/globe2027/api/tts.php',
-    'http://127.0.0.1/G4_Environment_Climate_Energy/globe2027/api/tts.php'
+    'http://127.0.0.1/G4_Environment_Climate_Energy/globe2027/api/tts.php',
+    'api/tts.php'
   ];
 
+  const SILENT_WAV_BASE64 = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+
   function unlockAudioContext() {
-    if (isAudioUnlocked) return;
     try {
+      // 1. Web Audio API Context Unlocking
+      if (!botAudioContext) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) {
+          botAudioContext = new AudioCtx();
+        }
+      }
+      if (botAudioContext && botAudioContext.state === 'suspended') {
+        botAudioContext.resume().catch(() => {});
+      }
+
+      // 2. HTML5 Audio Element Priming with Silent WAV
       if (!activeAudioElement) {
         activeAudioElement = new Audio();
-        activeAudioElement.crossOrigin = 'anonymous';
         activeAudioElement.preload = 'auto';
       }
-      isAudioUnlocked = true;
+      if (!isAudioUnlocked) {
+        activeAudioElement.src = SILENT_WAV_BASE64;
+        const playProm = activeAudioElement.play();
+        if (playProm !== undefined) {
+          playProm.then(() => {
+            activeAudioElement.pause();
+            activeAudioElement.currentTime = 0;
+            isAudioUnlocked = true;
+          }).catch(() => {});
+        } else {
+          isAudioUnlocked = true;
+        }
+      }
     } catch (e) {}
   }
 
   // Pre-unlock audio on user interaction
-  document.addEventListener('click', unlockAudioContext, { once: true, passive: true });
-  document.addEventListener('touchstart', unlockAudioContext, { once: true, passive: true });
+  ['click', 'touchstart', 'keydown', 'pointerdown'].forEach(evt => {
+    document.addEventListener(evt, unlockAudioContext, { passive: true });
+  });
 
   function updateVoices() {
     if (!('speechSynthesis' in window)) return;
@@ -305,7 +336,7 @@
       cachedGoogleThaiVoice = found;
       console.info('Mr. Deep_xAI Natural Voice ready:', found.name, found.lang);
       const voiceBadge = document.getElementById('ai-voice-status-indicator');
-      if (voiceBadge && !voiceBadge.textContent.includes('Studio')) {
+      if (voiceBadge && !voiceBadge.textContent.includes('Studio') && !voiceBadge.textContent.includes('HD')) {
         voiceBadge.textContent = found.name.includes('Google') ? '🎙️ Google Neural' : '🎙️ ' + found.name;
       }
     }
@@ -314,6 +345,120 @@
   if ('speechSynthesis' in window) {
     updateVoices();
     window.speechSynthesis.onvoiceschanged = updateVoices;
+  }
+
+  /**
+   * High-Fidelity Studio Audio Playback (Web Audio API direct PCM decode + Blob URL fallback)
+   */
+  async function playStudioBase64Audio(dataUrl, cleanText) {
+    let normalizedUrl = dataUrl;
+    if (normalizedUrl.startsWith('data:audio/mp3;')) {
+      normalizedUrl = normalizedUrl.replace('data:audio/mp3;', 'data:audio/mpeg;');
+    }
+
+    // Primary: Web Audio API (Hardware PCM decode - immune to Autoplay block once resumed)
+    try {
+      if (!botAudioContext) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) botAudioContext = new AudioCtx();
+      }
+      if (botAudioContext) {
+        if (botAudioContext.state === 'suspended') {
+          await botAudioContext.resume();
+        }
+
+        const base64Index = normalizedUrl.indexOf('base64,');
+        const base64Str = base64Index !== -1 ? normalizedUrl.substring(base64Index + 7) : normalizedUrl;
+        const binaryStr = window.atob(base64Str);
+        const len = binaryStr.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryStr.charCodeAt(i);
+        }
+
+        const audioBuffer = await botAudioContext.decodeAudioData(bytes.buffer.slice(0));
+        if (audioBuffer) {
+          stopVoiceAudio();
+
+          const source = botAudioContext.createBufferSource();
+          source.buffer = audioBuffer;
+          source.connect(botAudioContext.destination);
+
+          source.onended = () => {
+            stopVoiceAudio();
+          };
+
+          activeBufferSource = source;
+          source.start(0);
+
+          setMood('speaking');
+          startWaveformSimulation();
+          const voiceBadge = document.getElementById('ai-voice-status-indicator');
+          if (voiceBadge) voiceBadge.textContent = '🎙️ Google Neural2-C HD';
+          return true;
+        }
+      }
+    } catch (webAudioErr) {
+      console.warn('[Studio Voice] Web Audio API decode failed, attempting Blob URL fallback:', webAudioErr);
+    }
+
+    // Secondary: HTML5 Audio Element with standards-compliant audio/mpeg Blob URL
+    try {
+      stopVoiceAudio();
+      if (!activeAudioElement) {
+        activeAudioElement = new Audio();
+      }
+
+      let playableSrc = normalizedUrl;
+      try {
+        const base64Index = normalizedUrl.indexOf('base64,');
+        const base64Str = base64Index !== -1 ? normalizedUrl.substring(base64Index + 7) : normalizedUrl;
+        const binaryStr = window.atob(base64Str);
+        const len = binaryStr.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryStr.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], { type: 'audio/mpeg' });
+        playableSrc = URL.createObjectURL(blob);
+      } catch (blobErr) {
+        playableSrc = normalizedUrl;
+      }
+
+      activeAudioElement.removeAttribute('crossorigin');
+      activeAudioElement.src = playableSrc;
+      activeAudioElement.playbackRate = 1.0;
+      activeAudioElement.preload = 'auto';
+
+      activeAudioElement.onplay = () => {
+        setMood('speaking');
+        startWaveformSimulation();
+        const voiceBadge = document.getElementById('ai-voice-status-indicator');
+        if (voiceBadge) voiceBadge.textContent = '🎙️ Google Neural2-C HD';
+      };
+
+      activeAudioElement.onended = () => {
+        stopVoiceAudio();
+      };
+
+      activeAudioElement.onerror = (err) => {
+        console.warn('[Studio Voice] HTMLAudio error, fallback to browser speech:', err);
+        fallbackToBrowserSpeech(cleanText);
+      };
+
+      const playProm = activeAudioElement.play();
+      if (playProm !== undefined) {
+        playProm.catch((err) => {
+          console.warn('[Studio Voice] Play promise error, fallback to browser speech:', err);
+          fallbackToBrowserSpeech(cleanText);
+        });
+      }
+      return true;
+    } catch (htmlAudioErr) {
+      console.warn('[Studio Voice] HTMLAudio element failed, fallback to browser speech:', htmlAudioErr);
+      fallbackToBrowserSpeech(cleanText);
+      return false;
+    }
   }
 
   /**
@@ -367,7 +512,7 @@
     for (const endpoint of STUDIO_TTS_ENDPOINTS) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3500);
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
 
         const resp = await fetch(endpoint, {
           method: 'POST',
@@ -385,54 +530,27 @@
 
         if (resp.ok) {
           const ttsData = await resp.json();
-          if (ttsData.success && ttsData.audio_url) {
-            // Resolve relative audio URL against endpoint origin if needed
-            let fullAudioUrl = ttsData.audio_url;
-            if (endpoint.startsWith('http')) {
-              const urlObj = new URL(endpoint);
-              const basePath = urlObj.pathname.substring(0, urlObj.pathname.lastIndexOf('/') + 1);
-              fullAudioUrl = urlObj.origin + basePath + '../' + ttsData.audio_url;
+          if (ttsData.success && (ttsData.audio_data || ttsData.audio_url)) {
+            let fullAudioUrl = ttsData.audio_data;
+            if (!fullAudioUrl && ttsData.audio_url) {
+              if (endpoint.startsWith('http')) {
+                const urlObj = new URL(endpoint);
+                const basePath = urlObj.pathname.substring(0, urlObj.pathname.lastIndexOf('/') + 1);
+                fullAudioUrl = urlObj.origin + basePath + '../' + ttsData.audio_url;
+              } else {
+                fullAudioUrl = ttsData.audio_url;
+              }
             }
 
-            if (!activeAudioElement) {
-              activeAudioElement = new Audio();
-              activeAudioElement.crossOrigin = 'anonymous';
+            const success = await playStudioBase64Audio(fullAudioUrl, cleanText);
+            if (success) {
+              playedStudio = true;
+              break;
             }
-
-            activeAudioElement.src = fullAudioUrl;
-            activeAudioElement.playbackRate = 1.0;
-            activeAudioElement.preload = 'auto';
-
-            activeAudioElement.onplay = () => {
-              setMood('speaking');
-              startWaveformSimulation();
-              const voiceBadge = document.getElementById('ai-voice-status-indicator');
-              if (voiceBadge) voiceBadge.textContent = '🎙️ Google Neural2-C HD';
-            };
-
-            activeAudioElement.onended = () => {
-              stopVoiceAudio();
-            };
-
-            activeAudioElement.onerror = (err) => {
-              console.warn('[Studio Voice] Audio playback failed, fallback to Browser Neural:', err);
-              fallbackToBrowserSpeech(cleanText);
-            };
-
-            const playProm = activeAudioElement.play();
-            if (playProm !== undefined) {
-              playProm.catch((err) => {
-                console.warn('[Studio Voice] Play promise error, fallback to Browser Neural:', err);
-                fallbackToBrowserSpeech(cleanText);
-              });
-            }
-
-            playedStudio = true;
-            break;
           }
         }
       } catch (err) {
-        // Try next endpoint or fallback
+        // Try next endpoint
       }
     }
 
@@ -514,10 +632,18 @@
     isPlayingVoiceQueue = false;
     voiceQueue = [];
 
+    if (activeBufferSource) {
+      try {
+        activeBufferSource.stop();
+        activeBufferSource.disconnect();
+      } catch (e) {}
+      activeBufferSource = null;
+    }
+
     if (activeAudioElement) {
       try {
         activeAudioElement.pause();
-        activeAudioElement.src = '';
+        activeAudioElement.currentTime = 0;
       } catch (e) {}
     }
     if ('speechSynthesis' in window) {
@@ -706,6 +832,7 @@ ${SUKHOTHAI_PHRASES.co_create}
   }
 
   function handleSend() {
+    unlockAudioContext();
     const input = document.getElementById('ai-chat-input');
     if (!input) return;
     const text = input.value.trim();
@@ -715,6 +842,7 @@ ${SUKHOTHAI_PHRASES.co_create}
   }
 
   function sendUserMessage(text) {
+    unlockAudioContext();
     openChat();
     appendUserMessage(text);
 
@@ -1018,7 +1146,10 @@ ${SUKHOTHAI_PHRASES.co_create}
     handleImageUpload,
     handleSend,
     sendUserMessage,
-    setMood
+    setMood,
+    speakSukhothaiVoice,
+    playStudioBase64Audio,
+    unlockAudioContext
   };
 
 })();

@@ -71,6 +71,17 @@ if (strpos($lang, 'th') !== false) {
     $voice = 'en-US-Neural2-F';
 }
 
+// Direct key playback check
+if (isset($_GET['key'])) {
+    $targetFile = $cacheDir . '/' . preg_replace('/[^a-f0-9]/', '', $_GET['key']) . '.mp3';
+    if (file_exists($targetFile)) {
+        header('Content-Type: audio/mpeg');
+        header('Content-Length: ' . filesize($targetFile));
+        readfile($targetFile);
+        exit;
+    }
+}
+
 // Compute Cache Hash
 $cacheKey = md5($cleanText . '_' . $langCode . '_' . $voice . '_' . $speakingRate . '_' . $pitch);
 $cacheFilePath = $cacheDir . '/' . $cacheKey . '.mp3';
@@ -78,11 +89,19 @@ $cacheWebUrl = 'assets/audio_cache/' . $cacheKey . '.mp3';
 
 // 1. Check if Cached Audio Exists
 if (file_exists($cacheFilePath) && filesize($cacheFilePath) > 500) {
+    if (!empty($_GET['play']) || !empty($_POST['play'])) {
+        header('Content-Type: audio/mpeg');
+        header('Content-Length: ' . filesize($cacheFilePath));
+        readfile($cacheFilePath);
+        exit;
+    }
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode([
         'success' => true,
         'cached' => true,
         'audio_url' => $cacheWebUrl,
+        'audio_data' => 'data:audio/mpeg;base64,' . base64_encode(file_get_contents($cacheFilePath)),
+        'cache_key' => $cacheKey,
         'voice' => $voice,
         'duration_est_sec' => round(mb_strlen($cleanText) * 0.12, 1)
     ], JSON_UNESCAPED_UNICODE);
@@ -141,6 +160,8 @@ if (!empty($googleApiKey)) {
                 'success' => true,
                 'cached' => false,
                 'audio_url' => $cacheWebUrl,
+                'audio_data' => 'data:audio/mpeg;base64,' . $resJson['audioContent'],
+                'cache_key' => $cacheKey,
                 'voice' => $voice
             ], JSON_UNESCAPED_UNICODE);
             exit;
@@ -210,6 +231,8 @@ if ($fetchSuccess && strlen($combinedAudio) > 400) {
         'success' => true,
         'cached' => false,
         'audio_url' => $cacheWebUrl,
+        'audio_data' => 'data:audio/mpeg;base64,' . base64_encode($combinedAudio),
+        'cache_key' => $cacheKey,
         'voice' => 'google-studio-natural-voice'
     ], JSON_UNESCAPED_UNICODE);
     exit;

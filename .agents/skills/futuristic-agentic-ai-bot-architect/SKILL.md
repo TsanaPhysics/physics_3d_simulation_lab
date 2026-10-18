@@ -135,16 +135,20 @@ def build_digital_bot_avatar(input_photo_path, out_full_path, out_square_path):
 
 ---
 
-## 3. เอนจินเสียงพูดมนุษย์ธรรมชาติ (Google Natural TTS Engine)
+## 3. เอนจินเสียงพูดมนุษย์ธรรมชาติ (Google Natural TTS & Studio Neural2 Voice Engine)
 
-การสังเคราะห์เสียงภาษาไทยให้เหมือนมนุษย์ที่สุด ต้องแก้ปัญหา 3 ด้านหลัก:
-1. **คุณภาพเสียง:** ค้นหาเสียง `Google ภาษาไทย` (Google Cloud Neural Voice) ใน Chromium
-2. **ความเสถียร:** แบ่งประโยคยาวออกเป็น Sentence Chunks เพื่อไม่ให้เบราว์เซอร์หยุดพูดกลางคัน (Chromium 15s bug)
-3. **การออกเสียงศัพท์วิทยาศาสตร์ (Phonetics):** แปลงสมการและหน่วยวัดเป็นคำพูดภาษาไทยลื่นหู
+การสังเคราะห์เสียงภาษาไทยให้เหมือนมนุษย์ที่สุดและไม่กลายเป็นเสียงหุ่นยนต์กระด้าง:
+1. **Google Cloud Studio Neural2 Voice (th-TH-Neural2-C):** โทนเสียงชายอบอุ่นระดับสตูดิโอ (Studio HD) เป็นธรรมชาติสูงสุด (แบบเดียวกับโมดูล globe2027)
+2. **Web Audio API Hardware PCM Decoding:** แก้ปัญหา Chrome Autoplay Policy บล็อกเสียงเมื่อเรียกแบบ Asynchronous โดยการ Unlock AudioContext ด้วย Gesture ล่วงหน้า และ Decode Buffer ตรงสู่ Hardware
+3. **MIME Type Normalization:** บราวเซอร์ Chromium จะปฏิเสธ `data:audio/mp3;` ทันทีด้วย `MEDIA_ERR_SRC_NOT_SUPPORTED` ต้องแปลงเป็นมาตรฐานสากล `data:audio/mpeg;` เสมอ
+4. **Synchronous Silent WAV Priming:** เมื่อเกิด User Gesture (`click`, `touchstart`, `keydown`) ต้องรันการเล่นบัฟเฟอร์เสียงว่างเปล่าทันที:
+   `activeAudio.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";`
+5. **ความเสถียร:** แบ่งประโยคยาวออกเป็น Sentence Chunks เพื่อไม่ให้เบราว์เซอร์หยุดพูดกลางคัน (Chromium 15s bug)
+6. **การออกเสียงศัพท์วิทยาศาสตร์ (Phonetics):** แปลงสมการและหน่วยวัดเป็นคำพูดภาษาไทยลื่นหู
 
 ```javascript
 /**
- * js/natural-tts-engine.js
+ * js/natural-tts-engine.js (Dual Studio & Web Audio Architecture)
  */
 let cachedGoogleVoice = null;
 let voiceQueue = [];
