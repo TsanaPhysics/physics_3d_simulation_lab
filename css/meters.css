@@ -1,0 +1,85 @@
+/* Meter Mode Toggle Pill */
+.meter-mode-toggle {
+  display: flex;
+  background: rgba(2, 6, 23, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 7px;
+  padding: 2px;
+  gap: 3px;
+}
+
+.meter-mode-btn {
+  font-family: 'Prompt', sans-serif;
+  font-size: 0.7rem;
+  padding: 3px 8px;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+
+.meter-mode-btn.active {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Digital & Analog Meters Readout Cards */
+.meter-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.meter-box {
+  background: rgba(2, 6, 23, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 8px;
+  padding: 8px;
+  text-align: center;
+  position: relative;
+}
+
+.meter-box.ammeter {
+  border-left: 3px solid var(--accent-amber);
+}
+
+.meter-box.voltmeter {
+  border-left: 3px solid var(--accent-cyan);
+}
+
+.meter-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-bottom: 3px;
+}
+
+.meter-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.meter-fraction {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+  color: var(--accent-emerald);
+  margin-top: 2px;
+}
+
+.ui-analog-canvas {
+  width: 100%;
+  height: 78px;
+  display: none;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  background: #f8fafc;
+}
+
+.ui-analog-canvas.visible {
+  display: block;
+}

@@ -1,0 +1,2037 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RBRU Next Gen Lab — 3D Interactive Physics Simulation</title>
+  <!-- Three.js & OrbitControls via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- Google Fonts: Prompt / Sarabun -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0b1120;
+      --panel-bg: rgba(15, 23, 42, 0.88);
+      --panel-border: rgba(148, 163, 184, 0.22);
+      --accent-purple: #8b5cf6;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      user-select: none;
+    }
+
+    /* 3D Canvas Container */
+    #canvas-container {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* Top Navigation Bar */
+    .topbar {
+      position: absolute;
+      top: 12px;
+      left: 16px;
+      right: 16px;
+      height: 60px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 20;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-badge {
+      background: linear-gradient(135deg, #7c3aed, #06b6d4);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 6px 12px;
+      border-radius: 8px;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+    }
+
+    .brand-title h1 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.2;
+    }
+
+    .brand-title p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: 8px;
+      background: rgba(2, 6, 23, 0.65);
+      padding: 5px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.15);
+    }
+
+    .tab-btn {
+      font-family: 'Prompt', sans-serif;
+      background: transparent;
+      color: var(--text-muted);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 7px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .action-btn {
+      font-family: 'Prompt', sans-serif;
+      background: rgba(30, 41, 59, 0.9);
+      color: #e2e8f0;
+      border: 1px solid var(--panel-border);
+      padding: 7px 13px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .action-btn:hover {
+      background: rgba(51, 65, 85, 0.95);
+      border-color: var(--accent-cyan);
+    }
+
+    .action-btn.solution-btn {
+      background: linear-gradient(135deg, #f59e0b, #ea580c);
+      color: #fff;
+      border: none;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+    }
+
+    .action-btn.solution-btn:hover {
+      filter: brightness(1.1);
+    }
+
+    /* Side Panels */
+    .side-panel {
+      position: absolute;
+      top: 84px;
+      bottom: 16px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      padding: 16px;
+      z-index: 15;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+    }
+
+    .side-panel::-webkit-scrollbar {
+      width: 6px;
+    }
+    .side-panel::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.3);
+      border-radius: 3px;
+    }
+
+    .left-panel {
+      left: 16px;
+      width: 350px;
+    }
+
+    .right-panel {
+      right: 16px;
+      width: 440px;
+    }
+
+    .section-card {
+      background: rgba(2, 6, 23, 0.55);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+
+    .section-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--accent-cyan);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .subtext {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+      margin-bottom: 8px;
+    }
+
+    /* Digital Meters Readout Cards */
+    .meter-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .meter-box {
+      background: #020617;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      position: relative;
+    }
+
+    .meter-box.ammeter {
+      border-left: 3px solid var(--accent-amber);
+    }
+
+    .meter-box.voltmeter {
+      border-left: 3px solid var(--accent-cyan);
+    }
+
+    .meter-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .meter-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+
+    .meter-fraction {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--accent-emerald);
+      margin-top: 2px;
+    }
+
+    /* Node Pair Selector Grid */
+    .pair-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .pair-btn {
+      font-family: 'Prompt', sans-serif;
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      color: #e2e8f0;
+      padding: 8px 6px;
+      border-radius: 7px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: center;
+    }
+
+    .pair-btn:hover {
+      border-color: var(--accent-cyan);
+      background: rgba(51, 65, 85, 0.9);
+    }
+
+    .pair-btn.active {
+      background: linear-gradient(135deg, #0284c7, #06b6d4);
+      color: #fff;
+      border-color: transparent;
+      font-weight: 600;
+      box-shadow: 0 3px 10px rgba(6, 182, 212, 0.35);
+    }
+
+    /* Switch Button */
+    .switch-toggle {
+      width: 100%;
+      padding: 11px;
+      border-radius: 9px;
+      border: none;
+      font-family: 'Prompt', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .switch-toggle.open {
+      background: rgba(244, 63, 94, 0.18);
+      color: #fda4af;
+      border: 1px solid rgba(244, 63, 94, 0.5);
+    }
+
+    .switch-toggle.closed {
+      background: linear-gradient(135deg, #059669, #10b981);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .btn-primary {
+      flex: 1;
+      font-family: 'Prompt', sans-serif;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 7px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.1);
+    }
+
+    .btn-secondary {
+      font-family: 'Prompt', sans-serif;
+      background: rgba(30, 41, 59, 0.9);
+      color: #cbd5e1;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      padding: 8px 12px;
+      border-radius: 7px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(51, 65, 85, 0.9);
+      color: #fff;
+    }
+
+    /* Tables */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+      margin-top: 6px;
+    }
+
+    .data-table th,
+    .data-table td {
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      padding: 6px 5px;
+      text-align: center;
+    }
+
+    .data-table th {
+      background: rgba(30, 41, 59, 0.9);
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+
+    .data-table tr.highlight-max {
+      background: rgba(16, 185, 129, 0.18);
+      font-weight: 600;
+    }
+
+    .data-table td.mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Formula Box */
+    .formula-box {
+      background: rgba(15, 23, 42, 0.9);
+      border-left: 3px solid var(--accent-purple);
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      line-height: 1.5;
+      color: #e2e8f0;
+    }
+
+    /* Sliders */
+    .slider-group {
+      margin-bottom: 10px;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      margin-bottom: 4px;
+    }
+
+    .slider-val {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent-cyan);
+      font-weight: 600;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent-cyan);
+      cursor: pointer;
+    }
+
+    /* Graph Canvas */
+    #graph-canvas {
+      width: 100%;
+      height: 230px;
+      background: #020617;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 8px;
+      display: block;
+    }
+
+    /* 3D Floating Labels Overlay */
+    #labels-container {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 5;
+      overflow: hidden;
+    }
+
+    .label-3d {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      background: rgba(2, 6, 23, 0.82);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      color: #f8fafc;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 0.73rem;
+      font-weight: 600;
+      white-space: nowrap;
+      pointer-events: auto;
+      cursor: pointer;
+      transition: transform 0.1s, border-color 0.15s;
+    }
+
+    .label-3d:hover {
+      border-color: var(--accent-cyan);
+      transform: translate(-50%, -50%) scale(1.08);
+    }
+
+    .label-3d.node-label {
+      background: rgba(15, 23, 42, 0.92);
+      border-color: #38bdf8;
+      color: #38bdf8;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+    }
+
+    .label-3d.resistor-label {
+      background: rgba(30, 41, 59, 0.85);
+      color: #fde047;
+      border-color: rgba(253, 224, 71, 0.35);
+      pointer-events: none;
+    }
+
+    /* Bottom Hint Bar */
+    .bottom-hint {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--panel-bg);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--panel-border);
+      padding: 7px 16px;
+      border-radius: 20px;
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    /* Modal for Solution & Theory */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.78);
+      backdrop-filter: blur(8px);
+      z-index: 50;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-content {
+      background: #0f172a;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 16px;
+      max-width: 880px;
+      width: 100%;
+      max-height: 88vh;
+      overflow-y: auto;
+      padding: 24px 28px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+    }
+
+    .modal-header h2 {
+      font-size: 1.2rem;
+      color: #fff;
+    }
+
+    .close-modal {
+      background: rgba(244, 63, 94, 0.2);
+      color: #fda4af;
+      border: 1px solid rgba(244, 63, 94, 0.4);
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Prompt', sans-serif;
+      font-weight: 600;
+    }
+
+    .sol-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .sol-box {
+      background: rgba(2, 6, 23, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 0.84rem;
+      line-height: 1.65;
+    }
+
+    .sol-box h3 {
+      color: var(--accent-amber);
+      font-size: 0.98rem;
+      margin-bottom: 10px;
+    }
+
+    .math-block {
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(15, 23, 42, 0.9);
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin: 6px 0;
+      color: #38bdf8;
+      border-left: 3px solid #38bdf8;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 3D WebGL Viewport -->
+  <div id="canvas-container"></div>
+  <div id="labels-container"></div>
+
+  <!-- Top Navigation -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-badge">RBRU NEXT GEN LAB</div>
+      <div class="brand-title">
+        <h1>ปฏิบัติการถอดโจทย์ฟิสิกส์สู่การทดลองจริง (3D Interactive Lab)</h1>
+        <p>ข้อสอบคัดเลือกผู้แทนประเทศไทย 20th IJSO รอบที่ 3 • Learning by Laboratory</p>
+      </div>
+    </div>
+
+    <div class="mode-tabs">
+      <button id="tab-exp1" class="tab-btn active" onclick="switchExperiment(1)">
+        ⚡ กิจกรรมที่ 1: วงจรตัวต้านทาน 6 เหลี่ยม
+      </button>
+      <button id="tab-exp2" class="tab-btn" onclick="switchExperiment(2)">
+        ⏱️ กิจกรรมที่ 2: ลูกตุ้มเพนดูลัมอย่างง่าย
+      </button>
+    </div>
+
+    <div class="top-actions">
+      <button class="action-btn" onclick="resetCameraView()">🎥 รีเซ็ตมุมกล้อง</button>
+      <button class="action-btn" onclick="topCameraView()">📐 มุมมองด้านบน</button>
+      <button class="action-btn solution-btn" onclick="toggleSolutionModal(true)">📖 ดูเฉลยคำนวณ & ทฤษฎี</button>
+    </div>
+  </header>
+
+  <!-- ================= EXPERIMENT 1 PANELS (HEXAGONAL RESISTOR CIRCUIT) ================= -->
+  <aside id="left-exp1" class="side-panel left-panel">
+    <div class="section-card">
+      <div class="section-title">
+        <span>⚡ กิจกรรมที่ 1: วงจรตัวต้านทาน (ข้อ 7)</span>
+      </div>
+      <p class="subtext">
+        ชุดตัวต้านทาน 6 ตัวต่อกันเป็นรูปหกเหลี่ยม (a–f) มีค่า 1, 2, 3, 4, 5 และ 6 Ω ต่อกับแหล่งจ่ายไฟกระแสตรง 10 V และตัวต้านทานอนุกรม 10 Ω
+      </p>
+      <button id="switch-btn" class="switch-toggle closed" onclick="toggleCircuitSwitch()">
+        <span id="switch-icon">🟢</span>
+        <span id="switch-text">สวิตช์ปิดอยู่ (กระแสไหลครบวงจร)</span>
+      </button>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">
+        <span>📟 ค่าที่อ่านได้จากเครื่องวัดอุดมคติ</span>
+      </div>
+      <div class="meter-grid">
+        <div class="meter-box ammeter">
+          <div class="meter-label">แอมมิเตอร์ (A) กระแสรวม I</div>
+          <div id="ui-ammeter-dec" class="meter-value">0.913 A</div>
+          <div id="ui-ammeter-frac" class="meter-fraction">= 21 / 23 A</div>
+        </div>
+        <div class="meter-box voltmeter">
+          <div class="meter-label">โวลต์มิเตอร์ (V) คร่อม P-Q</div>
+          <div id="ui-voltmeter-dec" class="meter-value">0.870 V</div>
+          <div id="ui-voltmeter-frac" class="meter-fraction">= 20 / 23 V</div>
+        </div>
+      </div>
+      <div id="ui-circuit-breakdown" class="formula-box" style="margin-top: 10px;">
+        คู่จุดต่อ <b>f – a</b>: ทางตรง = 1 Ω || ทางอ้อม = 20 Ω<br/>
+        R<sub>ชุด</sub> = 20/21 Ω (0.952 Ω) | R<sub>รวม</sub> = 230/21 Ω
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">
+        <span>🔌 เลือกคู่จุดต่อสายวัด P (แดง) และ Q (ดำ)</span>
+      </div>
+      <p class="subtext">คลิกปุ่มด้านล่าง หรือคลิกที่ขั้ว a, b, c, d, e, f บนโมเดล 3D โดยตรง:</p>
+      <div class="pair-grid">
+        <button class="pair-btn" data-pair="a-b" onclick="selectNodePair('a','b')">คู่ a – b (2 Ω)</button>
+        <button class="pair-btn" data-pair="b-c" onclick="selectNodePair('b','c')">คู่ b – c (3 Ω)</button>
+        <button class="pair-btn" data-pair="c-d" onclick="selectNodePair('c','d')">คู่ c – d (4 Ω)</button>
+        <button class="pair-btn" data-pair="d-e" onclick="selectNodePair('d','e')">คู่ d – e (5 Ω)</button>
+        <button class="pair-btn" data-pair="e-f" onclick="selectNodePair('e','f')">คู่ e – f (6 Ω)</button>
+        <button class="pair-btn active" data-pair="f-a" onclick="selectNodePair('f','a')">คู่ f – a (1 Ω) ★</button>
+      </div>
+      <div style="margin-top: 8px; font-size: 0.75rem; color: var(--text-muted);">
+        ทดลองคู่จุดต่อแนวทแยง (เพิ่มเติม):
+      </div>
+      <div class="pair-grid">
+        <button class="pair-btn" data-pair="a-c" onclick="selectNodePair('a','c')">คู่ a – c (5||16)</button>
+        <button class="pair-btn" data-pair="a-d" onclick="selectNodePair('a','d')">คู่ a – d (9||12)</button>
+        <button class="pair-btn" data-pair="b-f" onclick="selectNodePair('b','f')">คู่ b – f (3||18)</button>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-primary" onclick="recordCurrentPair()">➕ บันทึกคู่ที่เลือกลงตาราง</button>
+        <button class="btn-secondary" onclick="recordAllAdjacentPairs()">บันทึกครบ 6 คู่</button>
+      </div>
+    </div>
+  </aside>
+
+  <aside id="right-exp1" class="side-panel right-panel">
+    <div class="section-card">
+      <div class="section-title">
+        <span>📊 ตารางบันทึกผลการทดลอง (กิจกรรมที่ 1)</span>
+        <button class="btn-secondary" style="padding:3px 8px; font-size:0.72rem;" onclick="clearExp1Table()">ล้างตาราง</button>
+      </div>
+      <p class="subtext">
+        เปรียบเทียบความต้านทานสมมูล กระแสไฟฟ้า I และความต่างศักย์ V<sub>PQ</sub> ของแต่ละคู่จุดต่อ (แถวสีเขียวคือคู่ที่ให้กระแสสูงสุด)
+      </p>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>คู่จุดต่อ</th>
+            <th>R ตรง<br>(Ω)</th>
+            <th>R อ้อม<br>(Ω)</th>
+            <th>R<sub>ชุด</sub> ทฤษฎี<br>(Ω)</th>
+            <th>กระแส I<br>(A)</th>
+            <th>V<sub>PQ</sub><br>(V)</th>
+            <th>R<sub>ทดลอง</sub><br>V<sub>PQ</sub>/I (Ω)</th>
+          </tr>
+        </thead>
+        <tbody id="exp1-tbody">
+          <!-- Populated dynamically -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">
+        <span>💡 สรุปหลักการและคำตอบโจทย์ข้อ 7</span>
+      </div>
+      <div class="formula-box">
+        <b>7.1 คู่ที่ทำให้แอมมิเตอร์อ่านค่าสูงสุด:</b> คู่ <b>a – f (หรือ f – a)</b> เพราะมีตัวต้านทาน 1 Ω ขนานกับ 20 Ω ให้ความต้านทานสมมูลต่ำสุด R<sub>af</sub> = 20/21 Ω ทำให้ R<sub>รวม</sub> = 10 + 20/21 = 230/21 Ω น้อยที่สุด<br/>
+        <b>7.2 แอมมิเตอร์อ่านค่าได้:</b> I = 10 / (230/21) = <b>21/23 A</b> (≈ 0.913 A)<br/>
+        <b>7.3 โวลต์มิเตอร์อ่านค่าได้:</b> V<sub>PQ</sub> = I · R<sub>af</sub> = (21/23)(20/21) = <b>20/23 V</b> (≈ 0.870 V)
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================= EXPERIMENT 2 PANELS (SIMPLE PENDULUM) ================= -->
+  <aside id="left-exp2" class="side-panel left-panel hidden">
+    <div class="section-card">
+      <div class="section-title">
+        <span>⏱️ กิจกรรมที่ 2: ลูกตุ้มอย่างง่าย (ข้อ 10)</span>
+      </div>
+      <p class="subtext">
+        ศึกษาความสัมพันธ์ระหว่างความยาวเชือก L กับคาบการแกว่ง T เพื่อเขียนกราฟเส้นตรง T<sup>2</sup> กับ L และคำนวณค่าความเร่งโน้มถ่วง g
+      </p>
+
+      <div class="slider-group">
+        <div class="slider-header">
+          <span>ความยาวเชือก L (จุดแขวนถึงศูนย์กลางมวล):</span>
+          <span id="ui-length-val" class="slider-val">50.0 cm (0.50 m)</span>
+        </div>
+        <input id="slider-length" type="range" min="50" max="90" step="10" value="50" oninput="updatePendulumLength(this.value)" />
+        <div class="pair-grid" style="grid-template-columns: repeat(5, 1fr); margin-top: 6px;">
+          <button class="pair-btn active" id="len-btn-50" onclick="updatePendulumLength(50)">50 cm</button>
+          <button class="pair-btn" id="len-btn-60" onclick="updatePendulumLength(60)">60 cm</button>
+          <button class="pair-btn" id="len-btn-70" onclick="updatePendulumLength(70)">70 cm</button>
+          <button class="pair-btn" id="len-btn-80" onclick="updatePendulumLength(80)">80 cm</button>
+          <button class="pair-btn" id="len-btn-90" onclick="updatePendulumLength(90)">90 cm</button>
+        </div>
+      </div>
+
+      <div class="slider-group" style="margin-top: 12px;">
+        <div class="slider-header">
+          <span>มุมปล่อยเริ่มต้น (θ<sub>0</sub>):</span>
+          <span id="ui-angle-val" class="slider-val">8.0°</span>
+        </div>
+        <input id="slider-angle" type="range" min="4" max="15" step="1" value="8" oninput="updatePendulumAngle(this.value)" />
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-header">
+          <span>โหมดข้อมูลการทดลอง:</span>
+        </div>
+        <select id="pendulum-data-mode" onchange="updatePendulumMode()" style="width:100%; padding:7px; border-radius:7px; background:#1e293b; color:#fff; border:1px solid rgba(148,163,184,0.3); font-family:'Prompt',sans-serif; font-size:0.78rem;">
+          <option value="exam">ชุดข้อมูลข้อสอบ 20th IJSO (g ≈ 9.46 m/s²)</option>
+          <option value="ideal">ฟิสิกส์อุดมคติมาตรฐาน (g = 9.80 m/s²)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">
+        <span>⏲️ นาฬิกาจับเวลา 20 รอบการแกว่ง</span>
+      </div>
+      <div class="meter-grid">
+        <div class="meter-box Voltmeter">
+          <div class="meter-label">เวลาที่จับได้ t (วินาที)</div>
+          <div id="ui-timer-val" class="meter-value">0.00 s</div>
+          <div id="ui-swing-count" class="meter-fraction">จำนวนรอบ: 0 / 20</div>
+        </div>
+        <div class="meter-box ammeter">
+          <div class="meter-label">คาบเฉลี่ย T = t₂₀ / 20</div>
+          <div id="ui-period-val" class="meter-value">1.40 s</div>
+          <div id="ui-t2-val" class="meter-fraction">T² = 1.97 s²</div>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top: 10px;">
+        <button id="btn-start-timer" class="btn-primary" onclick="startStopwatch20()">▶️ เริ่มจับเวลา 20 รอบ</button>
+        <button class="btn-secondary" onclick="instantMeasure20()">⚡ วัด 20 รอบทันที + บันทึก</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn-secondary" style="flex:1;" onclick="fillAllPendulumData()">📋 เติมข้อมูลครบทั้ง 5 ความยาวตามโจทย์</button>
+      </div>
+    </div>
+  </aside>
+
+  <aside id="right-exp2" class="side-panel right-panel hidden">
+    <div class="section-card">
+      <div class="section-title">
+        <span>📊 ตารางบันทึกผลลูกตุ้มอย่างง่าย</span>
+        <button class="btn-secondary" style="padding:3px 8px; font-size:0.72rem;" onclick="clearPendulumTable()">ล้างตาราง</button>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>L (cm)</th>
+            <th>L (m)</th>
+            <th>เวลา 20 รอบ<br>t<sub>20</sub> (s)</th>
+            <th>คาบ T<br>(s)</th>
+            <th>√L<br>(cm<sup>1/2</sup>)</th>
+            <th>T<sup>2</sup><br>(s<sup>2</sup>)</th>
+          </tr>
+        </thead>
+        <tbody id="exp2-tbody">
+          <!-- Populated dynamically -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">
+        <span>📈 กราฟความสัมพันธ์ระหว่าง T<sup>2</sup> (s<sup>2</sup>) กับ L (m)</span>
+      </div>
+      <canvas id="graph-canvas" width="400" height="230"></canvas>
+      <div id="ui-graph-stats" class="formula-box" style="margin-top: 8px;">
+        <b>สมการเส้นตรง:</b> T<sup>2</sup> = (4π<sup>2</sup> / g) · L<br/>
+        <b>ความชัน (m):</b> ΔT<sup>2</sup> / ΔL = (3.64 - 1.97) / (0.90 - 0.50) = <b>1.67 / 0.40 = 4.175 s<sup>2</sup>/m</b><br/>
+        <b>ค่าความเร่งโน้มถ่วง (g):</b> 4π<sup>2</sup> / (167/40) = <b>160π<sup>2</sup> / 167 m/s<sup>2</sup> ≈ 9.46 m/s<sup>2</sup></b>
+      </div>
+    </div>
+  </aside>
+
+  <div class="bottom-hint">
+    🖱️ <b>ควบคุมมุมมอง 3D:</b> คลิกซ้ายลากเพื่อหมุนกล้อง • ลูกกลิ้งเมาส์เพื่อซูม • คลิกขวาลากเพื่อเลื่อน • คลิกที่ขั้ว a–f บนแผง 3D เพื่อย้ายสายวัด
+  </div>
+
+  <!-- ================= SOLUTION & THEORY MODAL ================= -->
+  <div id="solution-modal" class="modal-backdrop" onclick="if(event.target===this) toggleSolutionModal(false)">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📖 เฉลยคำนวณและหลักการทฤษฎี (20th IJSO รอบที่ 3 วิชาฟิสิกส์)</h2>
+        <button class="close-modal" onclick="toggleSolutionModal(false)">✕ ปิดหน้าต่าง</button>
+      </div>
+      <div class="sol-grid">
+        <div class="sol-box">
+          <h3>⚡ ข้อ 7: กิจกรรมที่ 1 วงจรตัวต้านทานรูปหกเหลี่ยม (16 คะแนน)</h3>
+          <p>ชุดตัวต้านทาน 6 ตัวเรียงตามด้านเป็นรูปหกเหลี่ยม มีผลรวมความต้านทานรอบวงแหวน = 1 + 2 + 3 + 4 + 5 + 6 = 21 Ω</p>
+          <div class="math-block">
+            R<sub>ชุด</sub> = R<sub>ทางตรง</sub> || R<sub>ทางอ้อม</sub> = (R<sub>ตรง</sub> · R<sub>อ้อม</sub>) / 21
+          </div>
+          <p><b>ตอบข้อ 7.1:</b> ต่อสาย P และ Q เข้ากับจุด <b>a และ f</b> เพราะมีตัวต้านทาน 1 Ω ขนานกับอีกด้านที่อนุกรมกัน 2+3+4+5+6 = 20 Ω ได้ความต้านทานสมมูลน้อยที่สุด:</p>
+          <div class="math-block">
+            R<sub>af</sub> = 1 || 20 = (1 × 20) / (1 + 20) = 20 / 21 Ω
+          </div>
+          <p><b>ตอบข้อ 7.2:</b> ความต้านทานรวมของวงจรเมื่อต่ออนุกรมกับตัวต้านทาน 10 Ω:</p>
+          <div class="math-block">
+            R<sub>รวม</sub> = 10 + 20/21 = 230 / 21 Ω<br/>
+            I = V / R<sub>รวม</sub> = 10 / (230/21) = <b>21 / 23 A</b> (≈ 0.913 A)
+          </div>
+          <p><b>ตอบข้อ 7.3:</b> โวลต์มิเตอร์วัดความต่างศักย์คร่อมจุด a และ f:</p>
+          <div class="math-block">
+            V<sub>af</sub> = I · R<sub>af</sub> = (21/23) × (20/21) = <b>20 / 23 V</b> (≈ 0.870 V)
+          </div>
+        </div>
+
+        <div class="sol-box">
+          <h3>⏱️ ข้อ 10: กิจกรรมที่ 2 ลูกตุ้มเพนดูลัมอย่างง่าย (10 คะแนน)</h3>
+          <p>จากสมการคาบลูกตุ้มอย่างง่าย ยกกำลังสองทั้งสองข้างเพื่อจัดให้อยู่ในรูปสมการเส้นตรง y = mx + c:</p>
+          <div class="math-block">
+            T = 2π √(L / g)  ⇒  T<sup>2</sup> = (4π<sup>2</sup> / g) · L
+          </div>
+          <p><b>ตอบข้อ 10.1:</b> เลือกเขียนกราฟระหว่าง <b>T<sup>2</sup> (แกนตั้ง หน่วย s<sup>2</sup>) กับ L (แกนนอน หน่วย m)</b> เพราะแปรผันตรงเชิงเส้น และความชัน m = 4π<sup>2</sup>/g</p>
+          <p><b>ตอบข้อ 10.2:</b> หาความชันจากจุด (0.50 m, 1.97 s<sup>2</sup>) และ (0.90 m, 3.64 s<sup>2</sup>):</p>
+          <div class="math-block">
+            m = (3.64 - 1.97) / (0.90 - 0.50) = 1.67 / 0.40 = 4.175 = 167 / 40 s<sup>2</sup>/m<br/>
+            g = 4π<sup>2</sup> / m = 4π<sup>2</sup> / (167/40) = <b>160π<sup>2</sup> / 167 m/s<sup>2</sup></b> (≈ 9.46 m/s<sup>2</sup>)
+          </div>
+          <p><b>ตอบข้อ 10.3:</b> ตามทฤษฎี จุดตัดแกนตั้ง c = 0 คือกราฟตัดจุด (0,0) หมายความว่าเมื่อความยาวเชือกเป็นศูนย์ (L = 0) คาบยกกำลังสองจะเป็นศูนย์ (T<sup>2</sup> = 0) หากการทดลองจริงมีจุดตัดแกนตั้งไม่เป็นศูนย์ แสดงถึง<b>ความคลาดเคลื่อนเชิงระบบ (Systematic Error)</b> เช่น วัดความยาวไม่ถึงจุดศูนย์กลางมวลของลูกตุ้ม หรือมีเวลาหน่วงในการกดจับเวลา</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MAIN APPLICATION & THREE.JS LOGIC ================= -->
+  <script>
+    // =========================================================================
+    // 1. GLOBAL STATE & PHYSICS DATA
+    // =========================================================================
+    let currentExperiment = 1; // 1 = Resistor Circuit, 2 = Simple Pendulum
+
+    // Experiment 1: Hexagonal Resistor State
+    const nodesOrder = ['a', 'b', 'c', 'd', 'e', 'f'];
+    // Resistors on edges: a-b:2, b-c:3, c-d:4, d-e:5, e-f:6, f-a:1
+    const edgeResistors = [
+      { n1: 'a', n2: 'b', R: 2, colors: ['#ef4444', '#000000', '#d97706'] },
+      { n1: 'b', n2: 'c', R: 3, colors: ['#f97316', '#000000', '#d97706'] },
+      { n1: 'c', n2: 'd', R: 4, colors: ['#eab308', '#000000', '#d97706'] },
+      { n1: 'd', n2: 'e', R: 5, colors: ['#22c55e', '#000000', '#d97706'] },
+      { n1: 'e', n2: 'f', R: 6, colors: ['#3b82f6', '#000000', '#d97706'] },
+      { n1: 'f', n2: 'a', R: 1, colors: ['#92400e', '#000000', '#d97706'] }
+    ];
+
+    let selectedNodeP = 'f';
+    let selectedNodeQ = 'a';
+    let nextClickTarget = 'P';
+    let switchClosed = true;
+    let exp1RecordedRows = [];
+
+    // Experiment 2: Pendulum State
+    const examPendulumData = {
+      50: { L_cm: 50.0, L_m: 0.50, T: 1.40, sqrtL: 7.07, T2: 1.97 },
+      60: { L_cm: 60.0, L_m: 0.60, T: 1.55, sqrtL: 7.75, T2: 2.40 },
+      70: { L_cm: 70.0, L_m: 0.70, T: 1.68, sqrtL: 8.37, T2: 2.81 },
+      80: { L_cm: 80.0, L_m: 0.80, T: 1.76, sqrtL: 8.94, T2: 3.11 },
+      90: { L_cm: 90.0, L_m: 0.90, T: 1.91, sqrtL: 9.49, T2: 3.64 }
+    };
+
+    let pendLengthCm = 50;
+    let pendReleaseAngleDeg = 8;
+    let pendMode = 'exam'; // 'exam' or 'ideal'
+    let pendTime = 0;
+    let stopwatchRunning = false;
+    let stopwatchElapsed = 0;
+    let exp2RecordedRows = [];
+
+    // Helper: Greatest Common Divisor for Exact Fractions
+    function gcd(a, b) {
+      a = Math.abs(Math.round(a));
+      b = Math.abs(Math.round(b));
+      while (b) {
+        let t = b;
+        b = a % b;
+        a = t;
+      }
+      return a || 1;
+    }
+
+    function formatFraction(num, den) {
+      const g = gcd(num, den);
+      const n = Math.round(num / g);
+      const d = Math.round(den / g);
+      return d === 1 ? `${n}` : `${n}/${d}`;
+    }
+
+    // Calculate circuit physics for any pair (nodeP, nodeQ)
+    function computeCircuitPhysics(nP, nQ) {
+      const idxP = nodesOrder.indexOf(nP);
+      const idxQ = nodesOrder.indexOf(nQ);
+      if (idxP === -1 || idxQ === -1 || idxP === idxQ) return null;
+
+      // Path 1: Clockwise from idxP to idxQ
+      let r1 = 0;
+      let cur = idxP;
+      const path1Edges = [];
+      while (cur !== idxQ) {
+        r1 += edgeResistors[cur].R;
+        path1Edges.push(cur);
+        cur = (cur + 1) % 6;
+      }
+
+      // Path 2: Counter-clockwise
+      const r2 = 21 - r1;
+      const rDirect = Math.min(r1, r2);
+      const rIndirect = Math.max(r1, r2);
+
+      // R_eq = (rDirect * rIndirect) / 21
+      const reqNum = rDirect * rIndirect;
+      const reqDen = 21;
+      const reqVal = reqNum / reqDen;
+
+      // R_total = 10 + reqNum/21 = (210 + reqNum)/21
+      const rTotNum = 210 + reqNum;
+      const rTotDen = 21;
+      const rTotVal = rTotNum / rTotDen;
+
+      // I = 10 / R_total = 210 / rTotNum
+      const iNum = 210;
+      const iDen = rTotNum;
+      const iVal = switchClosed ? (iNum / iDen) : 0;
+
+      // V_PQ = I * R_eq = (210 / rTotNum) * (reqNum / 21) = (10 * reqNum) / rTotNum
+      // Wait: if switch is open, ideal voltmeter across P-Q reads 0 V because switch disconnects battery
+      const vNum = 10 * reqNum;
+      const vDen = rTotNum;
+      const vVal = switchClosed ? (vNum / vDen) : 0;
+
+      return {
+        pairLabel: `${nP}-${nQ}`,
+        rDirect,
+        rIndirect,
+        reqVal,
+        reqFrac: formatFraction(reqNum, reqDen),
+        rTotVal,
+        rTotFrac: formatFraction(rTotNum, rTotDen),
+        iVal,
+        iFrac: switchClosed ? formatFraction(iNum, iDen) : '0',
+        vVal,
+        vFrac: switchClosed ? formatFraction(vNum, vDen) : '0',
+        r1,
+        r2,
+        path1Edges
+      };
+    }
+
+    // =========================================================================
+    // 2. THREE.JS SCENE SETUP
+    // =========================================================================
+    const container = document.getElementById('canvas-container');
+    const labelsContainer = document.getElementById('labels-container');
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0b1120);
+    scene.fog = new THREE.FogExp2(0x0b1120, 0.022);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 8.5, 11.5);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.target.set(0, 1.2, 0);
+    controls.maxPolarAngle = Math.PI / 2 - 0.03;
+    controls.minDistance = 4;
+    controls.maxDistance = 24;
+
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.95);
+    dirLight.position.set(8, 15, 10);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.camera.near = 1;
+    dirLight.shadow.camera.far = 35;
+    const d = 10;
+    dirLight.shadow.camera.left = -d;
+    dirLight.shadow.camera.right = d;
+    dirLight.shadow.camera.top = d;
+    dirLight.shadow.camera.bottom = -d;
+    scene.add(dirLight);
+
+    const pointLight = new THREE.PointLight(0x38bdf8, 0.45, 25);
+    pointLight.position.set(-6, 6, -4);
+    scene.add(pointLight);
+
+    // Shared Lab Bench Table
+    const tableGroup = new THREE.Group();
+    scene.add(tableGroup);
+
+    const tableGeo = new THREE.BoxGeometry(18, 0.5, 12);
+    const tableMat = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      roughness: 0.45,
+      metalness: 0.1
+    });
+    const tableMesh = new THREE.Mesh(tableGeo, tableMat);
+    tableMesh.position.y = -0.25;
+    tableMesh.receiveShadow = true;
+    tableGroup.add(tableMesh);
+
+    const gridHelper = new THREE.GridHelper(18, 36, 0x334155, 0x1e293b);
+    gridHelper.position.y = 0.01;
+    tableGroup.add(gridHelper);
+
+    // =========================================================================
+    // 3. BUILD EXPERIMENT 1: 3D HEXAGONAL RESISTOR NETWORK & INSTRUMENTS
+    // =========================================================================
+    const exp1Group = new THREE.Group();
+    scene.add(exp1Group);
+
+    // Board base for hexagonal network
+    const hexBoardGeo = new THREE.CylinderGeometry(3.5, 3.6, 0.22, 6);
+    const hexBoardMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.35, metalness: 0.2 });
+    const hexBoard = new THREE.Mesh(hexBoardGeo, hexBoardMat);
+    hexBoard.rotation.y = Math.PI / 6;
+    hexBoard.position.set(-1.8, 0.11, 0.3);
+    hexBoard.receiveShadow = true;
+    hexBoard.castShadow = true;
+    exp1Group.add(hexBoard);
+
+    // Calculate 6 vertex positions for nodes a, b, c, d, e, f matching PDF layout:
+    // Top edge is a-b (2 Ω), right is c, bottom is e-d (5 Ω), left is f
+    // Angles so a is top-left, b is top-right, c is right, d is bottom-right, e is bottom-left, f is left
+    const hexRadius = 2.55;
+    const hexCenter = new THREE.Vector3(-1.8, 0.22, 0.3);
+    const nodePositions = {};
+    const nodeMeshes = {};
+    const nodeAngles = [
+      -2 * Math.PI / 3, // a: top-left (-120 deg)
+      -Math.PI / 3,     // b: top-right (-60 deg)
+      0,                // c: right (0 deg)
+      Math.PI / 3,      // d: bottom-right (60 deg)
+      2 * Math.PI / 3,  // e: bottom-left (120 deg)
+      Math.PI           // f: left (180 deg)
+    ];
+
+    nodesOrder.forEach((nodeName, i) => {
+      const ang = nodeAngles[i];
+      const pos = new THREE.Vector3(
+        hexCenter.x + hexRadius * Math.cos(ang),
+        hexCenter.y + 0.35,
+        hexCenter.z + hexRadius * Math.sin(ang)
+      );
+      nodePositions[nodeName] = pos;
+
+      // Binding Post Mesh
+      const postGroup = new THREE.Group();
+      postGroup.position.set(pos.x, hexCenter.y, pos.z);
+
+      const baseMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.22, 0.25, 0.18, 24),
+        new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.7, roughness: 0.25 })
+      );
+      baseMesh.position.y = 0.09;
+      postGroup.add(baseMesh);
+
+      const pinMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.11, 0.11, 0.45, 24),
+        new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.85, roughness: 0.15 })
+      );
+      pinMesh.position.y = 0.3;
+      pinMesh.userData = { nodeName };
+      postGroup.add(pinMesh);
+
+      nodeMeshes[nodeName] = pinMesh;
+      exp1Group.add(postGroup);
+    });
+
+    // Build 6 3D Axial Resistors along edges
+    const resistorMidpoints = [];
+    edgeResistors.forEach((edge, idx) => {
+      const p1 = nodePositions[edge.n1];
+      const p2 = nodePositions[edge.n2];
+      const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+      resistorMidpoints.push({ mid, label: `${edge.R} Ω` });
+
+      const dir = new THREE.Vector3().subVectors(p2, p1);
+      const len = dir.length();
+
+      const resGroup = new THREE.Group();
+      resGroup.position.copy(mid);
+      resGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+
+      // Metal wire lead
+      const leadMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.035, 0.035, len, 12),
+        new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.85, roughness: 0.2 })
+      );
+      resGroup.add(leadMesh);
+
+      // Ceramic Resistor Body
+      const bodyLen = len * 0.48;
+      const bodyMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.19, 0.19, bodyLen, 24),
+        new THREE.MeshStandardMaterial({ color: 0xd6bfa3, roughness: 0.4, metalness: 0.05 })
+      );
+      bodyMesh.castShadow = true;
+      resGroup.add(bodyMesh);
+
+      // Color Bands
+      edge.colors.forEach((col, bIdx) => {
+        const bandMesh = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.196, 0.196, bodyLen * 0.1, 24),
+          new THREE.MeshStandardMaterial({ color: col, roughness: 0.3 })
+        );
+        bandMesh.position.y = (bIdx - 1) * (bodyLen * 0.24);
+        resGroup.add(bandMesh);
+      });
+
+      exp1Group.add(resGroup);
+    });
+
+    // Build External Measurement Apparatus on Right Side of Bench
+    // 1. 10V DC Power Supply
+    const psuGroup = new THREE.Group();
+    psuGroup.position.set(3.8, 0, 2.2);
+    const psuBox = new THREE.Mesh(
+      new THREE.BoxGeometry(2.1, 1.4, 1.5),
+      new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4, metalness: 0.3 })
+    );
+    psuBox.position.y = 0.7;
+    psuBox.castShadow = true;
+    psuGroup.add(psuBox);
+    exp1Group.add(psuGroup);
+
+    // 2. 10 Ohm Series Resistor Block
+    const r10Group = new THREE.Group();
+    r10Group.position.set(5.2, 0.25, 0.2);
+    const r10Base = new THREE.Mesh(
+      new THREE.BoxGeometry(1.4, 0.25, 0.8),
+      new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5 })
+    );
+    r10Group.add(r10Base);
+    const r10Body = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.22, 0.22, 0.85, 24),
+      new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.35 })
+    );
+    r10Body.rotation.z = Math.PI / 2;
+    r10Body.position.y = 0.32;
+    r10Group.add(r10Body);
+    exp1Group.add(r10Group);
+
+    // 3. Knife Switch 3D
+    const switchGroup = new THREE.Group();
+    switchGroup.position.set(2.4, 0.15, 2.2);
+    const swBase = new THREE.Mesh(
+      new THREE.BoxGeometry(1.1, 0.2, 0.7),
+      new THREE.MeshStandardMaterial({ color: 0x1e293b })
+    );
+    switchGroup.add(swBase);
+    const swLeverPivot = new THREE.Group();
+    swLeverPivot.position.set(-0.3, 0.2, 0);
+    const swBlade = new THREE.Mesh(
+      new THREE.BoxGeometry(0.7, 0.08, 0.12),
+      new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8, roughness: 0.2 })
+    );
+    swBlade.position.x = 0.32;
+    swLeverPivot.add(swBlade);
+    switchGroup.add(swLeverPivot);
+    exp1Group.add(switchGroup);
+
+    // 4. 3D Digital Ammeter & Voltmeter with Dynamic Canvas Textures
+    function createMeter3D(title, borderColor, pos) {
+      const group = new THREE.Group();
+      group.position.copy(pos);
+
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(2.1, 1.35, 1.1),
+        new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.35, metalness: 0.25 })
+      );
+      body.position.y = 0.68;
+      body.castShadow = true;
+      group.add(body);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 140;
+      const ctx = canvas.getContext('2d');
+      const tex = new THREE.CanvasTexture(canvas);
+
+      const screen = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.85, 1.0),
+        new THREE.MeshBasicMaterial({ map: tex })
+      );
+      screen.position.set(0, 0.72, 0.56);
+      group.add(screen);
+
+      exp1Group.add(group);
+      return { group, canvas, ctx, tex, title, borderColor };
+    }
+
+    const ammeter3D = createMeter3D('AMMETER (A)', '#f59e0b', new THREE.Vector3(4.8, 0, -2.0));
+    const voltmeter3D = createMeter3D('VOLTMETER (V)', '#06b6d4', new THREE.Vector3(2.2, 0, -2.0));
+
+    function updateMeterCanvas(meterObj, mainText, subText) {
+      const { ctx, canvas, tex, title, borderColor } = meterObj;
+      ctx.fillStyle = '#020617';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 6;
+      ctx.strokeRect(3, 3, canvas.width - 6, canvas.height - 6);
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = 'bold 18px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(title, canvas.width / 2, 28);
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 34px monospace';
+      ctx.fillText(mainText, canvas.width / 2, 76);
+
+      ctx.fillStyle = '#10b981';
+      ctx.font = 'bold 22px monospace';
+      ctx.fillText(subText, canvas.width / 2, 114);
+
+      tex.needsUpdate = true;
+    }
+
+    // Fixed External Circuit Wires
+    function createWireMesh(points, colorHex) {
+      const curve = new THREE.CatmullRomCurve3(points);
+      const geo = new THREE.TubeGeometry(curve, 32, 0.045, 10, false);
+      const mat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.35 });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.castShadow = true;
+      return mesh;
+    }
+
+    // Connect PSU -> Switch -> Terminal P, and PSU -> 10Ω -> Ammeter -> Terminal Q
+    const terminalPPos = new THREE.Vector3(1.5, 0.35, -0.5);
+    const terminalQPos = new THREE.Vector3(2.8, 0.35, -0.5);
+
+    [terminalPPos, terminalQPos].forEach((tPos, idx) => {
+      const post = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.14, 0.14, 0.4, 20),
+        new THREE.MeshStandardMaterial({ color: idx === 0 ? 0xef4444 : 0x3b82f6, metalness: 0.6, roughness: 0.25 })
+      );
+      post.position.copy(tPos);
+      exp1Group.add(post);
+    });
+
+    // Static wires connecting external instruments
+    exp1Group.add(createWireMesh([
+      new THREE.Vector3(3.1, 0.3, 2.2),
+      new THREE.Vector3(2.7, 0.35, 2.2)
+    ], 0xef4444));
+    exp1Group.add(createWireMesh([
+      new THREE.Vector3(2.0, 0.3, 2.2),
+      new THREE.Vector3(1.5, 0.35, 0.9),
+      terminalPPos
+    ], 0xef4444));
+    exp1Group.add(createWireMesh([
+      new THREE.Vector3(4.5, 0.3, 2.2),
+      new THREE.Vector3(5.2, 0.35, 0.6)
+    ], 0x3b82f6));
+    exp1Group.add(createWireMesh([
+      new THREE.Vector3(5.2, 0.35, -0.2),
+      new THREE.Vector3(4.9, 0.35, -1.3)
+    ], 0x3b82f6));
+    exp1Group.add(createWireMesh([
+      new THREE.Vector3(4.4, 0.35, -1.3),
+      new THREE.Vector3(3.6, 0.35, -0.8),
+      terminalQPos
+    ], 0x3b82f6));
+    // Voltmeter parallel across P and Q
+    exp1Group.add(createWireMesh([
+      new THREE.Vector3(1.9, 0.35, -1.4),
+      terminalPPos
+    ], 0xef4444));
+    exp1Group.add(createWireMesh([
+      new THREE.Vector3(2.5, 0.35, -1.4),
+      terminalQPos
+    ], 0x3b82f6));
+
+    // Dynamic Probe Wires from P and Q to Selected Hexagon Nodes
+    let probeWireP = null;
+    let probeWireQ = null;
+    let clipMeshP = new THREE.Mesh(
+      new THREE.ConeGeometry(0.16, 0.42, 16),
+      new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.25 })
+    );
+    let clipMeshQ = new THREE.Mesh(
+      new THREE.ConeGeometry(0.16, 0.42, 16),
+      new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.25 })
+    );
+    exp1Group.add(clipMeshP);
+    exp1Group.add(clipMeshQ);
+
+    function updateDynamicProbeWires() {
+      if (probeWireP) exp1Group.remove(probeWireP);
+      if (probeWireQ) exp1Group.remove(probeWireQ);
+
+      const targetP = nodePositions[selectedNodeP].clone().add(new THREE.Vector3(0, 0.22, 0));
+      const targetQ = nodePositions[selectedNodeQ].clone().add(new THREE.Vector3(0, 0.22, 0));
+
+      const midP = new THREE.Vector3().addVectors(terminalPPos, targetP).multiplyScalar(0.5);
+      midP.y += 1.35;
+      probeWireP = createWireMesh([terminalPPos, midP, targetP], 0xef4444);
+      exp1Group.add(probeWireP);
+
+      const midQ = new THREE.Vector3().addVectors(terminalQPos, targetQ).multiplyScalar(0.5);
+      midQ.y += 1.65;
+      probeWireQ = createWireMesh([terminalQPos, midQ, targetQ], 0x38bdf8);
+      exp1Group.add(probeWireQ);
+
+      clipMeshP.position.copy(targetP).add(new THREE.Vector3(0, 0.18, 0));
+      clipMeshP.rotation.x = Math.PI;
+      clipMeshQ.position.copy(targetQ).add(new THREE.Vector3(0, 0.18, 0));
+      clipMeshQ.rotation.x = Math.PI;
+    }
+
+    // Current Flow Particles along the 6 Hexagon Edges
+    const edgeParticles = [];
+    for (let i = 0; i < 6; i++) {
+      const pMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(0.085, 12, 12),
+        new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+      );
+      exp1Group.add(pMesh);
+      edgeParticles.push({ edgeIdx: i, t: 0.5, speed: 0, mesh: pMesh });
+    }
+
+    // =========================================================================
+    // 4. BUILD EXPERIMENT 2: 3D SIMPLE PENDULUM APPARATUS
+    // =========================================================================
+    const exp2Group = new THREE.Group();
+    exp2Group.visible = false;
+    scene.add(exp2Group);
+
+    // Retort Stand Base
+    const standBase = new THREE.Mesh(
+      new THREE.BoxGeometry(2.6, 0.25, 1.8),
+      new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.6, roughness: 0.35 })
+    );
+    standBase.position.set(0, 0.125, -1.2);
+    standBase.castShadow = true;
+    standBase.receiveShadow = true;
+    exp2Group.add(standBase);
+
+    // Vertical Metal Rod (height = 7.2 units; 1 unit = 15 cm in pendulum scale -> 6 units = 90 cm)
+    const rodHeight = 7.4;
+    const standRod = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.1, 0.1, rodHeight, 24),
+      new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.85, roughness: 0.2 })
+    );
+    standRod.position.set(0, rodHeight / 2, -1.2);
+    standRod.castShadow = true;
+    exp2Group.add(standRod);
+
+    // Top Clamp & Pivot Arm at y = 6.8
+    const pivotY = 6.8;
+    const pivotZ = 0.2;
+    const clampArm = new THREE.Mesh(
+      new THREE.BoxGeometry(0.35, 0.28, 1.65),
+      new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.7, roughness: 0.3 })
+    );
+    clampArm.position.set(0, pivotY, -0.5);
+    exp2Group.add(clampArm);
+
+    // Protractor Arc at Pivot
+    const protractorGeo = new THREE.RingGeometry(0.7, 1.05, 32, 1, -Math.PI * 0.75, Math.PI * 0.5);
+    const protractorMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.35
+    });
+    const protractorMesh = new THREE.Mesh(protractorGeo, protractorMat);
+    protractorMesh.position.set(0, pivotY, pivotZ - 0.08);
+    exp2Group.add(protractorMesh);
+
+    // Pendulum Moving Pivot Group
+    const pendulumPivot = new THREE.Group();
+    pendulumPivot.position.set(0, pivotY, pivotZ);
+    exp2Group.add(pendulumPivot);
+
+    // String Mesh & Bob Mesh
+    const stringMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5 });
+    let stringMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1, 12), stringMat);
+    pendulumPivot.add(stringMesh);
+
+    const bobMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(0.32, 32, 32),
+      new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.85, roughness: 0.15 })
+    );
+    bobMesh.castShadow = true;
+    pendulumPivot.add(bobMesh);
+
+    // 3D Vertical Meter Stick beside the Pendulum
+    const rulerGroup = new THREE.Group();
+    rulerGroup.position.set(-1.6, pivotY - 3.0, pivotZ);
+    const rulerBody = new THREE.Mesh(
+      new THREE.BoxGeometry(0.32, 6.0, 0.06),
+      new THREE.MeshStandardMaterial({ color: 0xfde047, roughness: 0.4 })
+    );
+    rulerGroup.add(rulerBody);
+    exp2Group.add(rulerGroup);
+
+    // Scale conversion for 3D Pendulum: 100 cm = 6.0 3D units (so 50 cm = 3.0 units, 90 cm = 5.4 units)
+    function updatePendulum3DGeometry() {
+      const len3D = (pendLengthCm / 100) * 6.0;
+      stringMesh.scale.set(1, len3D, 1);
+      stringMesh.position.y = -len3D / 2;
+      bobMesh.position.y = -len3D;
+    }
+    updatePendulum3DGeometry();
+
+    // =========================================================================
+    // 5. 3D FLOATING LABELS & RAYCASTER INTERACTION
+    // =========================================================================
+    const labelItems = [];
+
+    function createLabel(text, pos3D, className, expId, onClickFn) {
+      const el = document.createElement('div');
+      el.className = `label-3d ${className}`;
+      el.innerHTML = text;
+      if (onClickFn) {
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          onClickFn();
+        });
+      }
+      labelsContainer.appendChild(el);
+      labelItems.push({ el, pos3D, expId });
+      return el;
+    }
+
+    // Create Node Labels a-f
+    nodesOrder.forEach((n) => {
+      createLabel(
+        `จุด ${n}`,
+        nodePositions[n].clone().add(new THREE.Vector3(0, 0.55, 0)),
+        'node-label',
+        1,
+        () => handle3DNodeClick(n)
+      );
+    });
+
+    // Create Resistor Labels
+    resistorMidpoints.forEach((rm) => {
+      createLabel(rm.label, rm.mid.clone().add(new THREE.Vector3(0, 0.32, 0)), 'resistor-label', 1, null);
+    });
+
+    // Instrument Labels (Exp 1)
+    createLabel('🔋 แหล่งจ่ายไฟ 10 V', new THREE.Vector3(3.8, 1.65, 2.2), '', 1, null);
+    createLabel('ตัวต้านทานอนุกรม 10 Ω', new THREE.Vector3(5.2, 0.9, 0.2), 'resistor-label', 1, null);
+    createLabel('ขั้ว P', terminalPPos.clone().add(new THREE.Vector3(0, 0.45, 0)), 'node-label', 1, null);
+    createLabel('ขั้ว Q', terminalQPos.clone().add(new THREE.Vector3(0, 0.45, 0)), 'node-label', 1, null);
+
+    // Exp 2 Labels
+    createLabel('จุดแขวน (Pivot)', new THREE.Vector3(0, pivotY + 0.35, pivotZ), 'node-label', 2, null);
+    createLabel('ไม้เมตรวัดความยาว L', new THREE.Vector3(-1.6, pivotY + 0.35, pivotZ), 'resistor-label', 2, null);
+
+    function handle3DNodeClick(nodeName) {
+      if (nodeName === selectedNodeP || nodeName === selectedNodeQ) return;
+      if (nextClickTarget === 'P') {
+        selectedNodeP = nodeName;
+        nextClickTarget = 'Q';
+      } else {
+        selectedNodeQ = nodeName;
+        nextClickTarget = 'P';
+      }
+      refreshExp1UI();
+    }
+
+    // Raycaster for clicking 3D binding posts or switch directly
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    renderer.domElement.addEventListener('pointerdown', (e) => {
+      if (currentExperiment !== 1) return;
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const pins = Object.values(nodeMeshes);
+      const intersects = raycaster.intersectObjects(pins);
+      if (intersects.length > 0) {
+        const hitNode = intersects[0].object.userData.nodeName;
+        if (hitNode) handle3DNodeClick(hitNode);
+      }
+    });
+
+    // =========================================================================
+    // 6. UI CONTROLLERS: EXPERIMENT 1 (RESISTOR CIRCUIT)
+    // =========================================================================
+    function selectNodePair(nP, nQ) {
+      selectedNodeP = nP;
+      selectedNodeQ = nQ;
+      refreshExp1UI();
+    }
+
+    function toggleCircuitSwitch() {
+      switchClosed = !switchClosed;
+      const btn = document.getElementById('switch-btn');
+      const icon = document.getElementById('switch-icon');
+      const txt = document.getElementById('switch-text');
+      if (switchClosed) {
+        btn.className = 'switch-toggle closed';
+        icon.textContent = '🟢';
+        txt.textContent = 'สวิตช์ปิดอยู่ (กระแสไหลครบวงจร)';
+      } else {
+        btn.className = 'switch-toggle open';
+        icon.textContent = '🔴';
+        txt.textContent = 'สวิตช์เปิดอยู่ (วงจรเปิด I = 0 A)';
+      }
+      refreshExp1UI();
+    }
+
+    function refreshExp1UI() {
+      updateDynamicProbeWires();
+      const phys = computeCircuitPhysics(selectedNodeP, selectedNodeQ);
+      if (!phys) return;
+
+      // Update active button state
+      document.querySelectorAll('#left-exp1 .pair-btn').forEach((b) => {
+        const p = b.getAttribute('data-pair');
+        const match = (p === `${selectedNodeP}-${selectedNodeQ}` || p === `${selectedNodeQ}-${selectedNodeP}`);
+        b.classList.toggle('active', match);
+      });
+
+      // Update UI Meter Readouts
+      document.getElementById('ui-ammeter-dec').textContent = `${phys.iVal.toFixed(3)} A`;
+      document.getElementById('ui-ammeter-frac').textContent = `= ${phys.iFrac} A`;
+      document.getElementById('ui-voltmeter-dec').textContent = `${phys.vVal.toFixed(3)} V`;
+      document.getElementById('ui-voltmeter-frac').textContent = `= ${phys.vFrac} V`;
+
+      document.getElementById('ui-circuit-breakdown').innerHTML =
+        `คู่จุดต่อ <b>${selectedNodeP} – ${selectedNodeQ}</b>: ทางตรง = ${phys.rDirect} Ω || ทางอ้อม = ${phys.rIndirect} Ω<br/>` +
+        `R<sub>ชุด</sub> = <b>${phys.reqFrac} Ω</b> (${phys.reqVal.toFixed(3)} Ω) | R<sub>รวม</sub> = <b>${phys.rTotFrac} Ω</b>`;
+
+      // Update 3D Meter Canvas Screens
+      updateMeterCanvas(ammeter3D, `${phys.iVal.toFixed(3)} A`, `${phys.iFrac} A`);
+      updateMeterCanvas(voltmeter3D, `${phys.vVal.toFixed(3)} V`, `${phys.vFrac} V`);
+
+      // Update 3D Switch Lever Rotation
+      swLeverPivot.rotation.z = switchClosed ? 0 : 0.65;
+
+      // Update Current Particle Speeds on Edges
+      edgeParticles.forEach((ep) => {
+        if (!switchClosed) {
+          ep.speed = 0;
+          ep.mesh.visible = false;
+        } else {
+          ep.mesh.visible = true;
+          const inPath1 = phys.path1Edges.includes(ep.edgeIdx);
+          const branchR = inPath1 ? phys.r1 : phys.r2;
+          // Current in branch is inversely proportional to branchR
+          ep.speed = (inPath1 ? 1 : -1) * (0.032 / branchR) * phys.iVal * 12;
+        }
+      });
+    }
+
+    function recordCurrentPair() {
+      const savedSwitch = switchClosed;
+      switchClosed = true;
+      const phys = computeCircuitPhysics(selectedNodeP, selectedNodeQ);
+      switchClosed = savedSwitch;
+      if (!phys) return;
+
+      const existingIdx = exp1RecordedRows.findIndex(
+        (r) => (r.rDirect === phys.rDirect && r.rIndirect === phys.rIndirect)
+      );
+      if (existingIdx >= 0) {
+        exp1RecordedRows[existingIdx] = phys;
+      } else {
+        exp1RecordedRows.push(phys);
+      }
+      renderExp1Table();
+    }
+
+    function recordAllAdjacentPairs() {
+      const pairs = [
+        ['a', 'b'],
+        ['b', 'c'],
+        ['c', 'd'],
+        ['d', 'e'],
+        ['e', 'f'],
+        ['f', 'a']
+      ];
+      const savedSwitch = switchClosed;
+      switchClosed = true;
+      exp1RecordedRows = pairs.map(([p, q]) => computeCircuitPhysics(p, q));
+      switchClosed = savedSwitch;
+      renderExp1Table();
+    }
+
+    function clearExp1Table() {
+      exp1RecordedRows = [];
+      renderExp1Table();
+    }
+
+    function renderExp1Table() {
+      const tbody = document.getElementById('exp1-tbody');
+      tbody.innerHTML = '';
+      exp1RecordedRows.forEach((r) => {
+        const tr = document.createElement('tr');
+        if (r.rDirect === 1) tr.className = 'highlight-max';
+        tr.innerHTML = `
+          <td><b>${r.pairLabel}</b></td>
+          <td class="mono">${r.rDirect}</td>
+          <td class="mono">${r.rIndirect}</td>
+          <td class="mono">${r.reqFrac} (${r.reqVal.toFixed(2)})</td>
+          <td class="mono">${r.iFrac} (${r.iVal.toFixed(3)})</td>
+          <td class="mono">${r.vFrac} (${r.vVal.toFixed(3)})</td>
+          <td class="mono">${(r.vVal / r.iVal).toFixed(2)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // =========================================================================
+    // 7. UI CONTROLLERS: EXPERIMENT 2 (SIMPLE PENDULUM & GRAPH)
+    // =========================================================================
+    function getCurrentPendulumStats(lenCm) {
+      const L_m = lenCm / 100;
+      if (pendMode === 'exam' && examPendulumData[lenCm]) {
+        const d = examPendulumData[lenCm];
+        return {
+          L_cm: d.L_cm,
+          L_m: d.L_m,
+          t20: d.T * 20,
+          T: d.T,
+          sqrtL: d.sqrtL,
+          T2: d.T2
+        };
+      } else {
+        const g = 9.80;
+        const T = 2 * Math.PI * Math.sqrt(L_m / g);
+        return {
+          L_cm: lenCm,
+          L_m: L_m,
+          t20: T * 20,
+          T: Number(T.toFixed(2)),
+          sqrtL: Number(Math.sqrt(lenCm).toFixed(2)),
+          T2: Number((T * T).toFixed(2))
+        };
+      }
+    }
+
+    function updatePendulumLength(val) {
+      pendLengthCm = Number(val);
+      document.getElementById('slider-length').value = pendLengthCm;
+      document.getElementById('ui-length-val').textContent = `${pendLengthCm.toFixed(1)} cm (${(pendLengthCm / 100).toFixed(2)} m)`;
+
+      [50, 60, 70, 80, 90].forEach((len) => {
+        const btn = document.getElementById(`len-btn-${len}`);
+        if (btn) btn.classList.toggle('active', len === pendLengthCm);
+      });
+
+      updatePendulum3DGeometry();
+      const st = getCurrentPendulumStats(pendLengthCm);
+      document.getElementById('ui-period-val').textContent = `${st.T.toFixed(2)} s`;
+      document.getElementById('ui-t2-val').textContent = `T² = ${st.T2.toFixed(2)} s²`;
+    }
+
+    function updatePendulumAngle(val) {
+      pendReleaseAngleDeg = Number(val);
+      document.getElementById('ui-angle-val').textContent = `${pendReleaseAngleDeg.toFixed(1)}°`;
+    }
+
+    function updatePendulumMode() {
+      pendMode = document.getElementById('pendulum-data-mode').value;
+      updatePendulumLength(pendLengthCm);
+      fillAllPendulumData();
+    }
+
+    function startStopwatch20() {
+      stopwatchRunning = true;
+      stopwatchElapsed = 0;
+      document.getElementById('btn-start-timer').textContent = '⏳ กำลังจับเวลา 20 รอบ (เร่งความเร็ว 5x)...';
+    }
+
+    function instantMeasure20() {
+      stopwatchRunning = false;
+      const st = getCurrentPendulumStats(pendLengthCm);
+      document.getElementById('ui-timer-val').textContent = `${st.t20.toFixed(2)} s`;
+      document.getElementById('ui-swing-count').textContent = `จำนวนรอบ: 20 / 20 (ครบ!)`;
+      document.getElementById('btn-start-timer').textContent = '▶️ เริ่มจับเวลา 20 รอบ';
+
+      const idx = exp2RecordedRows.findIndex((r) => r.L_cm === st.L_cm);
+      if (idx >= 0) exp2RecordedRows[idx] = st;
+      else exp2RecordedRows.push(st);
+      exp2RecordedRows.sort((a, b) => a.L_cm - b.L_cm);
+
+      renderExp2TableAndGraph();
+    }
+
+    function fillAllPendulumData() {
+      exp2RecordedRows = [50, 60, 70, 80, 90].map((len) => getCurrentPendulumStats(len));
+      const st = getCurrentPendulumStats(pendLengthCm);
+      document.getElementById('ui-timer-val').textContent = `${st.t20.toFixed(2)} s`;
+      document.getElementById('ui-swing-count').textContent = `จำนวนรอบ: 20 / 20`;
+      renderExp2TableAndGraph();
+    }
+
+    function clearPendulumTable() {
+      exp2RecordedRows = [];
+      renderExp2TableAndGraph();
+    }
+
+    function renderExp2TableAndGraph() {
+      const tbody = document.getElementById('exp2-tbody');
+      tbody.innerHTML = '';
+      exp2RecordedRows.forEach((r) => {
+        const tr = document.createElement('tr');
+        if (r.L_cm === pendLengthCm) tr.className = 'highlight-max';
+        tr.innerHTML = `
+          <td class="mono">${r.L_cm.toFixed(1)}</td>
+          <td class="mono">${r.L_m.toFixed(2)}</td>
+          <td class="mono">${r.t20.toFixed(2)}</td>
+          <td class="mono">${r.T.toFixed(2)}</td>
+          <td class="mono">${r.sqrtL.toFixed(2)}</td>
+          <td class="mono"><b>${r.T2.toFixed(2)}</b></td>
+        `;
+        tbody.appendChild(tr);
+      });
+      drawPendulumGraph();
+    }
+
+    function drawPendulumGraph() {
+      const canvas = document.getElementById('graph-canvas');
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width;
+      const H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      // Margins
+      const padL = 48, padR = 20, padT = 20, padB = 36;
+      const plotW = W - padL - padR;
+      const plotH = H - padT - padB;
+
+      // Axes Range: L from 0 to 1.0 m, T^2 from 0 to 4.0 s^2
+      const maxL = 1.0;
+      const maxT2 = 4.0;
+
+      const toX = (L) => padL + (L / maxL) * plotW;
+      const toY = (T2) => padT + plotH - (T2 / maxT2) * plotH;
+
+      // Grid lines
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.16)';
+      ctx.lineWidth = 1;
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '11px monospace';
+
+      for (let l = 0; l <= 1.0; l += 0.2) {
+        const x = toX(l);
+        ctx.beginPath();
+        ctx.moveTo(x, padT);
+        ctx.lineTo(x, padT + plotH);
+        ctx.stroke();
+        ctx.textAlign = 'center';
+        ctx.fillText(l.toFixed(1), x, H - 18);
+      }
+
+      for (let t2 = 0; t2 <= 4.0; t2 += 1.0) {
+        const y = toY(t2);
+        ctx.beginPath();
+        ctx.moveTo(padL, y);
+        ctx.lineTo(padL + plotW, y);
+        ctx.stroke();
+        ctx.textAlign = 'right';
+        ctx.fillText(t2.toFixed(1), padL - 6, y + 4);
+      }
+
+      // Axes
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(padL, padT);
+      ctx.lineTo(padL, padT + plotH);
+      ctx.lineTo(padL + plotW, padT + plotH);
+      ctx.stroke();
+
+      // Axis Titles
+      ctx.fillStyle = '#38bdf8';
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 11px Prompt, sans-serif';
+      ctx.fillText('ความยาวเชือก L (m)', padL + plotW / 2, H - 4);
+      ctx.save();
+      ctx.translate(14, padT + plotH / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText('คาบกำลังสอง T² (s²)', 0, 0);
+      ctx.restore();
+
+      if (exp2RecordedRows.length >= 2) {
+        const first = exp2RecordedRows[0];
+        const last = exp2RecordedRows[exp2RecordedRows.length - 1];
+        const slope = (last.T2 - first.T2) / (last.L_m - first.L_m);
+        const intercept = first.T2 - slope * first.L_m;
+        const gCalc = (4 * Math.PI * Math.PI) / slope;
+
+        // Trendline from L=0 to L=0.95
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 4]);
+        ctx.beginPath();
+        ctx.moveTo(toX(0), toY(intercept));
+        ctx.lineTo(toX(0.95), toY(slope * 0.95 + intercept));
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        document.getElementById('ui-graph-stats').innerHTML =
+          `<b>ความชันกราฟ (m):</b> ΔT<sup>2</sup> / ΔL = (${last.T2.toFixed(2)} - ${first.T2.toFixed(2)}) / (${last.L_m.toFixed(2)} - ${first.L_m.toFixed(2)}) = <b>${slope.toFixed(3)} s<sup>2</sup>/m</b><br/>` +
+          `<b>ค่า g จากความชัน:</b> g = 4π<sup>2</sup> / m = <b>${gCalc.toFixed(2)} m/s<sup>2</sup></b> ` +
+          (pendMode === 'exam' ? `(รูปเศษส่วน: <b>160π<sup>2</sup> / 167 m/s<sup>2</sup></b>)` : '');
+      }
+
+      // Data Points
+      exp2RecordedRows.forEach((r) => {
+        const x = toX(r.L_m);
+        const y = toY(r.T2);
+        ctx.fillStyle = r.L_cm === pendLengthCm ? '#f59e0b' : '#38bdf8';
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      });
+    }
+
+    // =========================================================================
+    // 8. EXPERIMENT & CAMERA SWITCHING
+    // =========================================================================
+    function switchExperiment(expNum) {
+      currentExperiment = expNum;
+      document.getElementById('tab-exp1').classList.toggle('active', expNum === 1);
+      document.getElementById('tab-exp2').classList.toggle('active', expNum === 2);
+
+      document.getElementById('left-exp1').classList.toggle('hidden', expNum !== 1);
+      document.getElementById('right-exp1').classList.toggle('hidden', expNum !== 1);
+      document.getElementById('left-exp2').classList.toggle('hidden', expNum !== 2);
+      document.getElementById('right-exp2').classList.toggle('hidden', expNum !== 2);
+
+      exp1Group.visible = (expNum === 1);
+      exp2Group.visible = (expNum === 2);
+
+      resetCameraView();
+    }
+
+    function resetCameraView() {
+      if (currentExperiment === 1) {
+        camera.position.set(0.6, 8.2, 9.8);
+        controls.target.set(0.8, 0.5, 0);
+      } else {
+        camera.position.set(0, 4.8, 9.5);
+        controls.target.set(0, 3.6, 0);
+      }
+      controls.update();
+    }
+
+    function topCameraView() {
+      if (currentExperiment === 1) {
+        camera.position.set(-0.5, 12.5, 0.5);
+        controls.target.set(-0.5, 0, 0);
+      } else {
+        camera.position.set(0, 11.5, 2.0);
+        controls.target.set(0, 3.5, 0);
+      }
+      controls.update();
+    }
+
+    function toggleSolutionModal(open) {
+      document.getElementById('solution-modal').classList.toggle('open', open);
+    }
+
+    // =========================================================================
+    // 9. ANIMATION LOOP & 3D LABEL PROJECTION
+    // =========================================================================
+    let lastTime = performance.now();
+
+    function animate(now) {
+      requestAnimationFrame(animate);
+      const dt = Math.min((now - lastTime) / 1000, 0.1);
+      lastTime = now;
+
+      controls.update();
+
+      if (currentExperiment === 1) {
+        // Animate current particles along hexagon edges
+        edgeParticles.forEach((ep) => {
+          if (ep.mesh.visible && ep.speed !== 0) {
+            ep.t = (ep.t + ep.speed * dt + 10) % 1;
+            const edge = edgeResistors[ep.edgeIdx];
+            const p1 = nodePositions[edge.n1];
+            const p2 = nodePositions[edge.n2];
+            ep.mesh.position.lerpVectors(p1, p2, ep.t);
+          }
+        });
+      } else {
+        // Animate Simple Pendulum
+        const st = getCurrentPendulumStats(pendLengthCm);
+        const omega = (2 * Math.PI) / st.T;
+        const speedMult = stopwatchRunning ? 5.0 : 1.0;
+        pendTime += dt * speedMult;
+
+        const theta0 = THREE.MathUtils.degToRad(pendReleaseAngleDeg);
+        const theta = theta0 * Math.cos(omega * pendTime);
+        pendulumPivot.rotation.z = theta;
+
+        if (stopwatchRunning) {
+          stopwatchElapsed += dt * speedMult;
+          const swings = Math.floor(stopwatchElapsed / st.T);
+          if (swings >= 20) {
+            instantMeasure20();
+          } else {
+            document.getElementById('ui-timer-val').textContent = `${stopwatchElapsed.toFixed(2)} s`;
+            document.getElementById('ui-swing-count').textContent = `จำนวนรอบ: ${swings} / 20`;
+          }
+        }
+      }
+
+      // Project 3D Floating Labels to 2D Screen Coordinates
+      labelItems.forEach((item) => {
+        if (item.expId !== currentExperiment) {
+          item.el.style.display = 'none';
+          return;
+        }
+        const v = item.pos3D.clone().project(camera);
+        if (v.z > 1) {
+          item.el.style.display = 'none';
+        } else {
+          item.el.style.display = 'block';
+          const x = (v.x * 0.5 + 0.5) * window.innerWidth;
+          const y = (-(v.y * 0.5) + 0.5) * window.innerHeight;
+          item.el.style.left = `${x}px`;
+          item.el.style.top = `${y}px`;
+        }
+      });
+
+      renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Initialize Default States for Both Experiments
+    refreshExp1UI();
+    recordAllAdjacentPairs();
+    fillAllPendulumData();
+    resetCameraView();
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>

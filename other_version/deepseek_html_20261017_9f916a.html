@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RBRU Next Gen Lab — 3D Interactive Physics Simulation + AR</title>
+  
+  <!-- Three.js & OrbitControls via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  
+  <!-- MediaPipe Hands (AR Hand Tracking) -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+  <!-- Google Fonts: Prompt / Sarabun -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-dark: #0b1120;
+      --panel-bg: rgba(15, 23, 42, 0.88);
+      --panel-border: rgba(148, 163, 184, 0.22);
+      --accent-purple: #8b5cf6;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      user-select: none;
+    }
+
+    /* 3D Canvas Container */
+    #canvas-container {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* Top Navigation Bar */
+    .topbar {
+      position: absolute;
+      top: 12px;
+      left: 16px;
+      right: 16px;
+      height: 60px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 20;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-badge {
+      background: linear-gradient(135deg, #7c3aed, #06b6d4);
+      color: #fff; font-weight: 700; font-size: 0.85rem; padding: 6px 12px; border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+    }
+    .brand-title h1 { font-size: 1.05rem; font-weight: 600; color: #fff; line-height: 1.2; }
+    .brand-title p { font-size: 0.75rem; color: var(--text-muted); }
+
+    .mode-tabs {
+      display: flex; gap: 8px; background: rgba(2, 6, 23, 0.65); padding: 5px;
+      border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.15);
+    }
+
+    .tab-btn {
+      font-family: 'Prompt', sans-serif; background: transparent; color: var(--text-muted);
+      border: none; padding: 8px 16px; border-radius: 7px; font-size: 0.85rem; font-weight: 500;
+      cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 6px;
+    }
+    .tab-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
+    .tab-btn.active {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; font-weight: 600;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+
+    .top-actions { display: flex; align-items: center; gap: 8px; }
+
+    .action-btn {
+      font-family: 'Prompt', sans-serif; background: rgba(30, 41, 59, 0.9); color: #e2e8f0;
+      border: 1px solid var(--panel-border); padding: 7px 13px; border-radius: 8px;
+      font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease;
+    }
+    .action-btn:hover { background: rgba(51, 65, 85, 0.95); border-color: var(--accent-cyan); }
+    
+    .action-btn.ar-btn {
+      background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white; border: none;
+      box-shadow: 0 4px 12px rgba(236, 72, 153, 0.35); font-weight: 600;
+    }
+    .action-btn.ar-btn.active { background: #ef4444; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5); }
+
+    .action-btn.solution-btn {
+      background: linear-gradient(135deg, #f59e0b, #ea580c); color: #fff; border: none;
+      font-weight: 600; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+    }
+
+    /* Side Panels */
+    .side-panel {
+      position: absolute; top: 84px; bottom: 16px; background: var(--panel-bg);
+      backdrop-filter: blur(14px); border: 1px solid var(--panel-border); border-radius: 14px;
+      padding: 16px; z-index: 15; overflow-y: auto; display: flex; flex-direction: column;
+      gap: 14px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+    }
+    .left-panel { left: 16px; width: 350px; }
+    .right-panel { right: 16px; width: 440px; }
+
+    .section-card {
+      background: rgba(2, 6, 23, 0.55); border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 10px; padding: 12px 14px;
+    }
+    .section-title {
+      font-size: 0.88rem; font-weight: 600; color: var(--accent-cyan);
+      margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .subtext { font-size: 0.76rem; color: var(--text-muted); line-height: 1.45; margin-bottom: 8px; }
+
+    /* Meters */
+    .meter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .meter-box {
+      background: #020617; border: 1px solid rgba(148, 163, 184, 0.25); border-radius: 8px;
+      padding: 10px; text-align: center;
+    }
+    .meter-box.ammeter { border-left: 3px solid var(--accent-amber); }
+    .meter-box.voltmeter { border-left: 3px solid var(--accent-cyan); }
+    .meter-label { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 4px; }
+    .meter-value { font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 700; }
+    .meter-fraction { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--accent-emerald); margin-top: 2px; }
+
+    /* Buttons & Inputs */
+    .pair-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px; }
+    .pair-btn {
+      font-family: 'Prompt', sans-serif; background: rgba(30, 41, 59, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.25); color: #e2e8f0; padding: 8px 6px;
+      border-radius: 7px; font-size: 0.8rem; font-weight: 500; cursor: pointer;
+      transition: all 0.15s ease; text-align: center;
+    }
+    .pair-btn:hover { border-color: var(--accent-cyan); }
+    .pair-btn.active {
+      background: linear-gradient(135deg, #0284c7, #06b6d4); color: #fff; border-color: transparent;
+    }
+
+    .switch-toggle {
+      width: 100%; padding: 11px; border-radius: 9px; border: none; font-family: 'Prompt', sans-serif;
+      font-size: 0.9rem; font-weight: 600; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; gap: 8px; transition: all 0.2s ease;
+    }
+    .switch-toggle.open { background: rgba(244, 63, 94, 0.18); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.5); }
+    .switch-toggle.closed { background: linear-gradient(135deg, #059669, #10b981); color: #fff; }
+
+    .btn-row { display: flex; gap: 8px; margin-top: 8px; }
+    .btn-primary {
+      flex: 1; font-family: 'Prompt', sans-serif; background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff; border: none; padding: 8px 12px; border-radius: 7px; font-size: 0.8rem; cursor: pointer;
+    }
+    .btn-secondary {
+      font-family: 'Prompt', sans-serif; background: rgba(30, 41, 59, 0.9); color: #cbd5e1;
+      border: 1px solid rgba(148, 163, 184, 0.25); padding: 8px 12px; border-radius: 7px;
+      font-size: 0.78rem; cursor: pointer;
+    }
+
+    /* Tables */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-top: 6px; }
+    .data-table th, .data-table td { border: 1px solid rgba(148, 163, 184, 0.2); padding: 6px 5px; text-align: center; }
+    .data-table th { background: rgba(30, 41, 59, 0.9); color: #cbd5e1; }
+    .data-table tr.highlight-max { background: rgba(16, 185, 129, 0.18); font-weight: 600; }
+    .data-table td.mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Formula Box */
+    .formula-box {
+      background: rgba(15, 23, 42, 0.9); border-left: 3px solid var(--accent-purple);
+      padding: 8px 10px; border-radius: 6px; font-size: 0.78rem; line-height: 1.5;
+    }
+
+    /* Graph */
+    #graph-canvas { width: 100%; height: 230px; background: #020617; border: 1px solid rgba(148, 163, 184, 0.25); border-radius: 8px; }
+
+    /* 3D Labels */
+    #labels-container { position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }
+    .label-3d {
+      position: absolute; transform: translate(-50%, -50%); background: rgba(2, 6, 23, 0.82);
+      border: 1px solid rgba(148, 163, 184, 0.35); color: #f8fafc; padding: 2px 7px;
+      border-radius: 6px; font-size: 0.73rem; font-weight: 600; white-space: nowrap;
+      pointer-events: auto; cursor: pointer; transition: transform 0.1s;
+    }
+    .label-3d.node-label { border-color: #38bdf8; color: #38bdf8; font-family: 'JetBrains Mono', monospace; }
+    .label-3d.resistor-label { color: #fde047; border-color: rgba(253, 224, 71, 0.35); pointer-events: none; }
+
+    /* AR Cursor */
+    #ar-cursor {
+      position: absolute; width: 40px; height: 40px; border-radius: 50%;
+      border: 3px solid var(--accent-cyan); background: rgba(6, 182, 212, 0.2);
+      pointer-events: none; z-index: 100; display: none; transform: translate(-50%, -50%);
+      transition: width 0.1s, height 0.1s, background 0.1s; box-shadow: 0 0 15px var(--accent-cyan);
+    }
+    #ar-cursor.pinch {
+      width: 20px; height: 20px; background: var(--accent-emerald);
+      border-color: var(--accent-emerald); box-shadow: 0 0 20px var(--accent-emerald);
+    }
+
+    /* Webcam Preview */
+    #webcam-preview {
+      position: absolute; bottom: 60px; right: 20px; width: 200px; height: 150px;
+      border-radius: 12px; border: 2px solid var(--panel-border); z-index: 20;
+      object-fit: cover; transform: scaleX(-1); display: none; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+
+    /* Bottom Hint */
+    .bottom-hint {
+      position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+      background: var(--panel-bg); border: 1px solid var(--panel-border); padding: 7px 16px;
+      border-radius: 20px; font-size: 0.76rem; color: var(--text-muted); z-index: 10; pointer-events: none;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(2, 6, 23, 0.78); backdrop-filter: blur(8px);
+      z-index: 50; display: none; align-items: center; justify-content: center; padding: 24px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-content {
+      background: #0f172a; border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 16px;
+      max-width: 880px; width: 100%; max-height: 88vh; overflow-y: auto; padding: 24px 28px;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(148, 163, 184, 0.2); padding-bottom: 14px; margin-bottom: 18px; }
+    .close-modal { background: rgba(244, 63, 94, 0.2); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.4); padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+    .sol-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .sol-box { background: rgba(2, 6, 23, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 12px; padding: 16px; font-size: 0.84rem; line-height: 1.65; }
+    .sol-box h3 { color: var(--accent-amber); font-size: 0.98rem; margin-bottom: 10px; }
+    .math-block { font-family: 'JetBrains Mono', monospace; background: rgba(15, 23, 42, 0.9); padding: 8px 12px; border-radius: 6px; margin: 6px 0; color: #38bdf8; border-left: 3px solid #38bdf8; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <div id="canvas-container"></div>
+  <div id="labels-container"></div>
+  
+  <!-- AR Elements -->
+  <video id="webcam-preview" autoplay playsinline></video>
+  <video id="input-video" autoplay playsinline style="display:none;"></video>
+  <div id="ar-cursor"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-badge">RBRU NEXT GEN LAB</div>
+      <div class="brand-title">
+        <h1>ปฏิบัติการฟิสิกส์ 3D + AR MediaPipe</h1>
+        <p>Interactive Virtual Lab with Hand Tracking</p>
+      </div>
+    </div>
+
+    <div class="mode-tabs">
+      <button id="tab-exp1" class="tab-btn active" onclick="switchExperiment(1)">
+        ⚡ กิจกรรมที่ 1: วงจรตัวต้านทาน
+      </button>
+      <button id="tab-exp2" class="tab-btn" onclick="switchExperiment(2)">
+        ⏱️ กิจกรรมที่ 2: ลูกตุ้มเพนดูลัม
+      </button>
+    </div>
+
+    <div class="top-actions">
+      <button id="btn-ar-mode" class="action-btn ar-btn" onclick="toggleARMode()">📷 เปิดโหมด AR</button>
+      <button class="action-btn" onclick="resetCameraView()">🎥 รีเซ็ตกล้อง</button>
+      <button class="action-btn solution-btn" onclick="toggleSolutionModal(true)">📖 ดูเฉลย</button>
+    </div>
+  </header>
+
+  <!-- EXPERIMENT 1 PANELS -->
+  <aside id="left-exp1" class="side-panel left-panel">
+    <div class="section-card">
+      <div class="section-title"><span>⚡ กิจกรรมที่ 1: วงจรตัวต้านทาน</span></div>
+      <p class="subtext">ชุดตัวต้านทาน 6 ตัวต่อกันเป็นรูปหกเหลี่ยม (a–f) มีค่า 1, 2, 3, 4, 5 และ 6 Ω</p>
+      <button id="switch-btn" class="switch-toggle closed" onclick="toggleCircuitSwitch()">
+        <span id="switch-icon">🟢</span>
+        <span id="switch-text">สวิตช์ปิดอยู่ (กระแสไหลครบวงจร)</span>
+      </button>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title"><span>📟 ค่าที่อ่านได้จากเครื่องวัด</span></div>
+      <div class="meter-grid">
+        <div class="meter-box ammeter">
+          <div class="meter-label">แอมมิเตอร์ (A)</div>
+          <div id="ui-ammeter-dec" class="meter-value">0.913 A</div>
+          <div id="ui-ammeter-frac" class="meter-fraction">= 21 / 23 A</div>
+        </div>
+        <div class="meter-box voltmeter">
+          <div class="meter-label">โวลต์มิเตอร์ (V)</div>
+          <div id="ui-voltmeter-dec" class="meter-value">0.870 V</div>
+          <div id="ui-voltmeter-frac" class="meter-fraction">= 20 / 23 V</div>
+        </div>
+      </div>
+      <div id="ui-circuit-breakdown" class="formula-box" style="margin-top: 10px;">
+        คู่จุดต่อ <b>f – a</b>: ทางตรง = 1 Ω || ทางอ้อม = 20 Ω<br/>
+        R<sub>ชุด</sub> = 20/21 Ω | R<sub>รวม</sub> = 230/21 Ω
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title"><span>🔌 เลือกคู่จุดต่อสายวัด P และ Q</span></div>
+      <div class="pair-grid">
+        <button class="pair-btn" data-pair="a-b" onclick="selectNodePair('a','b')">คู่ a – b</button>
+        <button class="pair-btn" data-pair="b-c" onclick="selectNodePair('b','c')">คู่ b – c</button>
+        <button class="pair-btn" data-pair="c-d" onclick="selectNodePair('c','d')">คู่ c – d</button>
+        <button class="pair-btn" data-pair="d-e" onclick="selectNodePair('d','e')">คู่ d – e</button>
+        <button class="pair-btn" data-pair="e-f" onclick="selectNodePair('e','f')">คู่ e – f</button>
+        <button class="pair-btn active" data-pair="f-a" onclick="selectNodePair('f','a')">คู่ f – a ★</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="recordCurrentPair()">➕ บันทึกผลลงตาราง</button>
+      </div>
+    </div>
+  </aside>
+
+  <aside id="right-exp1" class="side-panel right-panel">
+    <div class="section-card">
+      <div class="section-title"><span>📊 ตารางบันทึกผล</span></div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>คู่</th><th>R ตรง (Ω)</th><th>R อ้อม (Ω)</th><th>R ชุด (Ω)</th><th>I (A)</th><th>V (V)</th>
+          </tr>
+        </thead>
+        <tbody id="exp1-tbody"></tbody>
+      </table>
+    </div>
+  </aside>
+
+  <!-- EXPERIMENT 2 PANELS -->
+  <aside id="left-exp2" class="side-panel left-panel hidden">
+    <div class="section-card">
+      <div class="section-title"><span>⏱️ กิจกรรมที่ 2: ลูกตุ้มอย่างง่าย</span></div>
+      <div class="slider-group">
+        <div class="slider-header"><span>ความยาวเชือก L:</span><span id="ui-length-val" class="slider-val">50.0 cm</span></div>
+        <input id="slider-length" type="range" min="50" max="90" step="10" value="50" oninput="updatePendulumLength(this.value)" />
+      </div>
+      <div class="btn-row" style="margin-top: 10px;">
+        <button id="btn-start-timer" class="btn-primary" onclick="startStopwatch20()">▶️ เริ่มจับเวลา 20 รอบ</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn-secondary" style="flex:1;" onclick="fillAllPendulumData()">📋 เติมข้อมูลครบ 5 ความยาว</button>
+      </div>
+    </div>
+  </aside>
+
+  <aside id="right-exp2" class="side-panel right-panel hidden">
+    <div class="section-card">
+      <div class="section-title"><span>📈 กราฟ T² กับ L</span></div>
+      <canvas id="graph-canvas" width="400" height="230"></canvas>
+      <div id="ui-graph-stats" class="formula-box" style="margin-top: 8px;"></div>
+    </div>
+  </aside>
+
+  <div class="bottom-hint">
+    🖱️ ลากเพื่อหมุนกล้อง | 📷 เปิดโหมด AR แล้วใช้มือควบคุม (จีบนิ้วชี้+โป้งเพื่อคลิก)
+  </div>
+
+  <!-- SOLUTION MODAL -->
+  <div id="solution-modal" class="modal-backdrop" onclick="if(event.target===this) toggleSolutionModal(false)">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📖 เฉลยคำนวณและหลักการทฤษฎี</h2>
+        <button class="close-modal" onclick="toggleSolutionModal(false)">✕ ปิด</button>
+      </div>
+      <div class="sol-grid">
+        <div class="sol-box">
+          <h3>⚡ ข้อ 7: วงจรตัวต้านทาน</h3>
+          <p>ต่อ P และ Q ที่จุด a และ f ทำให้ได้ R น้อยสุด:</p>
+          <div class="math-block">R<sub>af</sub> = 1 || 20 = 20/21 Ω<br/>R<sub>รวม</sub> = 10 + 20/21 = 230/21 Ω<br/>I = 10 / (230/21) = 21/23 A<br/>V = I × R<sub>af</sub> = 20/23 V</div>
+        </div>
+        <div class="sol-box">
+          <h3>⏱️ ข้อ 10: ลูกตุ้มอย่างง่าย</h3>
+          <p>ความชัน m = 4π²/g = 4.175 = 167/40</p>
+          <div class="math-block">g = 4π² / (167/40) = 160π² / 167 m/s²<br/>จุดตัดแกนตั้ง c = 0 คือ Systematic Error</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. STATE & PHYSICS LOGIC
+    // ==========================================
+    let currentExperiment = 1;
+    const nodesOrder = ['a', 'b', 'c', 'd', 'e', 'f'];
+    const edgeResistors = [
+      { n1: 'a', n2: 'b', R: 2 }, { n1: 'b', n2: 'c', R: 3 },
+      { n1: 'c', n2: 'd', R: 4 }, { n1: 'd', n2: 'e', R: 5 },
+      { n1: 'e', n2: 'f', R: 6 }, { n1: 'f', n2: 'a', R: 1 }
+    ];
+    let selectedNodeP = 'f', selectedNodeQ = 'a';
+    let switchClosed = true;
+    let exp1RecordedRows = [];
+
+    function formatFraction(num, den) {
+      const gcd = (a, b) => b ? gcd(b, a % b) : a;
+      const g = gcd(num, den);
+      return (den/g === 1) ? `${num/g}` : `${num/g}/${den/g}`;
+    }
+
+    function computeCircuitPhysics(nP, nQ) {
+      const idxP = nodesOrder.indexOf(nP), idxQ = nodesOrder.indexOf(nQ);
+      if (idxP === -1 || idxQ === -1 || idxP === idxQ) return null;
+      let r1 = 0, cur = idxP;
+      while (cur !== idxQ) { r1 += edgeResistors[cur].R; cur = (cur + 1) % 6; }
+      const r2 = 21 - r1;
+      const rDirect = Math.min(r1, r2), rIndirect = Math.max(r1, r2);
+      const reqNum = rDirect * rIndirect, reqDen = 21;
+      const reqVal = reqNum / reqDen;
+      const rTotNum = 210 + reqNum, rTotDen = 21;
+      const rTotVal = rTotNum / rTotDen;
+      const iNum = 210, iDen = rTotNum, iVal = switchClosed ? (iNum / iDen) : 0;
+      const vNum = 10 * reqNum, vDen = rTotNum, vVal = switchClosed ? (vNum / vDen) : 0;
+      return { pairLabel: `${nP}-${nQ}`, rDirect, rIndirect, reqVal, reqFrac: formatFraction(reqNum, reqDen), iVal, iFrac: switchClosed ? formatFraction(iNum, iDen) : '0', vVal, vFrac: switchClosed ? formatFraction(vNum, vDen) : '0' };
+    }
+
+    // ==========================================
+    // 2. THREE.JS SETUP
+    // ==========================================
+    const container = document.getElementById('canvas-container');
+    const labelsContainer = document.getElementById('labels-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0b1120);
+    
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.target.set(0, 1.2, 0);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.95);
+    dirLight.position.set(8, 15, 10);
+    dirLight.castShadow = true;
+    scene.add(dirLight);
+
+    const tableMesh = new THREE.Mesh(new THREE.BoxGeometry(18, 0.5, 12), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+    tableMesh.position.y = -0.25;
+    tableMesh.receiveShadow = true;
+    scene.add(tableMesh);
+
+    // ==========================================
+    // 3. BUILD EXPERIMENT 1 (CIRCUIT)
+    // ==========================================
+    const exp1Group = new THREE.Group();
+    scene.add(exp1Group);
+
+    const hexCenter = new THREE.Vector3(-1.8, 0.22, 0.3);
+    const hexRadius = 2.55;
+    const nodePositions = {};
+    const nodeMeshes = {};
+    const nodeAngles = [-2*Math.PI/3, -Math.PI/3, 0, Math.PI/3, 2*Math.PI/3, Math.PI];
+
+    nodesOrder.forEach((n, i) => {
+      const pos = new THREE.Vector3(hexCenter.x + hexRadius*Math.cos(nodeAngles[i]), hexCenter.y + 0.35, hexCenter.z + hexRadius*Math.sin(nodeAngles[i]));
+      nodePositions[n] = pos;
+      const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.45, 16), new THREE.MeshStandardMaterial({ color: 0xfbbf24 }));
+      pin.position.copy(pos);
+      pin.userData = { nodeName: n };
+      nodeMeshes[n] = pin;
+      exp1Group.add(pin);
+    });
+
+    // Resistor meshes
+    edgeResistors.forEach(edge => {
+      const p1 = nodePositions[edge.n1], p2 = nodePositions[edge.n2];
+      const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+      const dir = new THREE.Vector3().subVectors(p2, p1);
+      const len = dir.length();
+      
+      const resGroup = new THREE.Group();
+      resGroup.position.copy(mid);
+      resGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+      
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, len * 0.48, 16), new THREE.MeshStandardMaterial({ color: 0xd6bfa3 }));
+      resGroup.add(body);
+      
+      const lead = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, len, 12), new THREE.MeshStandardMaterial({ color: 0xcbd5e1 }));
+      resGroup.add(lead);
+      
+      exp1Group.add(resGroup);
+    });
+
+    // ==========================================
+    // 4. BUILD EXPERIMENT 2 (PENDULUM)
+    // ==========================================
+    const exp2Group = new THREE.Group();
+    exp2Group.visible = false;
+    scene.add(exp2Group);
+
+    const standRod = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 7.4, 16), new THREE.MeshStandardMaterial({ color: 0xcbd5e1 }));
+    standRod.position.set(0, 3.7, -1.2);
+    exp2Group.add(standRod);
+
+    const pivotY = 6.8, pivotZ = 0.2;
+    const pendulumPivot = new THREE.Group();
+    pendulumPivot.position.set(0, pivotY, pivotZ);
+    exp2Group.add(pendulumPivot);
+
+    let stringMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1, 12), new THREE.MeshStandardMaterial({ color: 0xf8fafc }));
+    pendulumPivot.add(stringMesh);
+
+    const bobMesh = new THREE.Mesh(new THREE.SphereGeometry(0.32, 32, 32), new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.85 }));
+    pendulumPivot.add(bobMesh);
+
+    function updatePendulum3D(lenCm) {
+      const len3D = (lenCm / 100) * 6.0;
+      stringMesh.scale.set(1, len3D, 1);
+      stringMesh.position.y = -len3D / 2;
+      bobMesh.position.y = -len3D;
+    }
+    updatePendulum3D(50);
+
+    // ==========================================
+    // 5. LABELS & UI
+    // ==========================================
+    const labelItems = [];
+    function createLabel(text, pos3D, className, expId) {
+      const el = document.createElement('div');
+      el.className = `label-3d ${className}`;
+      el.innerHTML = text;
+      labelsContainer.appendChild(el);
+      labelItems.push({ el, pos3D, expId });
+    }
+    nodesOrder.forEach(n => createLabel(`จุด ${n}`, nodePositions[n].clone().add(new THREE.Vector3(0, 0.55, 0)), 'node-label', 1));
+
+    function refreshExp1UI() {
+      const phys = computeCircuitPhysics(selectedNodeP, selectedNodeQ);
+      if (!phys) return;
+      document.getElementById('ui-ammeter-dec').textContent = `${phys.iVal.toFixed(3)} A`;
+      document.getElementById('ui-ammeter-frac').textContent = `= ${phys.iFrac} A`;
+      document.getElementById('ui-voltmeter-dec').textContent = `${phys.vVal.toFixed(3)} V`;
+      document.getElementById('ui-voltmeter-frac').textContent = `= ${phys.vFrac} V`;
+      document.getElementById('ui-circuit-breakdown').innerHTML = `คู่จุดต่อ <b>${selectedNodeP} – ${selectedNodeQ}</b>: ทางตรง = ${phys.rDirect} Ω || ทางอ้อม = ${phys.rIndirect} Ω<br/>R<sub>ชุด</sub> = <b>${phys.reqFrac} Ω</b> | R<sub>รวม</sub> = <b>${formatFraction(210 + phys.rDirect * phys.rIndirect, 21)} Ω</b>`;
+    }
+
+    function selectNodePair(nP, nQ) { selectedNodeP = nP; selectedNodeQ = nQ; refreshExp1UI(); }
+    function toggleCircuitSwitch() {
+      switchClosed = !switchClosed;
+      document.getElementById('switch-btn').className = `switch-toggle ${switchClosed ? 'closed' : 'open'}`;
+      document.getElementById('switch-icon').textContent = switchClosed ? '🟢' : '🔴';
+      document.getElementById('switch-text').textContent = switchClosed ? 'สวิตช์ปิดอยู่ (กระแสไหลครบวงจร)' : 'สวิตช์เปิดอยู่ (I = 0 A)';
+      refreshExp1UI();
+    }
+
+    function recordCurrentPair() {
+      const phys = computeCircuitPhysics(selectedNodeP, selectedNodeQ);
+      const idx = exp1RecordedRows.findIndex(r => r.pairLabel === phys.pairLabel);
+      if (idx >= 0) exp1RecordedRows[idx] = phys; else exp1RecordedRows.push(phys);
+      renderExp1Table();
+    }
+    function renderExp1Table() {
+      const tbody = document.getElementById('exp1-tbody');
+      tbody.innerHTML = exp1RecordedRows.map(r => `
+        <tr class="${r.rDirect === 1 ? 'highlight-max' : ''}">
+          <td>${r.pairLabel}</td><td>${r.rDirect}</td><td>${r.rIndirect}</td>
+          <td>${r.reqFrac}</td><td>${r.iVal.toFixed(3)}</td><td>${r.vVal.toFixed(3)}</td>
+        </tr>`).join('');
+    }
+
+    // ==========================================
+    // 6. MEDIAPIPE AR HAND TRACKING INTEGRATION
+    // ==========================================
+    let isARMode = false;
+    const videoElement = document.getElementById('input-video');
+    const previewElement = document.getElementById('webcam-preview');
+    const arCursor = document.getElementById('ar-cursor');
+    let mediaPipeCamera = null;
+    let lastPinchTime = 0;
+    let isPinching = false;
+
+    const hands = new Hands({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    });
+
+    hands.setOptions({
+      maxNumHands: 1,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.6,
+      minTrackingConfidence: 0.6
+    });
+
+    hands.onResults(onARResults);
+
+    function onARResults(results) {
+      if (!isARMode) return;
+
+      // Draw video feed (optional: could draw landmarks, but we use custom cursor)
+      const canvasCtx = document.createElement('canvas').getContext('2d');
+      canvasCtx.clearRect(0, 0, 640, 480);
+      
+      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        const landmarks = results.multiHandLandmarks[0];
+        
+        // Index finger tip (Landmark 8)
+        const indexTip = landmarks[8];
+        
+        // Convert normalized coordinates to screen pixels (Mirror X for webcam)
+        const screenX = (1 - indexTip.x) * window.innerWidth;
+        const screenY = indexTip.y * window.innerHeight;
+        
+        // Update Cursor Position
+        arCursor.style.display = 'block';
+        arCursor.style.left = `${screenX}px`;
+        arCursor.style.top = `${screenY}px`;
+
+        // Pinch Detection: Distance between Thumb tip (4) and Index tip (8)
+        const thumbTip = landmarks[4];
+        const distance = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y);
+        
+        if (distance < 0.06) { // Threshold for pinch
+          if (!isPinching) {
+            isPinching = true;
+            arCursor.classList.add('pinch');
+            
+            // Trigger Click Action (Debounce)
+            const now = Date.now();
+            if (now - lastPinchTime > 500) {
+              lastPinchTime = now;
+              triggerARClick(screenX, screenY);
+            }
+          }
+        } else {
+          isPinching = false;
+          arCursor.classList.remove('pinch');
+        }
+      } else {
+        arCursor.style.display = 'none';
+        isPinching = false;
+        arCursor.classList.remove('pinch');
+      }
+    }
+
+    function triggerARClick(x, y) {
+      // 1. Check if clicking on UI elements
+      const element = document.elementFromPoint(x, y);
+      if (element && (element.tagName === 'BUTTON' || element.classList.contains('label-3d'))) {
+        element.click();
+        return;
+      }
+
+      // 2. Check if clicking on 3D nodes using Raycaster
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+      mouse.x = (x / window.innerWidth) * 2 - 1;
+      mouse.y = -(y / window.innerHeight) * 2 + 1;
+      
+      raycaster.setFromCamera(mouse, camera);
+      
+      if (currentExperiment === 1) {
+        const pins = Object.values(nodeMeshes);
+        const intersects = raycaster.intersectObjects(pins);
+        if (intersects.length > 0) {
+          const hitNode = intersects[0].object.userData.nodeName;
+          if (hitNode && hitNode !== selectedNodeP && hitNode !== selectedNodeQ) {
+            // Logic to swap P or Q
+            if (nextClickTarget === 'P') {
+              selectedNodeP = hitNode;
+              nextClickTarget = 'Q';
+            } else {
+              selectedNodeQ = hitNode;
+              nextClickTarget = 'P';
+            }
+            selectNodePair(selectedNodeP, selectedNodeQ);
+            // Visual feedback
+            arCursor.style.background = 'rgba(16, 185, 129, 0.8)';
+            setTimeout(() => arCursor.style.background = '', 300);
+          }
+        }
+      }
+    }
+
+    let nextClickTarget = 'P';
+
+    async function toggleARMode() {
+      isARMode = !isARMode;
+      const btn = document.getElementById('btn-ar-mode');
+      
+      if (isARMode) {
+        btn.classList.add('active');
+        btn.textContent = '🔴 ปิดโหมด AR';
+        previewElement.style.display = 'block';
+        
+        mediaPipeCamera = new Camera(videoElement, {
+          onFrame: async () => {
+            await hands.send({ image: videoElement });
+          },
+          width: 640,
+          height: 480
+        });
+        
+        try {
+          await mediaPipeCamera.start();
+          previewElement.srcObject = videoElement.srcObject;
+        } catch (err) {
+          console.error("Camera access denied:", err);
+          alert("ไม่สามารถเข้าถึงกล้องได้ กรุณาอนุญาตการใช้งานกล้องในการตั้งค่าเบราว์เซอร์");
+          toggleARMode(); // Turn off
+        }
+      } else {
+        btn.classList.remove('active');
+        btn.textContent = '📷 เปิดโหมด AR';
+        previewElement.style.display = 'none';
+        arCursor.style.display = 'none';
+        
+        if (mediaPipeCamera) {
+          mediaPipeCamera.stop();
+        }
+        if (videoElement.srcObject) {
+          videoElement.srcObject.getTracks().forEach(track => track.stop());
+        }
+      }
+    }
+
+    // ==========================================
+    // 7. ANIMATION & INTERACTION LOOP
+    // ==========================================
+    function resetCameraView() {
+      if (currentExperiment === 1) {
+        camera.position.set(0.6, 8.2, 9.8);
+        controls.target.set(0.8, 0.5, 0);
+      } else {
+        camera.position.set(0, 4.8, 9.5);
+        controls.target.set(0, 3.6, 0);
+      }
+      controls.update();
+    }
+
+    function switchExperiment(num) {
+      currentExperiment = num;
+      document.getElementById('tab-exp1').classList.toggle('active', num === 1);
+      document.getElementById('tab-exp2').classList.toggle('active', num === 2);
+      document.getElementById('left-exp1').classList.toggle('hidden', num !== 1);
+      document.getElementById('right-exp1').classList.toggle('hidden', num !== 1);
+      document.getElementById('left-exp2').classList.toggle('hidden', num !== 2);
+      document.getElementById('right-exp2').classList.toggle('hidden', num !== 2);
+      exp1Group.visible = (num === 1);
+      exp2Group.visible = (num === 2);
+      resetCameraView();
+    }
+
+    function toggleSolutionModal(open) {
+      document.getElementById('solution-modal').classList.toggle('open', open);
+    }
+
+    // Pendulum simple animation
+    let pendTime = 0;
+    function animate(now) {
+      requestAnimationFrame(animate);
+      const dt = Math.min((now - (animate.last || now)) / 1000, 0.1);
+      animate.last = now;
+      controls.update();
+
+      if (currentExperiment === 2) {
+        pendTime += dt;
+        const T = 1.40; // Simplified for visual
+        pendulumPivot.rotation.z = THREE.MathUtils.degToRad(8) * Math.cos((2 * Math.PI / T) * pendTime);
+      }
+
+      // Update 3D Labels
+      labelItems.forEach(item => {
+        if (item.expId !== currentExperiment) { item.el.style.display = 'none'; return; }
+        const v = item.pos3D.clone().project(camera);
+        if (v.z > 1) { item.el.style.display = 'none'; }
+        else {
+          item.el.style.display = 'block';
+          item.el.style.left = `${(v.x * 0.5 + 0.5) * window.innerWidth}px`;
+          item.el.style.top = `${(-(v.y * 0.5) + 0.5) * window.innerHeight}px`;
+        }
+      });
+
+      renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Init
+    refreshExp1UI();
+    resetCameraView();
+    requestAnimationFrame(animate);
+
+  </script>
+</body>
+</html>

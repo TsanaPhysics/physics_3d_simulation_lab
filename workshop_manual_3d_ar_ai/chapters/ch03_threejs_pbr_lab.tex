@@ -1,0 +1,162 @@
+% ==============================================================================
+% ch03_threejs_pbr_lab.tex — บทที่ 3
+% ==============================================================================
+\chapter{สถาปัตยกรรม Three.js PBR และระบบลากย้ายอุปกรณ์บนระนาบ 3 มิติ}
+\label{chap:ch03}
+
+\begin{teachingplan}{แผนการบริหารการสอนประจำบทที่ 3}
+\noindent\textbf{หัวข้อเนื้อหาประจำบท}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item สถาปัตยกรรมพื้นฐานของ Three.js: ฉาก (Scene), กล้อง (Camera), และตัวเรนเดอร์ (WebGLRenderer)
+    \item การสร้างวัสดุสมจริงเชิงฟิสิกส์ (Physically Based Rendering: PBR) และการจัดแสงเงาตกกระทบ
+    \item การสร้างชิ้นส่วนอุปกรณ์ 3D: แหล่งจ่ายไฟ DC, สวิตช์ใบมีด, โวลต์มิเตอร์, แอมมิเตอร์, และหัวแจ็คบานาน่า
+    \item ระบบตรวจจับการคลิกลากย้ายอุปกรณ์อิสระ (Dynamic Draggable Equipment) บนระนาบ $y=0$
+    \item ระบบสายไฟซิลิโคนดัดโค้งพลวัต (Dynamic Catmull-Rom Flexible Leads)
+\end{enumerate}
+
+\noindent\textbf{วัตถุประสงค์เชิงพฤติกรรม (Behavioral Objectives)}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item ผู้เรียนสามารถสร้างฉาก 3D และจัดแสง PBR ด้วย Three.js ได้อย่างถูกต้อง
+    \item ผู้เรียนสามารถเขียนสคริปต์ Raycasting เพื่อให้ผู้ใช้สามารถคลิกลากอุปกรณ์วัดค่าบนหน้าโต๊ะได้
+    \item ผู้เรียนสามารถควบคุมการเปิด-ปิด OrbitControls ขณะลากวัตถุ เพื่อป้องกันปัญหามุมกล้องหมุนวนได้
+    \item ผู้เรียนสามารถอัปเดต Geometry ของสายไฟ 3 มิติให้โค้งงอตามตำแหน่งเครื่องมือได้แบบ Real-time
+\end{enumerate}
+
+\noindent\textbf{กิจกรรมการเรียนการสอน (Teaching-Learning Activities)}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item บรรยายหลักการของ PBR Shaders และการคำนวณแสงแบบ Soft Shadows (30 นาที)
+    \item ปฏิบัติการ: ประกอบโมเดลเครื่องมือวัดและเขียนตรรกะ Raycasting ตรวจจับระนาบ $y=0$ (45 นาที)
+    \item ปฏิบัติการ: เขียนฟังก์ชันดัดสายไฟ Catmull-Rom และทดสอบลากย้ายอุปกรณ์บนเบราว์เซอร์ (45 นาที)
+\end{enumerate}
+
+\noindent\textbf{สื่อการเรียนการสอน}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item เอกสารคู่มือบทที่ 3, ไฟล์ต้นแบบ \texttt{scene.js} และ \texttt{labels-raycaster.js}
+\end{enumerate}
+
+\noindent\textbf{การวัดและประเมินผล}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item ประเมินจากการลากย้ายอุปกรณ์บนโต๊ะทดลองได้ราบรื่นโดยไม่เกิดอาการกล้องกระตุก
+    \item ประเมินจากความถูกต้องของแนวสายไฟที่หย่อนตัวตามแรงโน้มถ่วงและเชื่อมติดกับขั้วต่อเสมอ
+\end{enumerate}
+\end{teachingplan}
+
+\newpage
+
+\section{การตั้งค่าฉาก 3D และวัสดุ PBR (Physically Based Rendering)}
+การเรนเดอร์วัตถุในห้องปฏิบัติการเสมือนจริงให้ดูน่าเชื่อถือและเสมือนของจริง ต้องอาศัยวัสดุประเภท \texttt{THREE.MeshStandardMaterial} หรือ \texttt{THREE.MeshPhysicalMaterial} ซึ่งคำนวณการสะท้อนของแสงตามหลักทัศนศาสตร์จริง:
+
+\begin{lstlisting}[language=JavaScript, caption={การตั้งค่า Renderer และแสงเงา PBR ใน scene.js}]
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+// แสงอาทิตย์/แสงสปอตไลต์หลัก (Key Light) ทอดเงาเฉียง 45 องศา
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.4);
+dirLight.position.set(20, 35, 20);
+dirLight.castShadow = true;
+dirLight.shadow.mapSize.width = 2048;
+dirLight.shadow.mapSize.height = 2048;
+dirLight.shadow.bias = -0.0001;
+scene.add(dirLight);
+
+// แสงบรรยากาศนุ่มนวล (Ambient Fill Light)
+const ambLight = new THREE.AmbientLight(0xdbeafe, 0.65);
+scene.add(ambLight);
+\end{lstlisting}
+
+\section{ระบบลากย้ายอุปกรณ์อิสระบนระนาบโต๊ะ ($y = 0$)}
+ในการทดลองจริง นักเรียนจะต้องจัดวางเครื่องมือวัดบนโต๊ะปฏิบัติการตามความสะดวก ในระบบ Next Gen Lab เราออกแบบให้เครื่องมือวัด (โวลต์มิเตอร์, แอมมิเตอร์, แหล่งจ่ายไฟ, สวิตช์, ตัวต้านทาน $10\,\Omega$) สามารถคลิกลากย้ายตำแหน่งได้อย่างอิสระบนระนาบ $y=0$ โดยไม่หลุดลอยขึ้นสู่อากาศ:
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[scale=0.9, every node/.style={scale=0.9}]
+    % Table Plane
+    \draw[fill=blue!5, draw=rbruBlue, thick] (-4,-1) -- (4,-1) -- (5.5,1.5) -- (-2.5,1.5) -- cycle;
+    \node[color=rbruBlue!80!black, font=\bfseries] at (3.5,-0.6) {Table Plane ($y=0$)};
+
+    % Instrument Box
+    \draw[fill=rbruNavy, draw=cyan, thick, rounded corners=3pt] (-1,-0.5) rectangle (1.2,1.2);
+    \node[color=white, font=\small\bfseries] at (0.1,0.35) {Voltmeter 3D};
+
+    % Raycaster Camera Vector
+    \draw[-{Stealth[scale=1.2]}, red, thick, dashed] (0,3.5) -- (0.1,0.5) node[midway, right, font=\footnotesize] {Raycast Ray};
+    \fill[red] (0.1,0.5) circle (3pt) node[below right, font=\scriptsize, color=red] {Intersection Point};
+
+    % Movement arrows
+    \draw[{Stealth[scale=1.2]}-{Stealth[scale=1.2]}, line width=1.5pt, rbruGold] (-2.2,0.35) -- (2.4,0.35) node[right, font=\scriptsize] {Drag $\Delta X, \Delta Z$};
+\end{tikzpicture}
+\caption{หลักการ Raycasting ตรวจจับการลากย้ายตำแหน่งอุปกรณ์บนระนาบโต๊ะ $y=0$}
+\label{fig:raycast_plane}
+\end{figure}
+
+\begin{lstlisting}[language=JavaScript, caption={ตรรกะการคำนวณ Raycasting และการปิด OrbitControls ชั่วคราว}]
+const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+const intersectPt = new THREE.Vector3();
+const dragOffset = new THREE.Vector3();
+let draggedObject = null;
+
+function onPointerDown(event) {
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+
+  const hits = raycaster.intersectObjects(draggableObjects, true);
+  if (hits.length > 0) {
+    draggedObject = findRootInstrument(hits[0].object);
+    controls.enabled = false; // ปิดกล้องทันทีเพื่อไม่ให้ฉากหมุนตามเมาส์
+    raycaster.ray.intersectPlane(dragPlane, intersectPt);
+    dragOffset.copy(intersectPt).sub(draggedObject.position);
+  }
+}
+
+function onPointerMove(event) {
+  if (!draggedObject) return;
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+
+  if (raycaster.ray.intersectPlane(dragPlane, intersectPt)) {
+    const newPos = intersectPt.sub(dragOffset);
+    // Clamp ตำแหน่งให้อยู่บนหน้าโต๊ะ ไม่ให้หลุดขอบ
+    draggedObject.position.x = Math.max(-28, Math.min(28, newPos.x));
+    draggedObject.position.z = Math.max(-18, Math.min(18, newPos.z));
+    updateDynamicWires(); // อัปเดตสายไฟตามตำแหน่งใหม่
+  }
+}
+
+function onPointerUp() {
+  draggedObject = null;
+  controls.enabled = true; // เปิดการหมุนกล้องกลับคืนมา
+}
+\end{lstlisting}
+
+\section{ระบบสายไฟซิลิโคนดัดโค้ง Catmull-Rom}
+เมื่อผู้ใช้ลากเครื่องมือวัดออกไป สายไฟที่เชื่อมต่ออยู่จะต้องยืด หด และโค้งงออย่างเป็นธรรมชาติ มิใช่การลากเส้นตรงแบบโพลีกอนหยาบๆ เราใช้ \texttt{THREE.CatmullRomCurve3} ในการสร้างเส้นโค้งของสายไฟ:
+
+\begin{lstlisting}[language=JavaScript, caption={การสร้างเส้นโค้งสายไฟที่มีความหย่อนตัวตามแรงโน้มถ่วง}]
+function createFlexibleLead(startVec, endVec, colorHex) {
+  const midPoint = new THREE.Vector3().addVectors(startVec, endVec).multiplyScalar(0.5);
+  midPoint.y -= 2.2; // ความหย่อนของสายไฟตามแรงโน้มถ่วง
+  
+  const curve = new THREE.CatmullRomCurve3([startVec, midPoint, endVec]);
+  const tubeGeom = new THREE.TubeGeometry(curve, 24, 0.12, 8, false);
+  const tubeMat = new THREE.MeshStandardMaterial({
+    color: colorHex,
+    roughness: 0.35,
+    metalness: 0.1
+  });
+  return new THREE.Mesh(tubeGeom, tubeMat);
+}
+\end{lstlisting}
+
+\section*{คำถามทบทวนและใบงานปฏิบัติการท้ายบทที่ 3}
+\addcontentsline{toc}{section}{คำถามทบทวนและใบงานปฏิบัติการท้ายบทที่ 3}
+
+\begin{enumerate}[leftmargin=1.5em, itemsep=8pt]
+    \item จงอธิบายว่าเหตุใดการทำ Drag \& Drop ในฉาก 3D จึงจำเป็นต้องนิยามระนาบอ้างอิงเสมือน เช่น \texttt{THREE.Plane(Vector3(0, 1, 0), 0)} และหากไม่มีระนาบนี้จะเกิดพฤติกรรมอย่างไร
+    \item เพราะเหตุใดจึงต้องสั่ง \texttt{controls.enabled = false} ในจังหวะ \texttt{pointerdown} และสั่ง \texttt{controls.enabled = true} ในจังหวะ \texttt{pointerup}
+    \item \textbf{ใบงานปฏิบัติการ 3.1:} ให้นักศึกษาทดลองแก้ไขค่าพารามิเตอร์ความหย่อนของสายไฟ (\texttt{droopFactor}) ในไฟล์ \texttt{exp1-circuit.js} จากค่า $2.2$ เป็น $4.0$ และ $0.5$ แล้วสังเกตความเปลี่ยนแปลงที่เกิดขึ้นบนหน้าจอ บันทึกภาพเปรียบเทียบ
+\end{enumerate}

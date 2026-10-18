@@ -1,0 +1,131 @@
+% ==============================================================================
+% ch01_overview_principles.tex — บทที่ 1
+% ==============================================================================
+\chapter{วิวัฒนาการและทฤษฎีการออกแบบสื่อการสอนสามมิติเสมือนจริง}
+\label{chap:ch01}
+
+\begin{teachingplan}{แผนการบริหารการสอนประจำบทที่ 1}
+\noindent\textbf{หัวข้อเนื้อหาประจำบท}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item ข้อจำกัดของการทดลองทางกายภาพในห้องปฏิบัติการและสื่อสองมิติแบบดั้งเดิม
+    \item วิวัฒนาการจาก 2D Canvas สู่ 3D WebGL Virtual Lab และ Augmented Reality (AR)
+    \item ทฤษฎีการเรียนรู้เชิงสร้างสรรค์นิยม (Constructivism) และ Active Learning Cycle
+    \item ทฤษฎีภาระการรู้คิด (Cognitive Load Theory) กับการออกแบบหน้าจอห้องปฏิบัติการเสมือนจริง
+    \item สถาปัตยกรรมระบบ RBRU Next Gen Lab 2026 และมาตรฐานโอลิมปิกวิชาการ IJSO
+\end{enumerate}
+
+\noindent\textbf{วัตถุประสงค์เชิงพฤติกรรม (Behavioral Objectives)}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item ผู้เรียนสามารถอธิบายความแตกต่างระหว่างสื่อการสอน 2D, 3D WebGL และ AR ได้อย่างถูกต้อง
+    \item ผู้เรียนสามารถวิเคราะห์ข้อจำกัดในการจัดการเรียนการสอนวิทยาศาสตร์แบบเดิม และระบุจุดเด่นของสื่อเสมือนจริงได้
+    \item ผู้เรียนสามารถประยุกต์ทฤษฎี Cognitive Load ในการจัดวางส่วนติดต่อผู้ใช้ (UI/UX) ของห้องปฏิบัติการเสมือนจริงได้
+    \item ผู้เรียนสามารถเขียนผังมโนทัศน์ (Conceptual Framework) ในการพัฒนาสื่อการสอน 3 มิติของตนเองได้
+\end{enumerate}
+
+\noindent\textbf{กิจกรรมการเรียนการสอน (Teaching-Learning Activities)}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item บรรยายนำเข้าสู่บทเรียนด้วยกรณีศึกษาการทดลองที่อันตรายหรือไม่สามารถมองเห็นด้วยตาเปล่า (30 นาที)
+    \item สาธิตการใช้งานระบบ RBRU Next Gen Lab 2026 บนเบราว์เซอร์และการจำลองวงจรหกเหลี่ยม (30 นาที)
+    \item กิจกรรมกลุ่มย่อย: วิเคราะห์ตัวชี้วัดการเรียนรู้ฟิสิกส์เพื่อคัดเลือกหัวข้อสร้างสื่อเสมือนจริง (30 นาที)
+\end{enumerate}
+
+\noindent\textbf{สื่อการเรียนการสอน}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item สไลด์บรรยายอิเล็กทรอนิกส์, เอกสารคู่มือบทที่ 1, เว็บไซต์สาธิตระบบ Next Gen Lab
+\end{enumerate}
+
+\noindent\textbf{การวัดและประเมินผล}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item ประเมินจากการมีส่วนร่วมในกิจกรรมกลุ่มย่อยและการนำเสนอแนวคิดสื่อการสอน
+    \item ประเมินจากการตอบคำถามทบทวนท้ายบทที่ 1 ได้คะแนนไม่น้อยกว่าร้อยละ 80
+\end{enumerate}
+\end{teachingplan}
+
+\newpage
+
+\section{บทนำและข้อจำกัดของห้องปฏิบัติการกายภาพ}
+ในการจัดการเรียนรู้วิทยาศาสตร์ระดับมัธยมศึกษาและอุดมศึกษา “การทดลองในห้องปฏิบัติการ” ถือเป็นหัวใจสำคัญในการสร้างเสริมทักษะกระบวนการทางวิทยาศาสตร์ ทว่าในทางปฏิบัติ สถานศึกษาจำนวนมากต้องเผชิญกับอุปสรรคสำคัญหลายประการ:
+\begin{itemize}[leftmargin=1.5em, itemsep=3pt]
+    \item \textbf{ความเสี่ยงด้านความปลอดภัยและอุปกรณ์ชำรุด:} การทดลองที่เกี่ยวข้องกับไฟฟ้าแรงสูง สารเคมีอันตราย หรือเครื่องมือวัดความแม่นยำสูง (Precision Galvanometers) มักเกิดความเสียหายได้ง่ายจากการต่อวงจรผิดพลาดของนักเรียน
+    \item \textbf{ข้อจำกัดด้านงบประมาณและเวลา:} งบประมาณในการจัดซื้อชุดทดลองราคาแพงไม่เพียงพอต่อสัดส่วนนักเรียน ส่งผลให้นักเรียนส่วนใหญ่ทำได้เพียงเฝ้ามองตัวแทนกลุ่มทดลองเท่านั้น
+    \item \textbf{ข้อจำกัดของสิ่งที่ไม่สามารถมองเห็นได้ด้วยตาเปล่า (Unobservable Phenomena):} การไหลของอิเล็กตรอนในวงจร, การเหนี่ยวนำแม่เหล็กไฟฟ้า, หรือสนามศักย์ไฟฟ้า ล้วนเป็นนามธรรมที่ภาพวาด 2 มิติในหนังสือเรียนไม่สามารถถ่ายทอดพลวัตได้อย่างแท้จริง
+\end{itemize}
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[scale=0.9, every node/.style={scale=0.9}]
+    % 2D Flat Plane Box
+    \draw[fill=gray!15, draw=gray!60, rounded corners=6pt] (0,0) rectangle (4.2,3.5);
+    \node at (2.1,3.1) {\bfseries\color{rbruNavy} สื่อ 2D แบนราบแบบดั้งเดิม};
+    \draw[thick, red] (1,1) rectangle (3.2,2.2);
+    \node at (2.1,1.6) {\small ภาพนิ่งในหนังสือ};
+    \node[align=center, text width=3.8cm, font=\footnotesize, color=gray!80!black] at (2.1,0.5) {มองได้มุมเดียว ขาดมิติความลึก\\ไม่สามารถโต้ตอบได้};
+
+    % Arrow 1
+    \draw[-{Stealth[scale=1.2]}, thick, rbruBlue] (4.5,1.75) -- (5.8,1.75) node[midway, above, font=\scriptsize] {Web 3D};
+
+    % 3D Virtual Lab Box
+    \draw[fill=blue!5, draw=rbruBlue, rounded corners=6pt] (6.0,0) rectangle (10.2,3.5);
+    \node at (8.1,3.1) {\bfseries\color{rbruBlue} 3D Virtual Lab};
+    % 3D isometric cube
+    \draw[thick, fill=cyan!20, draw=cyan!80!black] (7.2,1.2) -- (8.6,1.2) -- (8.6,2.2) -- (7.2,2.2) -- cycle;
+    \draw[thick, fill=cyan!35, draw=cyan!80!black] (7.2,2.2) -- (7.8,2.7) -- (9.2,2.7) -- (8.6,2.2) -- cycle;
+    \draw[thick, fill=cyan!10, draw=cyan!80!black] (8.6,1.2) -- (9.2,1.7) -- (9.2,2.7) -- (8.6,2.2) -- cycle;
+    \node[align=center, text width=3.8cm, font=\footnotesize, color=rbruNavy] at (8.1,0.5) {หมุนกล้อง 360 องศา\\จำลองฟิสิกส์สมจริง};
+
+    % Arrow 2
+    \draw[-{Stealth[scale=1.2]}, thick, rbruEmerald] (10.4,1.75) -- (11.7,1.75) node[midway, above, font=\scriptsize] {Spatial AI};
+
+    % AR MediaPipe Box
+    \draw[fill=green!5, draw=rbruEmerald, rounded corners=6pt] (11.9,0) rectangle (16.1,3.5);
+    \node at (14.0,3.1) {\bfseries\color{rbruEmerald} Touchless AR Lab};
+    \draw[thick, rbruEmerald] (13.2,1.3) circle (0.5cm);
+    \draw[thick, rbruGold] (14.8,1.3) circle (0.5cm);
+    \draw[thick, dashed, cyan] (13.2,1.8) -- (14.8,1.8);
+    \node at (14.0,2.1) {\tiny Pinch Gesture};
+    \node[align=center, text width=3.8cm, font=\footnotesize, color=rbruNavy] at (14.0,0.5) {สั่งการด้วยมือเปล่าผ่านกล้อง\\ประสานโลกจริงกับโลกเสมือน};
+\end{tikzpicture}
+\caption{วิวัฒนาการของการจัดการเรียนรู้จากสื่อสองมิติ สู่ 3D WebGL และ Augmented Reality (AR)}
+\label{fig:evolution_media}
+\end{figure}
+
+\section{ทฤษฎีการเรียนรู้และภาระการรู้คิด (Cognitive Load Theory)}
+การพัฒนาสื่อเสมือนจริงที่มีประสิทธิภาพ มิใช่เพียงการสร้างภาพกราฟิกที่สวยงามตระการตาเท่านั้น หากแต่ต้องยึดหลักจิตวิทยาการเรียนรู้ เพื่อให้สมองของผู้เรียนสามารถประมวลผลข้อมูลได้อย่างสูงสุดตามทฤษฎี **Cognitive Load Theory (Sweller, 1988)**:
+
+\begin{theoremlab}{ภาระการรู้คิด 3 มิติในการออกแบบ Virtual Laboratory}
+ภาระการรู้คิดรวมของมนุษย์ ($CL_{\text{Total}}$) ประกอบด้วย 3 องค์ประกอบหลัก:
+\begin{equation}
+CL_{\text{Total}} = CL_{\text{Intrinsic}} + CL_{\text{Extraneous}} + CL_{\text{Germane}}
+\end{equation}
+\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+    \item \textbf{Intrinsic Load ($CL_{\text{Intrinsic}}$):} ความยากตามธรรมชาติของเนื้อหา (เช่น สูตรการยุบวงจร $R_{\text{ชุด}} = \frac{r_1 r_2}{r_1+r_2}$) ผู้สอนต้องซอยย่อยเนื้อหาเป็นขั้นตอน (Scaffolding Steps 1--4)
+    \item \textbf{Extraneous Load ($CL_{\text{Extraneous}}$):} ภาระส่วนเกินที่เกิดจากส่วนต่อประสานที่สับสน แผงควบคุมบดบังอุปกรณ์ หรือปุ่มกดยาก \textbf{ต้องลดทอนให้เหลือน้อยที่สุด} โดยใช้ดีไซน์ Glassmorphism โปร่งแสง และแผงควบคุมที่พับเก็บ/ย่อขยายได้อิสระ
+    \item \textbf{Germane Load ($CL_{\text{Germane}}$):} การจัดสรรพลังสมองเพื่อสร้างโครงสร้างความรู้ใหม่ (Schema Construction) สื่อต้องเสริมมิติภาพเคลื่อนไหว (อนุภาคกระแสวิ่ง, เข็มมิเตอร์แกว่ง) เพื่อกระตุ้นมโนทัศน์ที่ถูกต้อง
+\end{itemize}
+\end{theoremlab}
+
+\begin{tipbox}{กฎเหล็กการป้องกันการบดบังทางสายตา (Visual Occlusion Rule)}
+ในสื่อ 3 มิติเสมือนจริง อย่าให้ข้อความอธิบายทับซ้อนกับอุปกรณ์ทดลองเด็ดขาด ในระบบ RBRU Next Gen Lab เราออกแบบให้แถบด้านข้าง (Sidebars) ใช้คุณสมบัติ \texttt{backdrop-filter: blur(14px)} โปร่งแสง และมีปุ่มพับเก็บ (Collapse) เพื่อให้ผู้เรียนมองเห็นพฤติกรรมของอุปกรณ์ 3D ที่พื้นหลังได้ตลอดเวลา
+\end{tipbox}
+
+\section{สถาปัตยกรรมระบบ RBRU Next Gen Lab 2026}
+ระบบห้องปฏิบัติการเสมือนจริง RBRU Next Gen Lab 2026 ได้รับการออกแบบให้ทำงานในรูปแบบ **Standalone Client-Side Web Application** กล่าวคือ รันได้ทันทีบนเว็บเบราว์เซอร์มาตรฐานสากล (Chrome, Safari, Edge, Firefox) โดยไม่ต้องติดตั้งโปรแกรมเสริม ไม่ต้องใช้เซิร์ฟเวอร์หลังบ้านราคาแพง และสามารถโฮสต์ผ่านระบบ **GitHub Pages Global CDN** ได้ฟรีทั่วโลก
+
+\begin{activitybox}{การสำรวจโครงสร้างโค้ดและการเปิดใช้งานระบบ}
+เปิดดูโฟลเดอร์โครงงาน \texttt{nextgen\_lab2026/} จะพบว่าโครงสร้างไฟล์ถูกแบ่งออกเป็นโมดูลอิสระ:
+\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+    \item \texttt{index.html}: จุดเริ่มต้นของระบบ โครงสร้าง Semantic และแผง UI
+    \item \texttt{css/}: โมดูลสไตล์ชีตแยกย่อย 5 ไฟล์ (\texttt{main}, \texttt{panels}, \texttt{meters}, \texttt{ar}, \texttt{modal})
+    \item \texttt{js/}: ตรรกะฟิสิกส์และการเรนเดอร์ 8 โมดูล ปราศจากการเขียนโค้ดรวมในไฟล์เดียว
+\end{itemize}
+ทดลองเปิดไฟล์ \texttt{index.html} ผ่านเบราว์เซอร์ แล้วทดสอบสลับโหมดมิเตอร์ระหว่างเข็มอนาล็อกและตัวเลขดิจิทัล
+\end{activitybox}
+
+\section*{คำถามทบทวนและใบงานปฏิบัติการท้ายบทที่ 1}
+\addcontentsline{toc}{section}{คำถามทบทวนและใบงานปฏิบัติการท้ายบทที่ 1}
+
+\begin{enumerate}[leftmargin=1.5em, itemsep=8pt]
+    \item จงอธิบายว่าการจำลองการทดลองด้วย 3D WebGL สามารถช่วยแก้ไขข้อจำกัดของห้องปฏิบัติการวิทยาศาสตร์กายภาพในโรงเรียนได้อย่างไร ยกตัวอย่างปรากฏการณ์ที่มองไม่เห็นด้วยตาเปล่ามาอย่างน้อย 2 ตัวอย่าง
+    \item ตามทฤษฎี Cognitive Load Theory หากผู้ออกแบบสร้างหน้าจอที่มีปุ่มและกราฟิกกระพริบรกทึบ จะส่งผลกระทบต่อภาระการรู้คิดตัวใด ($CL_{\text{Intrinsic}}, CL_{\text{Extraneous}}$ หรือ $CL_{\text{Germane}}$) และมีแนวทางแก้ไขในเชิงสถาปัตยกรรมซอฟต์แวร์อย่างไร
+    \item \textbf{ใบงานปฏิบัติการ 1.1:} ให้นักศึกษาเลือกหัวข้อการทดลองวิทยาศาสตร์ในระดับมัธยมศึกษาที่ตนเองสนใจ 1 หัวข้อ (เช่น การหักเหของแสง, การเคลื่อนที่แบบโพรเจกไทล์, หรือคลื่นนิ่งในเส้นเชือก) แล้วร่างแผนผังส่วนติดต่อผู้ใช้ (UI Wireframe) แบ่งเป็น แผงควบคุมฝั่งซ้าย, ฉากทดลอง 3D กึ่งกลาง, และแผงวิเคราะห์ผลฝั่งขวา พร้อมอธิบายเหตุผลในการจัดวาง
+\end{enumerate}

@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RBRU Next Gen Lab — 3D & AR MediaPipe Interactive Physics Simulation</title>
+  
+  <!-- Three.js & OrbitControls via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  
+  <!-- MediaPipe Hands & Drawing Utils via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  
+  <!-- Google Fonts: Prompt & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Modular Stylesheets -->
+  <link rel="stylesheet" href="css/main.css?v=20261018_30" />
+  <link rel="stylesheet" href="css/panels.css?v=20261018_30" />
+  <link rel="stylesheet" href="css/meters.css?v=20261018_30" />
+  <link rel="stylesheet" href="css/ar.css?v=20261018_30" />
+  <link rel="stylesheet" href="css/modal.css?v=20261018_30" />
+  <link rel="stylesheet" href="css/portal.css?v=20261018_30" />
+  <link rel="stylesheet" href="css/ai-bot.css?v=20261018_30" />
+
+  <!-- KaTeX Academic Typesetting via CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+  <!-- Fullscreen AR Camera Background Video (Optional Passthrough Mode) -->
+  <video id="ar-bg-video" playsinline muted></video>
+
+  <!-- 3D WebGL Viewport -->
+  <div id="canvas-container"></div>
+  <div id="labels-container"></div>
+
+  <!-- Virtual Hand Cursor for AR MediaPipe -->
+  <div id="hand-cursor">
+    <div id="hand-cursor-label">👆 ชี้ตำแหน่ง</div>
+  </div>
+
+  <!-- Top Navigation Bar -->
+  <header class="topbar">
+    <div class="brand" onclick="togglePortalView(true)" style="cursor: pointer;" title="คลิกเพื่อเปิดหน้าเพจหลัก (Portal Dashboard)">
+      <div class="brand-badge">RBRU 2026</div>
+      <div class="brand-title">
+        <h1>NextGen Physics Lab</h1>
+      </div>
+    </div>
+
+    <div class="mode-tabs">
+      <button id="btn-topbar-portal" class="tab-btn" onclick="togglePortalView(true)" style="background: linear-gradient(135deg, #0284c7, #8b5cf6); color: #fff; font-weight: 600;" title="เปิดหน้าเพจหลักรวม 16 ปฏิบัติการ">
+        🏠 หน้าหลัก (Portal)
+      </button>
+
+      <button id="topbar-domain-btn" class="tab-btn" onclick="PhysicsLabRegistry.openHubModal()" title="เปิดศูนย์รวมปฏิบัติการฟิสิกส์เสมือนจริง 7 กลุ่มวิชา">
+        <span class="domain-pill" style="background: rgba(56, 189, 248, 0.2); border-color: #38bdf8; color: #38bdf8;">
+          ⚡ ไฟฟ้า
+        </span>
+        <span class="exp-title-current">วงจร 6 เหลี่ยม</span>
+        <span class="dropdown-caret">▾</span>
+      </button>
+
+      <button id="tab-exp1" data-exp-id="elec_hex_loop" class="tab-btn active" onclick="switchExperiment('elec_hex_loop')">
+        ⚡ วงจร 6 เหลี่ยม
+      </button>
+      <button id="tab-exp-bridge" data-exp-id="elec_wheatstone" class="tab-btn" onclick="switchExperiment('elec_wheatstone')">
+        ⚡ วงจรบริดจ์
+      </button>
+      <button id="tab-exp2" data-exp-id="mech_pendulum" class="tab-btn" onclick="switchExperiment('mech_pendulum')">
+        ⏱️ เพนดูลัม
+      </button>
+      <button id="tab-exp-airtrack" data-exp-id="mech_air_track" class="tab-btn" onclick="switchExperiment('mech_air_track')">
+        ⚙️ รางเบาะลม
+      </button>
+      <button id="tab-exp-freefall" data-exp-id="mech_free_fall" class="tab-btn" onclick="switchExperiment('mech_free_fall')">
+        ⚙️ การตกอิสระ
+      </button>
+      <button id="tab-exp-waves" data-exp-id="waves_resonance" class="tab-btn" onclick="switchExperiment('waves_resonance')">
+        🌊 เรโซแนนซ์เสียง
+      </button>
+      <button id="tab-exp-optics" data-exp-id="optics_bench" class="tab-btn" onclick="switchExperiment('optics_bench')">
+        💡 รางทัศนศาสตร์
+      </button>
+      <button id="tab-exp-faraday" data-exp-id="em_faraday_lenz" class="tab-btn" onclick="switchExperiment('em_faraday_lenz')">
+        🧲 เหนี่ยวนำฟาราเดย์
+      </button>
+      <button id="tab-exp-solenoid" data-exp-id="em_solenoid_field" class="tab-btn" onclick="switchExperiment('em_solenoid_field')">
+        🧲 ขดลวดโซเลนอยด์
+      </button>
+      <button id="tab-exp-helmholtz" data-exp-id="em_helmholtz_coils" class="tab-btn" onclick="switchExperiment('em_helmholtz_coils')">
+        🧲 ขดลวดเฮล์มโฮลทซ์
+      </button>
+      <button id="tab-exp-thermo" data-exp-id="thermo_ideal_gas" class="tab-btn" onclick="switchExperiment('thermo_ideal_gas')">
+        🌡️ กฎของแก๊ส
+      </button>
+      <button id="tab-exp-calorimeter" data-exp-id="thermo_calorimeter" class="tab-btn" onclick="switchExperiment('thermo_calorimeter')">
+        🌡️ แคลอริมิเตอร์
+      </button>
+      <button id="tab-exp-expansion" data-exp-id="thermo_thermal_exp" class="tab-btn" onclick="switchExperiment('thermo_thermal_exp')">
+        🌡️ การขยายตัวเชิงเส้น
+      </button>
+      <button id="tab-exp-modern" data-exp-id="modern_photoelectric" class="tab-btn" onclick="switchExperiment('modern_photoelectric')">
+        ⚛️ โฟโตอิเล็กทริก
+      </button>
+      <button id="tab-exp-halflife" data-exp-id="modern_half_life" class="tab-btn" onclick="switchExperiment('modern_half_life')">
+        ⚛️ ครึ่งชีวิตสารรังสี
+      </button>
+      <button id="tab-exp-frankhertz" data-exp-id="modern_frank_hertz" class="tab-btn" onclick="switchExperiment('modern_frank_hertz')">
+        ⚛️ ฟรังก์-เฮิรตซ์
+      </button>
+      <button id="tab-exp-hub" class="tab-btn" onclick="PhysicsLabRegistry.openHubModal()" style="color:#f59e0b;" title="เปิดดูศูนย์รวม 16 ปฏิบัติการครบทั้ง 7 กลุ่ม">
+        🌐 รวม 7 กลุ่มวิชา (16 Lab)...
+      </button>
+    </div>
+
+    <div class="top-actions">
+      <button id="btn-topbar-ai" class="action-btn" onclick="AIBot.toggleChat()" style="background: rgba(139, 92, 246, 0.25); border-color: #8b5cf6; color: #c4b5fd; font-weight: 600;" title="เปิด Dr. Newton ผู้ช่วยอัจฉริยะ Agentic AI">
+        🤖 Dr. Newton AI
+      </button>
+      <button id="btn-toggle-left-panel" class="action-btn" onclick="toggleSidePanel('left')" title="ย่อ/กาง แผงควบคุมด้านซ้าย">
+        <span id="btn-toggle-left-icon">◀</span> <span>แผงซ้าย</span>
+      </button>
+      <button id="btn-toggle-right-panel" class="action-btn" onclick="toggleSidePanel('right')" title="ย่อ/กาง แผงผลวิเคราะห์ด้านขวา">
+        <span>แผงขวา</span> <span id="btn-toggle-right-icon">▶</span>
+      </button>
+      <button id="btn-toggle-ar" class="action-btn ar-btn" onclick="toggleARHandControl()">
+        🖐️ กล้อง AR
+      </button>
+      <button class="action-btn" onclick="resetInstrumentPositions()">🔄 จัดอุปกรณ์</button>
+      <button class="action-btn" onclick="resetCameraView()">🎥 มุมกล้อง</button>
+      <button class="action-btn" onclick="topCameraView()">📐 มุมบน</button>
+      <button class="action-btn solution-btn" onclick="toggleSolutionModal(true)">📖 ดูเฉลย</button>
+    </div>
+  </header>
+
+  <!-- Docked Screen Edge Toggles (Always visible & accessible at screen sides) -->
+  <button id="edge-toggle-left" class="edge-dock-btn left-dock-btn" onclick="toggleSidePanel('left')" title="ย่อ / กาง แผงควบคุมด้านซ้าย">
+    <span id="edge-toggle-left-icon" class="dock-arrow">◀</span>
+    <span class="edge-text">แผงควบคุม</span>
+  </button>
+  <button id="edge-toggle-right" class="edge-dock-btn right-dock-btn" onclick="toggleSidePanel('right')" title="ย่อ / กาง แผงผลวิเคราะห์ด้านขวา">
+    <span class="edge-text">ผลวิเคราะห์</span>
+    <span id="edge-toggle-right-icon" class="dock-arrow">▶</span>
+  </button>
+
+  <!-- Floating Panel Expand Pills (Shown when panels are collapsed) -->
+  <button id="floating-expand-left" class="floating-panel-toggle" onclick="toggleSidePanel('left')" title="กางแผงควบคุมด้านซ้าย">
+    <span>▶</span> <span>กางแผงควบคุม (ซ้าย)</span>
+  </button>
+  <button id="floating-expand-right" class="floating-panel-toggle" onclick="toggleSidePanel('right')" title="กางแผงผลวิเคราะห์ด้านขวา">
+    <span>กางแผงผลวิเคราะห์ (ขวา)</span> <span>◀</span>
+  </button>
+
+  <!-- ================= AR MEDIAPIPE FLOATING HUD ================= -->
+  <div id="ar-hud-panel">
+    <div class="ar-cam-box">
+      <video id="ar-input-video" playsinline muted></video>
+      <canvas id="ar-overlay-canvas" width="320" height="240"></canvas>
+      <div id="ar-cam-status" class="ar-status-pill">กำลังเตรียมกล้อง...</div>
+    </div>
+    <div class="ar-controls-info">
+      <div class="ar-gesture-badge">
+        <span id="ar-gesture-text">🖐️ รอตรวจจับมือ...</span>
+        <button class="btn-secondary" style="padding:2px 7px; font-size:0.68rem;" onclick="toggleARPassthrough()" id="btn-ar-bg">
+          🌐 พื้นหลังกล้อง AR: ปิด
+        </button>
+      </div>
+      <ul class="gesture-list">
+        <li>👆 <b>ชี้นิ้วชี้ (Index Tip):</b> เลื่อนเคอร์เซอร์มือเสมือนไปยังอุปกรณ์, ขั้ว a–f หรือปุ่มบนจอ</li>
+        <li>🤏 <b>จีบนิ้ว (Pinch Drag):</b> จับเลื่อนย้ายโวลต์มิเตอร์, แอมมิเตอร์, แหล่งจ่ายไฟ / ย้ายหัววัด / ดึงลูกตุ้ม</li>
+        <li>✊ <b>กำมือแล้วลาก (Fist Orbit):</b> หมุนมุมกล้อง 3D รอบโต๊ะปฏิบัติการ</li>
+        <li>✌️ <b>ชู 2 นิ้วค้าง (Peace Sign):</b> สลับเปิด-ปิดสวิตช์ไฟ (กิจกรรม 1) / เริ่มจับเวลา 20 รอบ (กิจกรรม 2)</li>
+      </ul>
+      <div style="display:flex; gap:6px; margin-top:2px;">
+        <button class="btn-secondary" style="padding:3px 8px; font-size:0.68rem; flex:1;" onclick="toggleSimulatedHandDemo()" id="btn-sim-hand">
+          🤖 ทดสอบมือเสมือนอัตโนมัติ (กรณีไม่มีกล้อง)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= EXPERIMENT 1 PANELS (HEXAGONAL RESISTOR CIRCUIT) ================= -->
+  <aside id="left-exp1" class="side-panel left-panel">
+    <div class="panel-resize-handle" onpointerdown="initPanelResize(event, 'left')" title="คลิกลากซ้าย-ขวา เพื่อย่อ/ขยายความกว้าง"></div>
+    <div class="panel-header-bar">
+      <span class="panel-header-title">🎛️ แผงควบคุมวงจร</span>
+      <div class="panel-header-actions">
+        <button class="panel-size-btn" onclick="adjustPanelWidth('left', -40)" title="ย่อความกว้าง (แคบลง)">➖ ย่อ</button>
+        <button class="panel-size-btn" onclick="adjustPanelWidth('left', 40)" title="ขยายความกว้าง (กว้างขึ้น)">➕ ขยาย</button>
+        <button class="panel-collapse-btn" onclick="toggleSidePanel('left')" title="พับเก็บแผงซ้าย">◀ พับเก็บ</button>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">
+        <span>⚡ กิจกรรมที่ 1: วงจรตัวต้านทาน (ข้อ 7)</span>
+      </div>
+      <p class="subtext">
+        แผงวงจรตัวต้านทาน 6 เหลี่ยม (1–6 Ω) ต่อกับแหล่งจ่ายไฟห้องแล็บ 10 V ด้านหลัง สวิตช์ใบมีด และตัวต้านทานมาตรฐาน 10 Ω พร้อมโวลต์มิเตอร์และแอมมิเตอร์ตั้งโต๊ะด้านหน้า
+      </p>
+      <button id="switch-btn" class="switch-toggle closed" onclick="toggleCircuitSwitch()">
+        <span id="switch-icon">🟢</span>
+        <span id="switch-text">สวิตช์ปิดอยู่ (กระแสไหลครบวงจร)</span>
+      </button>
+    </div>
+
+    <!-- Section: DC Power Supply Voltage Control -->
+    <div class="section-card psu-control-card">
+      <div class="section-title">
+        <span>🔋 แหล่งจ่ายไฟ DC Power Supply (HY-3005D)</span>
+        <span class="psu-badge-cv">C.V. MODE</span>
+      </div>
+      <p class="subtext">ปรับเปลี่ยนแรงดันไฟฟ้า $V_s$ (0.0 – 30.0 V) จ่ายเข้าวงจร (พิมพ์ตัวเลขหรือเลื่อนสไลเดอร์):</p>
+      
+      <div class="psu-control-main">
+        <div class="psu-input-box">
+          <label for="psu-voltage-input" class="psu-label">แรงดันที่จ่าย ($V_s$):</label>
+          <div class="psu-num-wrap">
+            <button class="psu-step-btn" onclick="stepVoltage(-1)" title="ลด 1 V">−1V</button>
+            <button class="psu-step-btn" onclick="stepVoltage(-0.1)" title="ลด 0.1 V">−0.1</button>
+            <input type="number" id="psu-voltage-input" class="psu-voltage-input" min="0" max="30" step="0.1" value="10.0" oninput="onVoltageInputChange(this.value)" onchange="onVoltageInputChange(this.value)">
+            <span class="psu-unit">V</span>
+            <button class="psu-step-btn" onclick="stepVoltage(0.1)" title="เพิ่ม 0.1 V">+0.1</button>
+            <button class="psu-step-btn" onclick="stepVoltage(1)" title="เพิ่ม 1 V">+1V</button>
+          </div>
+        </div>
+
+        <div class="psu-slider-wrap">
+          <input type="range" id="psu-voltage-slider" class="psu-slider" min="0" max="30" step="0.1" value="10" oninput="onVoltageSliderChange(this.value)">
+          <div class="psu-slider-marks">
+            <span>0 V</span>
+            <span>5 V</span>
+            <span>10 V (โจทย์)</span>
+            <span>15 V</span>
+            <span>20 V</span>
+            <span>30 V</span>
+          </div>
+        </div>
+
+        <div class="psu-presets">
+          <span class="preset-label">ลัดค่า:</span>
+          <button class="preset-chip" data-v="5" onclick="setPresetVoltage(5)">5.0 V</button>
+          <button class="preset-chip active" data-v="10" onclick="setPresetVoltage(10)">10.0 V (โจทย์)</button>
+          <button class="preset-chip" data-v="12" onclick="setPresetVoltage(12)">12.0 V</button>
+          <button class="preset-chip" data-v="15" onclick="setPresetVoltage(15)">15.0 V</button>
+          <button class="preset-chip" data-v="24" onclick="setPresetVoltage(24)">24.0 V</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">
+        <span>🎛️ หน้าปัดมิเตอร์ตั้งโต๊ะ (ด้านหน้า)</span>
+        <div class="meter-mode-toggle">
+          <button id="mode-analog-btn" class="meter-mode-btn active" onclick="setMeterDisplayMode('analog')">🧭 แบบเข็ม 3D</button>
+          <button id="mode-digital-btn" class="meter-mode-btn" onclick="setMeterDisplayMode('digital')">🔢 ดิจิทัล</button>
+        </div>
+      </div>
+      <div class="meter-grid">
+        <div class="meter-box voltmeter">
+          <div class="meter-label">โวลต์มิเตอร์ (V) คร่อม P-Q</div>
+          <canvas id="ui-volt-analog" class="ui-analog-canvas visible" width="160" height="86"></canvas>
+          <div id="ui-voltmeter-dec" class="meter-value">0.870 V</div>
+          <div id="ui-voltmeter-frac" class="meter-fraction">= 20 / 23 V</div>
+        </div>
+        <div class="meter-box ammeter">
+          <div class="meter-label">แอมมิเตอร์ (A) กระแสรวม I</div>
+          <canvas id="ui-amp-analog" class="ui-analog-canvas visible" width="160" height="86"></canvas>
+          <div id="ui-ammeter-dec" class="meter-value">0.913 A</div>
+          <div id="ui-ammeter-frac" class="meter-fraction">= 21 / 23 A</div>
+        </div>
+      </div>
+      <div id="ui-circuit-breakdown" class="formula-box" style="margin-top: 8px;">
+        <div>คู่จุดต่อ <b>f – a</b>: $R_{\text{ตรง}} = 1\,\Omega \parallel R_{\text{อ้อม}} = 20\,\Omega$</div>
+        <div style="margin-top:4px;">$R_{\text{ชุด}} = \mathbf{\frac{20}{21}\,\Omega} \approx 0.952\,\Omega$ &nbsp;|&nbsp; $R_{\text{รวม}} = \mathbf{\frac{230}{21}\,\Omega}$</div>
+      </div>
+    </div>
+
+    <!-- Section: Dynamic Resistor Value Tuning -->
+    <div class="section-card">
+      <div class="section-title">
+        <span>🔧 ปรับค่าความต้านทานแต่ละตัว (1–6)</span>
+        <button class="btn-secondary" style="padding:2px 8px; font-size:0.7rem;" onclick="resetResistorValues()" title="รีเซ็ตกลับเป็นค่าโจทย์ IJSO: 1, 2, 3, 4, 5, 6 Ω และไฟ 10 V">🔄 ค่าโจทย์</button>
+      </div>
+      <p class="subtext">พิมพ์ตัวเลขโดยตรง หรือลากสไลเดอร์ / กดปุ่ม ± (แถบสี 3D และสูตรคำนวณจะอัปเดตอัตโนมัติ):</p>
+      <div class="resistor-adjust-grid">
+        <div class="res-adj-item">
+          <div class="res-adj-header">
+            <span class="res-adj-name">R<sub>ab</sub> (กิ่ง a-b)</span>
+            <div class="res-adj-num-wrap">
+              <input type="number" class="res-adj-num-input" id="res-input-0" min="1" max="100" step="1" value="2" oninput="onResistorInputChange(0, this.value)" onchange="onResistorInputChange(0, this.value)">
+              <span class="res-unit">Ω</span>
+            </div>
+          </div>
+          <div class="res-adj-controls">
+            <button class="res-adj-btn" onclick="stepResistorValue(0, -1)" title="ลด 1 Ω">−</button>
+            <input type="range" class="res-adj-slider" id="res-slider-0" min="1" max="50" value="2" oninput="onResistorSliderChange(0, this.value)">
+            <button class="res-adj-btn" onclick="stepResistorValue(0, 1)" title="เพิ่ม 1 Ω">+</button>
+          </div>
+        </div>
+
+        <div class="res-adj-item">
+          <div class="res-adj-header">
+            <span class="res-adj-name">R<sub>bc</sub> (กิ่ง b-c)</span>
+            <div class="res-adj-num-wrap">
+              <input type="number" class="res-adj-num-input" id="res-input-1" min="1" max="100" step="1" value="3" oninput="onResistorInputChange(1, this.value)" onchange="onResistorInputChange(1, this.value)">
+              <span class="res-unit">Ω</span>
+            </div>
+          </div>
+          <div class="res-adj-controls">
+            <button class="res-adj-btn" onclick="stepResistorValue(1, -1)" title="ลด 1 Ω">−</button>
+            <input type="range" class="res-adj-slider" id="res-slider-1" min="1" max="50" value="3" oninput="onResistorSliderChange(1, this.value)">
+            <button class="res-adj-btn" onclick="stepResistorValue(1, 1)" title="เพิ่ม 1 Ω">+</button>
+          </div>
+        </div>
+
+        <div class="res-adj-item">
+          <div class="res-adj-header">
+            <span class="res-adj-name">R<sub>cd</sub> (กิ่ง c-d)</span>
+            <div class="res-adj-num-wrap">
+              <input type="number" class="res-adj-num-input" id="res-input-2" min="1" max="100" step="1" value="4" oninput="onResistorInputChange(2, this.value)" onchange="onResistorInputChange(2, this.value)">
+              <span class="res-unit">Ω</span>
+            </div>
+          </div>
+          <div class="res-adj-controls">
+            <button class="res-adj-btn" onclick="stepResistorValue(2, -1)" title="ลด 1 Ω">−</button>
+            <input type="range" class="res-adj-slider" id="res-slider-2" min="1" max="50" value="4" oninput="onResistorSliderChange(2, this.value)">
+            <button class="res-adj-btn" onclick="stepResistorValue(2, 1)" title="เพิ่ม 1 Ω">+</button>
+          </div>
+        </div>
+
+        <div class="res-adj-item">
+          <div class="res-adj-header">
+            <span class="res-adj-name">R<sub>de</sub> (กิ่ง d-e)</span>
+            <div class="res-adj-num-wrap">
+              <input type="number" class="res-adj-num-input" id="res-input-3" min="1" max="100" step="1" value="5" oninput="onResistorInputChange(3, this.value)" onchange="onResistorInputChange(3, this.value)">
+              <span class="res-unit">Ω</span>
+            </div>
+          </div>
+          <div class="res-adj-controls">
+            <button class="res-adj-btn" onclick="stepResistorValue(3, -1)" title="ลด 1 Ω">−</button>
+            <input type="range" class="res-adj-slider" id="res-slider-3" min="1" max="50" value="5" oninput="onResistorSliderChange(3, this.value)">
+            <button class="res-adj-btn" onclick="stepResistorValue(3, 1)" title="เพิ่ม 1 Ω">+</button>
+          </div>
+        </div>
+
+        <div class="res-adj-item">
+          <div class="res-adj-header">
+            <span class="res-adj-name">R<sub>ef</sub> (กิ่ง e-f)</span>
+            <div class="res-adj-num-wrap">
+              <input type="number" class="res-adj-num-input" id="res-input-4" min="1" max="100" step="1" value="6" oninput="onResistorInputChange(4, this.value)" onchange="onResistorInputChange(4, this.value)">
+              <span class="res-unit">Ω</span>
+            </div>
+          </div>
+          <div class="res-adj-controls">
+            <button class="res-adj-btn" onclick="stepResistorValue(4, -1)" title="ลด 1 Ω">−</button>
+            <input type="range" class="res-adj-slider" id="res-slider-4" min="1" max="50" value="6" oninput="onResistorSliderChange(4, this.value)">
+            <button class="res-adj-btn" onclick="stepResistorValue(4, 1)" title="เพิ่ม 1 Ω">+</button>
+          </div>
+        </div>
+
+        <div class="res-adj-item">
+          <div class="res-adj-header">
+            <span class="res-adj-name">R<sub>fa</sub> (กิ่ง f-a)</span>
+            <div class="res-adj-num-wrap">
+              <input type="number" class="res-adj-num-input" id="res-input-5" min="1" max="100" step="1" value="1" oninput="onResistorInputChange(5, this.value)" onchange="onResistorInputChange(5, this.value)">
+              <span class="res-unit">Ω</span>
+            </div>
+          </div>
+          <div class="res-adj-controls">
+            <button class="res-adj-btn" onclick="stepResistorValue(5, -1)" title="ลด 1 Ω">−</button>
+            <input type="range" class="res-adj-slider" id="res-slider-5" min="1" max="50" value="1" oninput="onResistorSliderChange(5, this.value)">
+            <button class="res-adj-btn" onclick="stepResistorValue(5, 1)" title="เพิ่ม 1 Ω">+</button>
+          </div>
+        </div>
+      </div>
+      <div id="ui-loop-total" class="subtext" style="margin-top: 8px; font-weight:600; color:var(--accent-cyan);">
+        ผลรวมความต้านทานรอบวงแหวน: $\sum R = \mathbf{21\,\Omega}$
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">
+        <span>🔌 เลือกคู่จุดต่อหัววัดปากคีบ P (แดง) และ Q (ดำ)</span>
+      </div>
+      <p class="subtext">เลือกขั้วต่ออิสระ หรือคลิกปุ่มคู่ลัด หรือคลิก/ใช้มือ AR จีบนิ้วที่ขั้ว a–f บนโมเดล 3D:</p>
+
+      <!-- Independent Probe Selectors for P and Q -->
+      <div class="probe-selector-box">
+        <div class="probe-selector-row">
+          <span class="probe-label probe-label-p">🔴 ขั้วต่อ P:</span>
+          <div class="node-chip-group" id="node-p-chips">
+            <button class="node-chip" data-node="a" onclick="setProbeNode('P', 'a')">a</button>
+            <button class="node-chip" data-node="b" onclick="setProbeNode('P', 'b')">b</button>
+            <button class="node-chip" data-node="c" onclick="setProbeNode('P', 'c')">c</button>
+            <button class="node-chip" data-node="d" onclick="setProbeNode('P', 'd')">d</button>
+            <button class="node-chip" data-node="e" onclick="setProbeNode('P', 'e')">e</button>
+            <button class="node-chip active" data-node="f" onclick="setProbeNode('P', 'f')">f</button>
+          </div>
+        </div>
+        <div class="probe-selector-row">
+          <span class="probe-label probe-label-q">🔵 ขั้วต่อ Q:</span>
+          <div class="node-chip-group" id="node-q-chips">
+            <button class="node-chip active" data-node="a" onclick="setProbeNode('Q', 'a')">a</button>
+            <button class="node-chip" data-node="b" onclick="setProbeNode('Q', 'b')">b</button>
+            <button class="node-chip" data-node="c" onclick="setProbeNode('Q', 'c')">c</button>
+            <button class="node-chip" data-node="d" onclick="setProbeNode('Q', 'd')">d</button>
+            <button class="node-chip" data-node="e" onclick="setProbeNode('Q', 'e')">e</button>
+            <button class="node-chip" data-node="f" onclick="setProbeNode('Q', 'f')">f</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 5px; font-size: 0.72rem; color: #94a3b8; font-weight: 600;">
+        ปุ่มลัดคู่ติดกันรอบวงแหวน (Adjacent):
+      </div>
+      <div class="pair-grid">
+        <button class="pair-btn" data-pair="a-b" onclick="selectNodePair('a','b')">คู่ a – b (2 Ω)</button>
+        <button class="pair-btn" data-pair="b-c" onclick="selectNodePair('b','c')">คู่ b – c (3 Ω)</button>
+        <button class="pair-btn" data-pair="c-d" onclick="selectNodePair('c','d')">คู่ c – d (4 Ω)</button>
+        <button class="pair-btn" data-pair="d-e" onclick="selectNodePair('d','e')">คู่ d – e (5 Ω)</button>
+        <button class="pair-btn" data-pair="e-f" onclick="selectNodePair('e','f')">คู่ e – f (6 Ω)</button>
+        <button class="pair-btn active" data-pair="f-a" onclick="selectNodePair('f','a')">คู่ f – a (1 Ω) ★</button>
+      </div>
+      <div style="margin-top: 7px; font-size: 0.72rem; color: #94a3b8; font-weight: 600;">
+        ปุ่มลัดคู่ข้ามและคู่ตรงข้าม (Diagonal & Opposite):
+      </div>
+      <div class="pair-grid">
+        <button class="pair-btn" data-pair="a-c" onclick="selectNodePair('a','c')">คู่ a – c (ข้าม 1)</button>
+        <button class="pair-btn" data-pair="a-d" onclick="selectNodePair('a','d')">คู่ a – d (ตรงข้าม)</button>
+        <button class="pair-btn" data-pair="b-e" onclick="selectNodePair('b','e')">คู่ b – e (ตรงข้าม)</button>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-primary" onclick="recordCurrentPair()">➕ บันทึกคู่ที่เลือกลงตาราง</button>
+        <button class="btn-secondary" onclick="recordAllAdjacentPairs()">บันทึกครบ 6 คู่</button>
+      </div>
+    </div>
+  </aside>
+
+  <aside id="right-exp1" class="side-panel right-panel">
+    <div class="panel-resize-handle" onpointerdown="initPanelResize(event, 'right')" title="คลิกลากซ้าย-ขวา เพื่อย่อ/ขยายความกว้าง"></div>
+    <div class="panel-header-bar">
+      <div class="panel-header-actions">
+        <button class="panel-collapse-btn" onclick="toggleSidePanel('right')" title="พับเก็บแผงขวา">พับเก็บ ▶</button>
+        <button class="panel-size-btn" onclick="adjustPanelWidth('right', -40)" title="ย่อความกว้าง (แคบลง)">➖ ย่อ</button>
+        <button class="panel-size-btn" onclick="adjustPanelWidth('right', 40)" title="ขยายความกว้าง (กว้างขึ้น)">➕ ขยาย</button>
+      </div>
+      <span class="panel-header-title">📊 ตารางและวิเคราะห์ผล</span>
+    </div>
+
+    <!-- Section: Step-by-Step Circuit Reduction Diagram -->
+    <div class="section-card circuit-reduction-card">
+      <div class="section-title">
+        <span>🔄 แผนภาพการลดรูปวงจร (Circuit Reduction)</span>
+        <span class="pair-current-pill" id="reduction-pair-pill">คู่ f – a</span>
+      </div>
+      <p class="subtext">
+        แสดงการคลี่วงแหวน 6 เหลี่ยมออกเป็น 2 สายขนาน และการยุบรวมตัวต้านทานแบบทีละขั้นตอน:
+      </p>
+
+      <!-- Step 1: 2 Parallel Branches -->
+      <div class="reduction-step-box">
+        <div class="reduction-step-header">
+          <span class="step-num">ขั้นตอน 1</span>
+          <span class="step-desc">คลี่วงแหวนออกเป็น 2 สายขนานระหว่างขั้ว <b id="red-p-name">f</b> และ <b id="red-q-name">a</b></span>
+        </div>
+        <div class="reduction-svg-wrap" id="reduction-svg-step1"></div>
+        <div class="reduction-branch-details" id="reduction-branch-math"></div>
+      </div>
+
+      <!-- Step 2: Series Sum to Parallel Pair -->
+      <div class="reduction-step-box">
+        <div class="reduction-step-header">
+          <span class="step-num">ขั้นตอน 2</span>
+          <span class="step-desc">ยุบอนุกรมในแต่ละสายกิ่ง $\implies$ กิ่งบน $r_1$ ขนานกับกิ่งล่าง $r_2$</span>
+        </div>
+        <div class="reduction-svg-wrap" id="reduction-svg-step2"></div>
+      </div>
+
+      <!-- Step 3: Parallel Equivalent R_ชุด -->
+      <div class="reduction-step-box">
+        <div class="reduction-step-header">
+          <span class="step-num">ขั้นตอน 3</span>
+          <span class="step-desc">ยุบขนานชุดหกเหลี่ยมเป็นตัวต้านทานสมมูลก้อนเดียว $R_{\text{ชุด}}$</span>
+        </div>
+        <div class="reduction-svg-wrap" id="reduction-svg-step3"></div>
+        <div class="reduction-formula-box" id="reduction-step3-math"></div>
+      </div>
+
+      <!-- Step 4: Full Circuit with 10 Ω & DC Supply -->
+      <div class="reduction-step-box">
+        <div class="reduction-step-header">
+          <span class="step-num">ขั้นตอน 4</span>
+          <span class="step-desc">วงจรสมบูรณ์: ต่ออนุกรมกับ $R_{\text{มาตรฐาน}} = 10\,\Omega$ และแหล่งจ่ายไฟ $V_s$</span>
+        </div>
+        <div class="reduction-svg-wrap" id="reduction-svg-step4"></div>
+        <div class="reduction-formula-box" id="reduction-step4-math"></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">
+        <span>📊 ตารางบันทึกผลการทดลอง (กิจกรรมที่ 1)</span>
+        <button class="btn-secondary" style="padding:3px 8px; font-size:0.72rem;" onclick="clearExp1Table()">ล้างตาราง</button>
+      </div>
+      <p class="subtext">
+        เปรียบเทียบความต้านทานสมมูล กระแสไฟฟ้า I และความต่างศักย์ V<sub>PQ</sub> ของแต่ละคู่จุดต่อ (แถวสีเขียวคือคู่ที่ให้กระแสสูงสุด)
+      </p>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>คู่จุดต่อ</th>
+            <th>R ตรง<br>(Ω)</th>
+            <th>R อ้อม<br>(Ω)</th>
+            <th>R<sub>ชุด</sub> ทฤษฎี<br>(Ω)</th>
+            <th>กระแส I<br>(A)</th>
+            <th>V<sub>PQ</sub><br>(V)</th>
+            <th>R<sub>ทดลอง</sub><br>V<sub>PQ</sub>/I (Ω)</th>
+          </tr>
+        </thead>
+        <tbody id="exp1-tbody">
+          <!-- Populated dynamically -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">
+        <span>💡 สรุปหลักการและคำตอบโจทย์ข้อ 7</span>
+      </div>
+      <div class="formula-box">
+        <b>7.1 คู่ที่ให้กระแสสูงสุด:</b> คู่ <b>a – f (หรือ f – a)</b> เพราะ $R_{af} = 1 \parallel 20 = \frac{1 \times 20}{1 + 20} = \mathbf{\frac{20}{21}\,\Omega}$ ต่ำที่สุด<br/>
+        <b>7.2 กระแสไฟฟ้าวงจร:</b> $I = \frac{V}{R_{\text{รวม}}} = \frac{10}{10 + \frac{20}{21}} = \frac{10}{\frac{230}{21}} = \mathbf{\frac{21}{23}\text{ A}} \approx 0.913\text{ A}$<br/>
+        <b>7.3 ความต่างศักย์ $V_{PQ}$:</b> $V_{PQ} = I \cdot R_{af} = \left(\frac{21}{23}\right) \times \left(\frac{20}{21}\right) = \mathbf{\frac{20}{23}\text{ V}} \approx 0.870\text{ V}$
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================= EXPERIMENT 2 PANELS (SIMPLE PENDULUM) ================= -->
+  <aside id="left-exp2" class="side-panel left-panel hidden">
+    <div class="panel-resize-handle" onpointerdown="initPanelResize(event, 'left')" title="คลิกลากซ้าย-ขวา เพื่อย่อ/ขยายความกว้าง"></div>
+    <div class="panel-header-bar">
+      <span class="panel-header-title">⏱️ แผงควบคุมลูกตุ้ม</span>
+      <div class="panel-header-actions">
+        <button class="panel-size-btn" onclick="adjustPanelWidth('left', -40)" title="ย่อความกว้าง (แคบลง)">➖ ย่อ</button>
+        <button class="panel-size-btn" onclick="adjustPanelWidth('left', 40)" title="ขยายความกว้าง (กว้างขึ้น)">➕ ขยาย</button>
+        <button class="panel-collapse-btn" onclick="toggleSidePanel('left')" title="พับเก็บแผงซ้าย">◀ พับเก็บ</button>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">
+        <span>⏱️ กิจกรรมที่ 2: ลูกตุ้มอย่างง่าย (ข้อ 10)</span>
+      </div>
+      <p class="subtext">
+        สังเกตขีดสเกลบนไม้บรรทัดเมตร (0–100 cm) และเข็มชี้ระดับศูนย์กลางมวลลูกตุ้ม หรือใช้มือ AR จีบนิ้วดึงลูกตุ้มเพื่อปรับมุมปล่อย
+      </p>
+
+      <div class="slider-group">
+        <div class="slider-header">
+          <span>ความยาวเชือก L (จุดแขวนถึงศูนย์กลางมวล):</span>
+          <span id="ui-length-val" class="slider-val">50.0 cm (0.50 m)</span>
+        </div>
+        <input id="slider-length" type="range" min="50" max="90" step="10" value="50" oninput="updatePendulumLength(this.value)" />
+        <div class="pair-grid" style="grid-template-columns: repeat(5, 1fr); margin-top: 6px;">
+          <button class="pair-btn active" id="len-btn-50" onclick="updatePendulumLength(50)">50 cm</button>
+          <button class="pair-btn" id="len-btn-60" onclick="updatePendulumLength(60)">60 cm</button>
+          <button class="pair-btn" id="len-btn-70" onclick="updatePendulumLength(70)">70 cm</button>
+          <button class="pair-btn" id="len-btn-80" onclick="updatePendulumLength(80)">80 cm</button>
+          <button class="pair-btn" id="len-btn-90" onclick="updatePendulumLength(90)">90 cm</button>
+        </div>
+      </div>
+
+      <div class="slider-group" style="margin-top: 12px;">
+        <div class="slider-header">
+          <span>มุมปล่อยเริ่มต้น (θ<sub>0</sub> บนแผ่นวัดมุม):</span>
+          <span id="ui-angle-val" class="slider-val">8.0°</span>
+        </div>
+        <input id="slider-angle" type="range" min="4" max="15" step="1" value="8" oninput="updatePendulumAngle(this.value)" />
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-header">
+          <span>โหมดข้อมูลการทดลอง:</span>
+        </div>
+        <select id="pendulum-data-mode" onchange="updatePendulumMode()" style="width:100%; padding:7px; border-radius:7px; background:#1e293b; color:#fff; border:1px solid rgba(148,163,184,0.3); font-family:'Prompt',sans-serif; font-size:0.78rem;">
+          <option value="exam">ชุดข้อมูลข้อสอบ 20th IJSO (g ≈ 9.46 m/s²)</option>
+          <option value="ideal">ฟิสิกส์อุดมคติมาตรฐาน (g = 9.80 m/s²)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">
+        <span>⏲️ นาฬิกาจับเวลา 20 รอบการแกว่ง</span>
+      </div>
+      <div class="meter-grid">
+        <div class="meter-box voltmeter">
+          <div class="meter-label">เวลาที่จับได้ t (วินาที)</div>
+          <div id="ui-timer-val" class="meter-value">0.00 s</div>
+          <div id="ui-swing-count" class="meter-fraction">จำนวนรอบ: 0 / 20</div>
+        </div>
+        <div class="meter-box ammeter">
+          <div class="meter-label">คาบเฉลี่ย T = t₂₀ / 20</div>
+          <div id="ui-period-val" class="meter-value">1.40 s</div>
+          <div id="ui-t2-val" class="meter-fraction">T² = 1.97 s²</div>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top: 10px;">
+        <button id="btn-start-timer" class="btn-primary" onclick="startStopwatch20()">▶️ เริ่มจับเวลา 20 รอบ</button>
+        <button class="btn-secondary" onclick="instantMeasure20()">⚡ วัด 20 รอบทันที + บันทึก</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn-secondary" style="flex:1;" onclick="fillAllPendulumData()">📋 เติมข้อมูลครบทั้ง 5 ความยาวตามโจทย์</button>
+      </div>
+    </div>
+  </aside>
+
+  <aside id="right-exp2" class="side-panel right-panel hidden">
+    <div class="panel-resize-handle" onpointerdown="initPanelResize(event, 'right')" title="คลิกลากซ้าย-ขวา เพื่อย่อ/ขยายความกว้าง"></div>
+    <div class="panel-header-bar">
+      <div class="panel-header-actions">
+        <button class="panel-collapse-btn" onclick="toggleSidePanel('right')" title="พับเก็บแผงขวา">พับเก็บ ▶</button>
+        <button class="panel-size-btn" onclick="adjustPanelWidth('right', -40)" title="ย่อความกว้าง (แคบลง)">➖ ย่อ</button>
+        <button class="panel-size-btn" onclick="adjustPanelWidth('right', 40)" title="ขยายความกว้าง (กว้างขึ้น)">➕ ขยาย</button>
+      </div>
+      <span class="panel-header-title">📈 ตารางและกราฟ T²-L</span>
+    </div>
+    <div class="section-card">
+      <div class="section-title">
+        <span>📊 ตารางบันทึกผลลูกตุ้มอย่างง่าย</span>
+        <button class="btn-secondary" style="padding:3px 8px; font-size:0.72rem;" onclick="clearPendulumTable()">ล้างตาราง</button>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>L (cm)</th>
+            <th>L (m)</th>
+            <th>เวลา 20 รอบ<br>t<sub>20</sub> (s)</th>
+            <th>คาบ T<br>(s)</th>
+            <th>√L<br>(cm<sup>1/2</sup>)</th>
+            <th>T<sup>2</sup><br>(s<sup>2</sup>)</th>
+          </tr>
+        </thead>
+        <tbody id="exp2-tbody">
+          <!-- Populated dynamically -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">
+        <span>📈 กราฟความสัมพันธ์ระหว่าง T<sup>2</sup> (s<sup>2</sup>) กับ L (m)</span>
+      </div>
+      <canvas id="graph-canvas" width="400" height="220"></canvas>
+      <div id="ui-graph-stats" class="formula-box" style="margin-top: 8px;">
+        <div><b>สมการเส้นตรง:</b> $T^2 = \left(\frac{4\pi^2}{g}\right) L$</div>
+        <div style="margin-top:4px;"><b>ความชัน $(m)$:</b> $m = \frac{\Delta T^2}{\Delta L} = \frac{3.64 - 1.97}{0.90 - 0.50} = \mathbf{4.175\text{ s}^2/\text{m}}$</div>
+        <div style="margin-top:4px;"><b>ความเร่งโน้มถ่วง $(g)$:</b> $g = \frac{4\pi^2}{m} = \mathbf{\frac{160\pi^2}{167}\text{ m/s}^2 \approx 9.46\text{ m/s}^2}$</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Bottom Interactive Guide Hint -->
+  <div class="bottom-hint">
+    🧭 <b>คลิกลากอุปกรณ์ (โวลต์มิเตอร์, แอมมิเตอร์, แหล่งจ่ายไฟ, สวิตช์) หรือใช้มือ AR จีบนิ้วย้ายได้อิสระ</b> • 🖱️ คลิกซ้ายหมุนกล้อง / ลูกกลิ้งซูม
+  </div>
+
+  <!-- ================= SOLUTION & THEORY MODAL ================= -->
+  <div id="solution-modal" class="modal-backdrop" onclick="if(event.target===this) toggleSolutionModal(false)">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📖 เฉลยคำนวณและหลักการทฤษฎี (20th IJSO รอบที่ 3 วิชาฟิสิกส์)</h2>
+        <button class="close-modal" onclick="toggleSolutionModal(false)">✕ ปิดหน้าต่าง</button>
+      </div>
+      <div class="sol-grid">
+        <div class="sol-box">
+          <span class="sol-badge">⚡ กิจกรรมที่ 1</span>
+          <h3>ข้อ 7: วงจรตัวต้านทานรูปหกเหลี่ยม (16 คะแนน)</h3>
+          <p>ชุดตัวต้านทาน 6 ตัวเรียงต่อกันเป็นวงแหวนรูปหกเหลี่ยม ผลรวมความต้านทานรอบวงคือ $\sum_{i=1}^6 R_i = 1 + 2 + 3 + 4 + 5 + 6 = 21\,\Omega$</p>
+          <div class="math-block">
+            $$R_{\text{ชุด}} = R_{\text{ตรง}} \parallel R_{\text{อ้อม}} = \frac{R_{\text{ตรง}} \cdot R_{\text{อ้อม}}}{R_{\text{ตรง}} + R_{\text{อ้อม}}} = \frac{R_{\text{ตรง}} \cdot R_{\text{อ้อม}}}{21\,\Omega}$$
+          </div>
+          <p><b>ตอบข้อ 7.1:</b> ต่อสาย P และ Q เข้ากับจุด <b>a และ f</b> เนื่องจากมีตัวต้านทาน $1\,\Omega$ ขนานกับอีกด้านที่อนุกรมกัน $2+3+4+5+6 = 20\,\Omega$ จะได้ความต้านทานสมมูลต่ำที่สุด:</p>
+          <div class="math-block">
+            $$R_{af} = 1 \parallel 20 = \frac{1 \times 20}{1 + 20} = \mathbf{\frac{20}{21}\,\Omega}$$
+          </div>
+          <p><b>ตอบข้อ 7.2:</b> ความต้านทานรวมของวงจรเมื่อต่ออนุกรมกับตัวต้านทาน $10\,\Omega$ และกระแสไฟฟ้าที่อ่านได้จากแอมมิเตอร์:</p>
+          <div class="math-block">
+            $$R_{\text{รวม}} = 10\,\Omega + R_{af} = 10 + \frac{20}{21} = \frac{230}{21}\,\Omega$$
+            $$I = \frac{V}{R_{\text{รวม}}} = \frac{10\text{ V}}{\frac{230}{21}\,\Omega} = \mathbf{\frac{21}{23}\text{ A}} \quad (\approx 0.913\text{ A})$$
+          </div>
+          <p><b>ตอบข้อ 7.3:</b> โวลต์มิเตอร์วัดความต่างศักย์ตกคร่อมชุดหกเหลี่ยมระหว่างจุด a และ f ($V_{af} = V_{PQ}$):</p>
+          <div class="math-block">
+            $$V_{af} = I \cdot R_{af} = \left(\frac{21}{23}\text{ A}\right) \times \left(\frac{20}{21}\,\Omega\right) = \mathbf{\frac{20}{23}\text{ V}} \quad (\approx 0.870\text{ V})$$
+          </div>
+        </div>
+
+        <div class="sol-box">
+          <span class="sol-badge">⏱️ กิจกรรมที่ 2</span>
+          <h3>ข้อ 10: ลูกตุ้มเพนดูลัมอย่างง่าย (10 คะแนน)</h3>
+          <p>จากสมการคาบการแกว่งลูกตุ้มอย่างง่าย (Simple Pendulum) ยกกำลังสองทั้งสองข้างเพื่อจัดรูปเข้าสู่สมการเส้นตรง $y = mx + c$:</p>
+          <div class="math-block">
+            $$T = 2\pi\sqrt{\frac{L}{g}} \implies T^2 = \left(\frac{4\pi^2}{g}\right) L$$
+          </div>
+          <p><b>ตอบข้อ 10.1:</b> เลือกเขียนกราฟระหว่าง <b>$T^2$ (แกนตั้ง หน่วย $\text{s}^2$) กับ $L$ (แกนนอน หน่วย $\text{m}$)</b> เพราะมีความสัมพันธ์เชิงเส้นตรง โดยความชันของกราฟเท่ากับ $m = \frac{4\pi^2}{g}$</p>
+          <p><b>ตอบข้อ 10.2:</b> หาความชัน $m$ จากคู่จุด $(0.50\text{ m}, 1.97\text{ s}^2)$ และ $(0.90\text{ m}, 3.64\text{ s}^2)$:</p>
+          <div class="math-block">
+            $$m = \frac{\Delta T^2}{\Delta L} = \frac{3.64 - 1.97}{0.90 - 0.50} = \frac{1.67}{0.40} = 4.175 = \frac{167}{40}\text{ s}^2/\text{m}$$
+            $$g = \frac{4\pi^2}{m} = \frac{4\pi^2}{\frac{167}{40}} = \mathbf{\frac{160\pi^2}{167}\text{ m/s}^2} \quad (\approx 9.46\text{ m/s}^2)$$
+          </div>
+          <p><b>ตอบข้อ 10.3:</b> ตามทฤษฎี จุดตัดแกนตั้ง $c = 0$ หมายความว่าเมื่อความยาวเชือก $L = 0$ คาบยกกำลังสองต้องเป็นศูนย์ ($T^2 = 0$) กราฟจึงต้องผ่านจุดกำเนิด $(0,0)$<br/>
+          หากการทดลองจริงได้จุดตัดแกนตั้งไม่เท่ากับศูนย์ ($c \neq 0$) แสดงถึง <b>ความคลาดเคลื่อนเชิงระบบ (Systematic Error)</b> เช่น การวัดความยาวเชือกไม่ถึงจุดศูนย์กลางมวลของลูกตุ้ม หรือเวลาหน่วง (Delay) คงที่ในการกดปุ่มเริ่ม/หยุดเวลา</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- ================= MAIN PORTAL LANDING DASHBOARD ================= -->
+  <div id="portal-view">
+    <div class="portal-top-nav">
+      <div class="portal-brand-block">
+        <div class="portal-logo-icon">🌐</div>
+        <div class="portal-brand-text">
+          <h2>RBRU NextGen Virtual Physics Lab & AI Ecosystem</h2>
+          <p>ระบบห้องปฏิบัติการฟิสิกส์ 3 มิติเสมือนจริง และผู้ช่วยอัจฉริยะ Agentic AI (16 ปฏิบัติการครบ 7 กลุ่มวิชา)</p>
+        </div>
+      </div>
+      <button class="portal-close-btn" onclick="togglePortalView(false)">
+        <span>เข้าสู่ห้องทดลอง 3D</span> <span>✕</span>
+      </button>
+    </div>
+
+    <div class="portal-hero">
+      <div class="hero-pill-badge">
+        <span>✨ พัฒนาเพื่อการเรียนรู้วิทยาศาสตร์และฟิสิกส์ยุคใหม่ 2026</span>
+      </div>
+      <h1 class="portal-hero-title">ศูนย์รวมห้องปฏิบัติการฟิสิกส์เสมือนจริง 3 มิติ</h1>
+      <p class="portal-hero-subtitle">
+        จำลองปรากฏการณ์ฟิสิกส์ตามกฎธรรมชาติอย่างสมจริงด้วย Three.js PBR Shaders, การตรวจจับท่าทางมือไร้สัมผัส AR MediaPipe, การประมวลผลสมการคณิตศาสตร์เวกเตอร์ และผู้ช่วยอัจฉริยะ <b>Dr. Newton Agentic AI</b>
+      </p>
+
+      <div id="portal-stats-bar" class="portal-stats-bar">
+        <!-- Rendered dynamically by portal.js -->
+      </div>
+    </div>
+
+    <div class="portal-controls-bar">
+      <div class="portal-search-box">
+        <span class="portal-search-icon">🔍</span>
+        <input type="text" id="portal-search-input" class="portal-search-input" placeholder="ค้นหาปฏิบัติการ เช่น วงจร, เพนดูลัม, โซเลนอยด์, โฟโตเกต, เรโซแนนซ์, เลนส์, ควอนตัม..." />
+      </div>
+      <div id="portal-domain-chips" class="portal-domain-chips">
+        <!-- Rendered dynamically by portal.js -->
+      </div>
+    </div>
+
+    <div id="portal-cards-grid" class="portal-cards-grid">
+      <!-- Rendered dynamically by portal.js -->
+    </div>
+  </div>
+
+  <!-- ================= AGENTIC AI BOT LAUNCHER & DRAWER ================= -->
+  <button id="ai-bot-launcher" onclick="AIBot.toggleChat()" title="เปิด Dr. Newton ผู้ช่วยอัจฉริยะ Agentic AI">
+    <div class="ai-launcher-avatar">🤖</div>
+    <div class="ai-launcher-text">
+      <span class="ai-launcher-title">Dr. Newton AI</span>
+      <span class="ai-launcher-status">● Agentic Copilot</span>
+    </div>
+  </button>
+
+  <aside id="ai-bot-drawer">
+    <div class="ai-drawer-header">
+      <div class="ai-bot-info">
+        <div class="ai-bot-avatar-box">🤖</div>
+        <div class="ai-bot-meta">
+          <h4>Dr. Newton <span class="ai-bot-badge">Agentic AI</span></h4>
+          <p><span>●</span> ผู้ช่วยฟิสิกส์อัจฉริยะ</p>
+        </div>
+      </div>
+      <div class="ai-drawer-actions">
+        <button id="btn-ai-tts" class="ai-tts-btn" onclick="AIBot.toggleTTS()" title="เปิด/ปิด เสียงบรรยาย AI">🔊</button>
+        <button class="ai-header-btn" onclick="AIBot.closeChat()" title="ปิดหน้าต่าง AI">✕</button>
+      </div>
+    </div>
+
+    <div class="ai-telemetry-pill">
+      <span id="ai-telemetry-text">กำลังโหลดสถานะ...</span>
+      <span style="font-size:0.68rem; color:#94a3b8;">Telemetry Active</span>
+    </div>
+
+    <div class="ai-quick-pills">
+      <button class="ai-pill-btn" onclick="AIBot.sendUserMessage('ช่วยแนะนำขั้นตอนและวัตถุประสงค์ของแล็บนี้อย่างละเอียด')">💡 แนะนำแล็บนี้</button>
+      <button class="ai-pill-btn" onclick="AIBot.sendUserMessage('ตรวจสอบค่าปัจจุบันในห้องทดลองให้ฉันหน่อย')">🔍 ตรวจสอบค่าปัจจุบัน</button>
+      <button class="ai-pill-btn" onclick="AIBot.sendUserMessage('อธิบายสูตรและการคำนวณของแล็บนี้')">📊 สูตรและการคำนวณ</button>
+      <button class="ai-pill-btn" onclick="AIBot.sendUserMessage('ช่วยดำเนินการหรือกดสลับอุปกรณ์แทนฉัน (Auto-Pilot)')">⚡ ดำเนินการแทนฉัน</button>
+      <button class="ai-pill-btn" onclick="AIBot.sendUserMessage('ถามคำถามวัดความเข้าใจในแล็บนี้หน่อย (Quiz)')">🧪 ทดสอบความรู้ (Quiz)</button>
+    </div>
+
+    <div id="ai-messages-list" class="ai-messages-area">
+      <!-- Chat messages dynamically rendered -->
+    </div>
+
+    <div class="ai-input-bar">
+      <input type="text" id="ai-chat-input" class="ai-text-input" placeholder="พิมพ์คำถามหรือสั่งการ Dr. Newton เช่น 'อธิบายกฎของเลนซ์', 'ตรวจสอบค่า'..." />
+      <button class="ai-send-btn" onclick="AIBot.handleSend()" title="ส่งข้อความ">➤</button>
+    </div>
+  </aside>
+
+  <!-- ================= MODULAR JAVASCRIPT APPLICATION ================= -->
+  <script src="js/state.js?v=20261018_30"></script>
+  <script src="js/panels-controller.js?v=20261018_30"></script>
+  <script src="js/scene.js?v=20261018_30"></script>
+  <script src="js/experiments-registry.js?v=20261018_30"></script>
+  <script src="js/exp1-circuit.js?v=20261018_30"></script>
+  <script src="js/exp2-pendulum.js?v=20261018_30"></script>
+  <script src="js/experiments/optics-bench.js?v=20261018_30"></script>
+  <script src="js/experiments/waves-resonance.js?v=20261018_30"></script>
+  <script src="js/experiments/elec-wheatstone.js?v=20261018_30"></script>
+  <script src="js/experiments/em-faraday.js?v=20261018_30"></script>
+  <script src="js/experiments/em-solenoid.js?v=20261018_30"></script>
+  <script src="js/experiments/em-helmholtz.js?v=20261018_30"></script>
+  <script src="js/experiments/mech-air-track.js?v=20261018_30"></script>
+  <script src="js/experiments/mech-free-fall.js?v=20261018_30"></script>
+  <script src="js/experiments/thermo-gas.js?v=20261018_30"></script>
+  <script src="js/experiments/thermo-calorimeter.js?v=20261018_30"></script>
+  <script src="js/experiments/thermo-expansion.js?v=20261018_30"></script>
+  <script src="js/experiments/modern-photoelectric.js?v=20261018_30"></script>
+  <script src="js/experiments/modern-half-life.js?v=20261018_30"></script>
+  <script src="js/experiments/modern-frank-hertz.js?v=20261018_30"></script>
+  <script src="js/experiments/catalog-planned.js?v=20261018_30"></script>
+  <script src="js/labels-raycaster.js?v=20261018_30"></script>
+  <script src="js/ui-exp1.js?v=20261018_30"></script>
+  <script src="js/ui-exp2.js?v=20261018_30"></script>
+  <script src="js/ar-mediapipe.js?v=20261018_30"></script>
+  <script src="js/portal.js?v=20261018_30"></script>
+  <script src="js/ai-bot.js?v=20261018_30"></script>
+  <script src="js/app.js?v=20261018_30"></script>
+
+</body>
+</html>

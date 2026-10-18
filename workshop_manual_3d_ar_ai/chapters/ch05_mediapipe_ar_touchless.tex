@@ -1,0 +1,140 @@
+% ==============================================================================
+% ch05_mediapipe_ar_touchless.tex — บทที่ 5
+% ==============================================================================
+\chapter{การพัฒนาเทคโนโลยีตรวจจับท่าทางมือไร้สัมผัส AR MediaPipe Hands}
+\label{chap:ch05}
+
+\begin{teachingplan}{แผนการบริหารการสอนประจำบทที่ 5}
+\noindent\textbf{หัวข้อเนื้อหาประจำบท}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item สถาปัตยกรรมโครงข่ายประสาทเทียมตรวจจับมือ 21 จุด (MediaPipe Hands Pipeline)
+    \item การเชื่อมต่อวิดีโอสตรีมจากกล้องเว็บแคม (Webcam Video Stream \& Canvas Overlay)
+    \item ตรรกะการตรวจจับท่าทางมือ (Hand Gesture Heuristics): การจีบนิ้ว (Pinch), กำมือ (Fist), และชูสองนิ้ว (V-Sign)
+    \item การแปลงพิกัดมือ 2 มิติ สู่ทิศทางรังสี 3 มิติเพื่อหยิบเลื่อนอุปกรณ์ (Touchless Pinch Dragging)
+    \item กลไกจำลองมืออัตโนมัติ (Simulated Virtual Hand Fallback) สำหรับเครื่องที่ไม่มีกล้อง
+\end{enumerate}
+
+\noindent\textbf{วัตถุประสงค์เชิงพฤติกรรม (Behavioral Objectives)}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item ผู้เรียนสามารถอธิบายตำแหน่งพิกัด Landmark สำคัญของมือทั้ง 21 จุดได้
+    \item ผู้เรียนสามารถเขียนฟังก์ชันคำนวณระยะพิกัดยูคลิดระหว่างปลายนิ้วโป้งและปลายนิ้วชี้เพื่อระบุสถานะ Pinch ได้
+    \item ผู้เรียนสามารถประยุกต์ใช้ Raycasting ในการเชื่อมพิกัดมือเข้ากับตำแหน่งวัตถุ 3D ได้
+    \item ผู้เรียนสามารถจัดการข้อผิดพลาดกรณีที่เบราว์เซอร์ไม่ได้รับอนุญาตให้เปิดกล้องได้
+\end{enumerate}
+
+\noindent\textbf{กิจกรรมการเรียนการสอน (Teaching-Learning Activities)}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item บรรยายสถาปัตยกรรม MediaPipe Hands และการวาดโครงกระดูกมือบน Tracking Canvas (30 นาที)
+    \item ปฏิบัติการ: เปิดใช้งานกล้องเว็บแคมและทดสอบการแสดงจุดพิกัด 21 จุดบนหน้าจอ (45 นาที)
+    \item ปฏิบัติการ: เชื่อมต่อท่าทางการจีบนิ้วเพื่อหยิบเลื่อนโวลต์มิเตอร์ 3D บนโต๊ะทดลอง (45 นาที)
+\end{enumerate}
+
+\noindent\textbf{สื่อการเรียนการสอน}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item เอกสารคู่มือบทที่ 5, โมดูล \texttt{ar-mediapipe.js}, เครื่องคอมพิวเตอร์พร้อมกล้องเว็บแคม
+\end{enumerate}
+
+\noindent\textbf{การวัดและประเมินผล}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item ประเมินจากความสามารถในการควบคุมอุปกรณ์ 3D ด้วยมือเปล่าผ่านกล้องได้อย่างแม่นยำ
+    \item ประเมินจากความเสถียรของระบบ ไม่เกิดอาการหน่วยความจำรั่วไหล (Memory Leak) ในแอนิเมชันลูป
+\end{enumerate}
+\end{teachingplan}
+
+\newpage
+
+\section{สถาปัตยกรรมโครงข่ายประสาทเทียมตรวจจับมือ 21 จุด}
+Google MediaPipe Hands เป็นโมเดล Deep Learning ประสิทธิภาพสูงที่สามารถตรวจจับพิกัดโครงกระดูกมือ 3 มิติแบบ Real-time จำนวน 21 จุด (Landmarks) บนเว็บเบราว์เซอร์ผ่าน WebAssembly (Wasm) โดยไม่จำเป็นต้องส่งภาพขึ้นไปประมวลผลบนคลาวด์ภายนอก:
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[scale=0.95, every node/.style={scale=0.95}]
+    % Wrist (0)
+    \coordinate (W) at (0,0);
+    \fill[rbruNavy] (W) circle (4pt) node[below] {\small 0 (Wrist)};
+
+    % Thumb
+    \coordinate (T1) at (-0.8,0.8); \coordinate (T2) at (-1.3,1.6);
+    \coordinate (T3) at (-1.6,2.3); \coordinate (T4) at (-1.8,2.9);
+    \draw[thick, rbruGold] (W) -- (T1) -- (T2) -- (T3) -- (T4);
+    \foreach \pt/\lbl in {T1/1, T2/2, T3/3, T4/4 (Tip)} \fill[rbruGold] (\pt) circle (3pt) node[left] {\tiny \lbl};
+
+    % Index Finger
+    \coordinate (I1) at (-0.5,1.5); \coordinate (I2) at (-0.6,2.4);
+    \coordinate (I3) at (-0.7,3.2); \coordinate (I4) at (-0.8,3.9);
+    \draw[thick, cyan] (W) -- (I1) -- (I2) -- (I3) -- (I4);
+    \foreach \pt/\lbl in {I1/5, I2/6, I3/7, I4/8 (Tip)} \fill[cyan] (\pt) circle (3pt) node[left] {\tiny \lbl};
+
+    % Middle Finger
+    \coordinate (M1) at (0,1.6); \coordinate (M2) at (0,2.6);
+    \coordinate (M3) at (0,3.5); \coordinate (M4) at (0,4.2);
+    \draw[thick, rbruBlue] (W) -- (M1) -- (M2) -- (M3) -- (M4);
+    \foreach \pt/\lbl in {M1/9, M2/10, M3/11, M4/12 (Tip)} \fill[rbruBlue] (\pt) circle (3pt) node[right] {\tiny \lbl};
+
+    % Ring Finger
+    \coordinate (R1) at (0.5,1.5); \coordinate (R2) at (0.6,2.4);
+    \coordinate (R3) at (0.7,3.2); \coordinate (R4) at (0.8,3.8);
+    \draw[thick, rbruEmerald] (W) -- (R1) -- (R2) -- (R3) -- (R4);
+    \foreach \pt/\lbl in {R1/13, R2/14, R3/15, R4/16 (Tip)} \fill[rbruEmerald] (\pt) circle (3pt) node[right] {\tiny \lbl};
+
+    % Pinky Finger
+    \coordinate (P1) at (0.9,1.2); \coordinate (P2) at (1.2,1.9);
+    \coordinate (P3) at (1.4,2.5); \coordinate (P4) at (1.5,3.1);
+    \draw[thick, rbruPurple] (W) -- (P1) -- (P2) -- (P3) -- (P4);
+    \foreach \pt/\lbl in {P1/17, P2/18, P3/19, P4/20 (Tip)} \fill[rbruPurple] (\pt) circle (3pt) node[right] {\tiny \lbl};
+
+    % Palm Base Connection
+    \draw[thick, gray] (I1) -- (M1) -- (R1) -- (P1);
+
+    % Pinch Distance indicator between Thumb 4 and Index 8
+    \draw[dashed, red, thick] (T4) -- (I4) node[midway, above, font=\scriptsize\bfseries, color=red] {$d_{\text{pinch}}$};
+\end{tikzpicture}
+\caption{ผังพิกัด 21 จุดของกระดูกมือมนุษย์ (MediaPipe Hand Landmarks)}
+\label{fig:mediapipe_skeleton}
+\end{figure}
+
+\section{ตรรกะการตรวจจับท่าทางมือ (Gesture Heuristics)}
+ระบบนิยามท่าทางหลัก 3 ท่าทางสำหรับควบคุมการทดลอง:
+\begin{enumerate}[leftmargin=1.5em, itemsep=3pt]
+    \item \textbf{การจีบนิ้ว (Pinch Gesture):} คำนวณระยะพิกเซลระหว่างปลายนิ้วโป้ง (Landmark 4) และปลายนิ้วชี้ (Landmark 8):
+    \begin{equation}
+    d_{\text{pinch}} = \sqrt{(x_8 - x_4)^2 + (y_8 - y_4)^2}
+    \end{equation}
+    เมื่อ $d_{\text{pinch}} < 38\text{ pixels}$ (หรือ $0.045$ ในระบบ Normalized Coordinates) จะถือว่าเกิดการจีบนิ้วเพื่อ “หยิบจับอุปกรณ์”
+    \item \textbf{การกำมือ (Fist Gesture):} ตรวจสอบว่าระยะห่างของปลายนิ้วทั้ง 4 เทียบกับข้อมือมีค่าน้อยกว่าเกณฑ์ ใช้สำหรับ “หมุนกล้อง 3D (Orbiting)”
+    \item \textbf{การชูสองนิ้ว (Peace / V-Sign):} นิ้วชี้และนิ้วกลางเหยียดตรง นิ้วนางและก้อยพับชิด ใช้สำหรับสั่ง “เปิด/ปิดสวิตช์ไฟฟ้า” หรือ “กดเริ่มจับเวลา”
+\end{enumerate}
+
+\begin{lstlisting}[language=JavaScript, caption={โค้ดการตรวจจับ Pinch Gesture ใน ar-mediapipe.js}]
+function checkPinchGesture(landmarks, width, height) {
+  const pThumb = landmarks[4];
+  const pIndex = landmarks[8];
+  
+  // แปลง Normalized Coordinates (0-1) เป็น Pixel Coordinates
+  const dx = (pThumb.x - pIndex.x) * width;
+  const dy = (pThumb.y - pIndex.y) * height;
+  const distPx = Math.hypot(dx, dy);
+
+  return {
+    isPinch: distPx < 38.0,
+    pinchX: ((pThumb.x + pIndex.x) / 2) * width,
+    pinchY: ((pThumb.y + pIndex.y) / 2) * height
+  };
+}
+\end{lstlisting}
+
+\section{กลไกจำลองมืออัตโนมัติ (Simulated Hand Engine)}
+เพื่อแก้ปัญหาในห้องเรียนที่เครื่องคอมพิวเตอร์ของโรงเรียนบางแห่งไม่มีกล้องเว็บแคม หรือระบบปฏิบัติการบล็อกการเข้าถึงกล้อง ระบบ Next Gen Lab ได้ติดตั้ง **Simulated Hand Engine** ซึ่งจะเคลื่อนไหวเลียนแบบการจีบนิ้วหยิบอุปกรณ์โดยอัตโนมัติ ช่วยให้ผู้เรียนยังคงเห็นกระบวนการทำงานของระบบได้ 100\%:
+
+\begin{tipbox}{การบริหารจัดการทรัพยากรเบราว์เซอร์ (Zero-GC Optimization)}
+การรัน MediaPipe Hands ควบคู่กับ Three.js 60 FPS จะสร้างความร้อนและกินแรมสูงมาก หากสร้างวัตถุ \texttt{new Vector3()} ภายในแอนิเมชันลูป ทุกตัวแปรคณิตศาสตร์ต้องถูกจองพื้นที่ไว้ล่วงหน้านอกลูป (Pre-allocated Object Pooling) เพื่อป้องกัน Garbage Collection กระตุก
+\end{tipbox}
+
+\section*{คำถามทบทวนและใบงานปฏิบัติการท้ายบทที่ 5}
+\addcontentsline{toc}{section}{คำถามทบทวนและใบงานปฏิบัติการท้ายบทที่ 5}
+
+\begin{enumerate}[leftmargin=1.5em, itemsep=8pt]
+    \item จงระบุหมายเลข Landmark ของปลายนิ้วทั้ง 5 นิ้วในระบบ MediaPipe Hands และอธิบายว่าเพราะเหตุใดจึงเลือกใช้ Landmark 4 และ 8 ในการตรวจวัดการหยิบจับ
+    \item หากกล้องเว็บแคมมีมุมมองกลับด้านซ้าย-ขวา (Mirror Effect) จะส่งผลต่อการควบคุมวัตถุ 3D อย่างไร และมีคำสั่ง CSS หรือ JavaScript ตัวใดที่ช่วยแก้ไขปัญหานี้
+    \item \textbf{ใบงานปฏิบัติการ 5.1:} ให้นักศึกษาเปิดระบบ Next Gen Lab แล้วเปิดกล้องเว็บแคม ทดลองใช้มือชี้ไปยังโวลต์มิเตอร์ จีบนิ้ว (Pinch) เพื่อหยิบเลื่อนอุปกรณ์ไปยังมุมอื่นของโต๊ะ แล้วคลายนิ้วเพื่อปล่อยวาง บันทึกวิดีโอสั้นหรือภาพถ่ายขณะปฏิบัติการ
+\end{enumerate}

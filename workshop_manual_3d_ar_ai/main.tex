@@ -1,0 +1,69 @@
+% ==============================================================================
+% main.tex — Master Document for Workshop Manual (RBRU Masterclass Edition)
+% Title: การออกแบบและพัฒนาสื่อการสอนสามมิติเสมือนจริงและความจริงเสริมด้วยปัญญาประดิษฐ์
+% Standard: rbru-latex-textbook-builder & academic-book-cover-architect
+% ==============================================================================
+\documentclass[11pt,twoside,openright]{book}
+
+% Load custom styling package
+\usepackage{styles/rbru_book}
+
+\title{การออกแบบและพัฒนาสื่อการสอนสามมิติเสมือนจริงและความจริงเสริมด้วยปัญญาประดิษฐ์}
+\author{ผู้ช่วยศาสตราจารย์ ดร.ชีวะ ทัศนา}
+\date{พ.ศ. 2569}
+
+\begin{document}
+
+% ------------------------------------------------------------------------------
+% Front Matter (Cover, Inner Cover, Preface, Curriculum, Table of Contents)
+% ------------------------------------------------------------------------------
+\frontmatter
+
+% 1. Full-Bleed 3D Pixar Semi-realistic Artwork Cover
+\input{cover}
+
+% 2. Vector TikZ Dark Mode Inner Title Page
+\input{inner_cover}
+
+% 3. Preface & 2-Day Workshop Curriculum (12 Hours)
+\input{preface}
+
+% 4. Table of Contents
+{
+  \hypersetup{linkcolor=rbruNavy}
+  \tableofcontents
+}
+\cleardoublepage
+
+% ------------------------------------------------------------------------------
+% Main Matter (Chapters 1 to 6)
+% ------------------------------------------------------------------------------
+\mainmatter
+
+% Chapter 1: Overview & Design Principles
+\input{chapters/ch01_overview_principles}
+
+% Chapter 2: AI Prompting & Curriculum Deconstruction
+\input{chapters/ch02_ai_assisted_content}
+
+% Chapter 3: Three.js PBR Shaders & Draggable Equipment
+\input{chapters/ch03_threejs_pbr_lab}
+
+% Chapter 4: Circuit Reduction SVG Engine & Exact Fractions
+\input{chapters/ch04_circuit_reduction_svg}
+
+% Chapter 5: MediaPipe AR Hands & Touchless Interaction
+\input{chapters/ch05_mediapipe_ar_touchless}
+
+% Chapter 6: Cloud CDN Deployment & Learning Gain Evaluation
+\input{chapters/ch06_deployment_evaluation}
+
+% ------------------------------------------------------------------------------
+% Back Matter (References & Bibliography)
+% ------------------------------------------------------------------------------
+\backmatter
+
+% References in APA 7th Style
+\input{references}
+
+\end{document}

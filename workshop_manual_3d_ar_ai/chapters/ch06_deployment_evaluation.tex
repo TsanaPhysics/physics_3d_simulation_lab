@@ -1,0 +1,107 @@
+% ==============================================================================
+% ch06_deployment_evaluation.tex — บทที่ 6
+% ==============================================================================
+\chapter{การเผยแพร่ระบบบนคลาวด์ CDN และการประเมินผลสัมฤทธิ์ทางการเรียน}
+\label{chap:ch06}
+
+\begin{teachingplan}{แผนการบริหารการสอนประจำบทที่ 6}
+\noindent\textbf{หัวข้อเนื้อหาประจำบท}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item สถาปัตยกรรมการเผยแพร่สื่อการสอนบน GitHub Pages Global CDN
+    \item การควบคุมความปลอดภัย HTTPS สำหรับการอนุญาตให้เข้าถึงกล้องเว็บแคม
+    \item รายการตรวจสอบความสมบูรณ์เชิงวิศวกรรมซอฟต์แวร์ (0 Errors / 0 Warnings Checklist)
+    \item ระเบียบวิธีวิจัยและเครื่องมือวัดผลสัมฤทธิ์ทางการเรียนวิทยาศาสตร์
+    \item การคำนวณอัตราการเรียนรู้สัมพัทธ์ (Hake's Normalized Learning Gain $\langle g \rangle$)
+    \item การประเมินความพึงพอใจและคุณภาพสื่อการสอนมาตรฐาน 5 ดาว
+\end{enumerate}
+
+\noindent\textbf{วัตถุประสงค์เชิงพฤติกรรม (Behavioral Objectives)}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item ผู้เรียนสามารถสร้าง Git Repository และเปิดใช้งาน GitHub Pages เพื่อเผยแพร่สื่อได้
+    \item ผู้เรียนสามารถตรวจสอบข้อผิดพลาดบน Developer Tools Console ให้ได้ 0 Errors ได้
+    \item ผู้เรียนสามารถออกแบบข้อสอบวัดผลก่อนเรียน-หลังเรียน (Pre-Test / Post-Test) ที่สอดคล้องกับสื่อ 3D ได้
+    \item ผู้เรียนสามารถคำนวณและแปลความหมายค่า Normalized Gain $\langle g \rangle$ ทางการศึกษาได้
+\end{enumerate}
+
+\noindent\textbf{กิจกรรมการเรียนการสอน (Teaching-Learning Activities)}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item สาธิตขั้นตอนการ Push โค้ดขึ้น GitHub และการตั้งค่า Custom Domain/GitHub Pages (30 นาที)
+    \item ปฏิบัติการ: ตรวจสอบ Console Log และทดสอบการเปิดใช้งานบนสมาร์ทโฟน/แท็บเล็ต (30 นาที)
+    \item บรรยายระเบียบวิธีวิจัยการวัดผลสัมฤทธิ์และการคำนวณ Hake's Gain ด้วยแบบทดสอบ (45 นาที)
+\end{enumerate}
+
+\noindent\textbf{สื่อการเรียนการสอน}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item เอกสารคู่มือบทที่ 6, เครื่องมือ Git CLI / GitHub Desktop, เครื่องคำนวณสถิติ
+\end{enumerate}
+
+\noindent\textbf{การวัดและประเมินผล}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item ประเมินจากการมีลิงก์ GitHub Pages ที่สามารถเข้าถึงและใช้งานได้จริงจากเครือข่ายอินเทอร์เน็ตสาธารณะ
+    \item ประเมินจากความสมบูรณ์ของแผนผังการประเมินผลสัมฤทธิ์และการคำนวณค่า Normalized Gain
+\end{enumerate}
+\end{teachingplan}
+
+\newpage
+
+\section{การเผยแพร่สื่อบน GitHub Pages Global CDN}
+การเผยแพร่เว็บแอปพลิเคชันเสมือนจริงให้ครูและนักเรียนทั่วประเทศเข้าถึงได้อย่างรวดเร็วและปลอดภัย ต้องอาศัยเครือข่ายกระจายเนื้อหา (Content Delivery Network: CDN) ที่รองรับโพรโทคอล HTTPS ซึ่งเป็นข้อบังคับขั้นพื้นฐานของเบราว์เซอร์ในการอนุญาตให้เข้าถึงกล้องเว็บแคม (MediaDevices API):
+
+\begin{activitybox}{ขั้นตอนการติดตั้งระบบบน GitHub Pages}
+\begin{enumerate}[leftmargin=1.5em, itemsep=3pt]
+    \item สร้าง Repository ใหม่บน GitHub เช่น \texttt{nextgen\_lab2026}
+    \item ทำการ Push โค้ดทั้งหมดขึ้นสู่ Branch \texttt{main}:
+    \begin{lstlisting}[language=bash]
+git init
+git add .
+git commit -m "feat: complete 3D & AR virtual physics lab"
+git branch -M main
+git remote add origin https://github.com/<username>/nextgen_lab2026.git
+git push -u origin main
+    \end{lstlisting}
+    \item ไปที่แท็บ \textbf{Settings} $\rightarrow$ \textbf{Pages} เลือก Source เป็น \texttt{Deploy from a branch} และเลือก Branch \texttt{main}
+    \item ระบบจะสร้าง URL สาธารณะ เช่น \texttt{https://<username>.github.io/nextgen\_lab2026/} พร้อมใช้งานได้ทันทีทั่วโลก
+\end{enumerate}
+\end{activitybox}
+
+\section{รายการตรวจสอบคุณภาพเชิงวิศวกรรม (Pre-Flight Audit Checklist)}
+ก่อนนำสื่อการสอนไปใช้จริงในชั้นเรียน ครูผู้สอนต้องตรวจสอบความสมบูรณ์ตามเกณฑ์ 8 ประการ:
+\begin{itemize}[leftmargin=1.5em, itemsep=3pt]
+    \item [$\square$] \textbf{0 Errors / 0 Warnings:} ไม่มีข้อผิดพลาดสีแดงบน Console
+    \item [$\square$] \textbf{HTTPS Active:} มีใบรับรอง SSL/TLS เปิดใช้งานกล้องเว็บแคมได้
+    \item [$\square$] \textbf{Full Standalone:} ใช้งานได้ทันทีโดยไม่ต้องติดตั้ง Node.js
+    \item [$\square$] \textbf{Responsive UI:} แผงควบคุม Glassmorphism สามารถย่อ ขยาย และพับเก็บได้
+    \item [$\square$] \textbf{Touchless Pinch Drag:} การจีบนิ้วเพื่อหยิบเลื่อนอุปกรณ์ทำงานได้แม่นยำ
+    \item [$\square$] \textbf{Circuit Math Correctness:} ค่ากระแสและแรงดันตรงตามเฉลยโอลิมปิก IJSO
+    \item [$\square$] \textbf{Simulated Hand Fallback:} ทำงานอัตโนมัติเมื่อไม่มีกล้อง
+    \item [$\square$] \textbf{Academic MathJax:} สมการคณิตศาสตร์แสดงผลคมชัด ไร้รอยกระพริบ
+\end{itemize}
+
+\section{การประเมินผลสัมฤทธิ์ทางการเรียนและการคำนวณ Hake's Gain}
+ในการวิจัยนวัตกรรมการศึกษาเพื่อขอตำแหน่งทางวิชาการ (ผศ./รศ./ศ.) หรือการรายงานผลโครงการ การวัดผลสัมฤทธิ์ต้องอาศัยการทดสอบก่อนเรียน (Pre-Test) และหลังเรียน (Post-Test) จากนั้นนำมาคำนวณ **Normalized Learning Gain ($\langle g \rangle$)** ตามเกณฑ์ของ **Hake (1998)**:
+
+\begin{theoremlab}{สูตรการคำนวณ Hake's Normalized Learning Gain}
+\begin{equation}
+\langle g \rangle = \frac{S_{\text{post}} - S_{\text{pre}}}{100 - S_{\text{pre}}}
+\end{equation}
+โดยที่:
+\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+    \item $S_{\text{pre}}$ คือ ร้อยละของคะแนนเฉลี่ยก่อนเรียน (\%)
+    \item $S_{\text{post}}$ คือ ร้อยละของคะแนนเฉลี่ยหลังเรียน (\%)
+\end{itemize}
+\textbf{เกณฑ์การแปลความหมายอัตราการเรียนรู้สัมพัทธ์:}
+\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+    \item $\langle g \rangle \ge 0.70$ : อัตราการเรียนรู้ระดับสูง (High Gain)
+    \item $0.30 \le \langle g \rangle < 0.70$ : อัตราการเรียนรู้ระดับปานกลาง (Medium Gain)
+    \item $\langle g \rangle < 0.30$ : อัตราการเรียนรู้ระดับต่ำ (Low Gain)
+\end{itemize}
+\end{theoremlab}
+
+\section*{คำถามทบทวนและใบงานปฏิบัติการท้ายบทที่ 6}
+\addcontentsline{toc}{section}{คำถามทบทวนและใบงานปฏิบัติการท้ายบทที่ 6}
+
+\begin{enumerate}[leftmargin=1.5em, itemsep=8pt]
+    \item เพราะเหตุใดเว็บเบราว์เซอร์จึงไม่อนุญาตให้เปิดกล้องเว็บแคมผ่านโพรโทคอล HTTP ธรรมดา และ GitHub Pages ช่วยแก้ไขปัญหานี้ได้อย่างไร
+    \item หากนักเรียนทำคะแนนแบบทดสอบก่อนเรียนได้เฉลี่ย $35\%$ และหลังใช้สื่อ 3D Virtual Lab ทำคะแนนได้เฉลี่ย $82\%$ จงคำนวณค่า Normalized Learning Gain ($\langle g \rangle$) และแปลความหมายตามเกณฑ์ของ Hake
+    \item \textbf{ใบงานปฏิบัติการ 6.1:} ให้นักศึกษาทำการทดสอบระบบ Next Gen Lab บน GitHub Pages ของตนเอง ตรวจสอบ Console Log และจับภาพหน้าจอแสดงผลลัพธ์ 0 Errors แนบเป็นหลักฐานการส่งงานฉบับสมบูรณ์
+\end{enumerate}

@@ -1,0 +1,119 @@
+% ==============================================================================
+% ch02_ai_assisted_content.tex — บทที่ 2
+% ==============================================================================
+\chapter{การใช้ปัญญาประดิษฐ์สกัดตัวชี้วัดหลักสูตรสู่พิมพ์เขียวสื่อการสอน}
+\label{chap:ch02}
+
+\begin{teachingplan}{แผนการบริหารการสอนประจำบทที่ 2}
+\noindent\textbf{หัวข้อเนื้อหาประจำบท}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item การสังเคราะห์ตัวชี้วัดหลักสูตรแกนกลางสู่ผลลัพธ์การเรียนรู้ระดับพฤติกรรม (Bloom's Revised Taxonomy)
+    \item กรอบการสั่งการปัญญาประดิษฐ์ระดับสูงแบบ CLEAR Prompting Framework
+    \item เทคนิคการสร้างสถาปัตยกรรมสื่อการสอนเสมือนจริงด้วยโมเดลภาษาขนาดใหญ่ (LLM)
+    \item การสร้าง System Prompt และ Role-Based Personas สำหรับครูผู้สร้างสื่อ 3D
+    \item การตรวจสอบความถูกต้องทางฟิสิกส์ (Physics Verification) และการป้องกันปัญหา AI Hallucination
+\end{enumerate}
+
+\noindent\textbf{วัตถุประสงค์เชิงพฤติกรรม (Behavioral Objectives)}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item ผู้เรียนสามารถแปลงตัวชี้วัดหลักสูตรให้เป็นคำสั่ง Prompt เชิงสถาปัตยกรรมได้อย่างถูกต้อง
+    \item ผู้เรียนสามารถใช้กรอบ CLEAR Prompting ในการสร้างโค้ดจำลองฟิสิกส์ HTML/JS ได้
+    \item ผู้เรียนสามารถเขียนแบบทดสอบและสคริปต์การตรวจสอบความถูกต้องทางคณิตศาสตร์ร่วมกับ AI ได้
+\end{enumerate}
+
+\noindent\textbf{กิจกรรมการเรียนการสอน (Teaching-Learning Activities)}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item อธิบายทฤษฎีการเขียน Prompt เชิงโครงสร้างและการเทียบเคียงกับ Bloom's Taxonomy (30 นาที)
+    \item ปฏิบัติการ: ฝึกเขียน CLEAR Prompt เพื่อสั่งการให้ AI ร่างโค้ดจำลองลูกตุ้มเพนดูลัม (45 นาที)
+    \item วิเคราะห์ข้อผิดพลาดและวิธีแก้ปัญหาภาพหลอน (Hallucination) ในการคำนวณฟิสิกส์ (45 นาที)
+\end{enumerate}
+
+\noindent\textbf{สื่อการเรียนการสอน}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item เอกสารคู่มือบทที่ 2, เทมเพลต CLEAR Prompting, อินเทอร์เฟซผู้ช่วย AI (Claude/Gemini/GPT)
+\end{enumerate}
+
+\noindent\textbf{การวัดและประเมินผล}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item ประเมินจากความสมบูรณ์ของชุดคำสั่ง Prompt ที่ผู้เรียนสร้างขึ้น
+    \item ประเมินจากความสามารถในการตรวจจับข้อผิดพลาดในโค้ดฟิสิกส์ที่ AI สร้างขึ้น
+\end{enumerate}
+\end{teachingplan}
+
+\newpage
+
+\section{กรอบการสั่งการปัญญาประดิษฐ์ CLEAR Prompting Framework}
+การใช้ Generative AI ในการพัฒนาสื่อการสอนระดับมืออาชีพ ไม่สามารถสั่งการด้วยข้อความสั้นๆ หรือกำกวมได้ ครูและนักพัฒนาจำเป็นต้องใช้ระเบียบวิธีวิศวกรรมคำสั่ง (Prompt Engineering) ที่มีโครงสร้างชัดเจน เรียกว่า **CLEAR Prompting Framework** ประกอบด้วย 5 มิติ:
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[scale=0.88, every node/.style={scale=0.88}]
+    % 5 Steps of CLEAR
+    \node[draw=rbruNavy, fill=blue!10, rounded corners=6pt, text width=2.4cm, align=center, minimum height=2.4cm] (C) at (0,0) {\bfseries\color{rbruNavy}\Large C\\[4pt]\footnotesize Context \& Persona\\(บทบาทและบริบท)};
+    \node[draw=rbruBlue, fill=cyan!10, rounded corners=6pt, text width=2.4cm, align=center, minimum height=2.4cm] (L) at (3.2,0) {\bfseries\color{rbruBlue}\Large L\\[4pt]\footnotesize Learning Goal\\(เป้าหมายการเรียนรู้)};
+    \node[draw=rbruEmerald, fill=green!10, rounded corners=6pt, text width=2.4cm, align=center, minimum height=2.4cm] (E) at (6.4,0) {\bfseries\color{rbruEmerald}\Large E\\[4pt]\footnotesize Execution Logic\\(ตรรกะเชิงฟิสิกส์)};
+    \node[draw=rbruGold, fill=amber!10, rounded corners=6pt, text width=2.4cm, align=center, minimum height=2.4cm] (A) at (9.6,0) {\bfseries\color{rbruGold!80!black}\Large A\\[4pt]\footnotesize Architecture \& UI\\(โครงสร้างส่วนหน้า)};
+    \node[draw=rbruPurple, fill=purple!10, rounded corners=6pt, text width=2.4cm, align=center, minimum height=2.4cm] (R) at (12.8,0) {\bfseries\color{rbruPurple}\Large R\\[4pt]\footnotesize Review \& Audit\\(เกณฑ์ตรวจสอบ)};
+
+    \draw[-{Stealth[scale=1.2]}, thick, gray] (C) -- (L);
+    \draw[-{Stealth[scale=1.2]}, thick, gray] (L) -- (E);
+    \draw[-{Stealth[scale=1.2]}, thick, gray] (E) -- (A);
+    \draw[-{Stealth[scale=1.2]}, thick, gray] (A) -- (R);
+\end{tikzpicture}
+\caption{โครงสร้างกรอบคำสั่ง CLEAR Prompting สำหรับการสร้างสื่อจำลองฟิสิกส์ 3 มิติ}
+\label{fig:clear_prompting}
+\end{figure}
+
+\begin{enumerate}[leftmargin=1.5em, itemsep=4pt]
+    \item \textbf{C -- Context \& Role Persona:} กำหนดบทบาทที่ชัดเจน เช่น \textit{“คุณคือสถาปนิกผู้เชี่ยวชาญการสร้าง 3D Virtual Physics Lab ตามมาตรฐานโอลิมปิกวิชาการ...”}
+    \item \textbf{L -- Learning Objectives (Bloom's Taxonomy):} ระบุพฤติกรรมการเรียนรู้ที่ต้องการ เช่น วิเคราะห์การต่อตัวต้านทานแบบผสม (Analyze) และประเมินค่าความต่างศักย์ (Evaluate)
+    \item \textbf{E -- Execution \& Physics Formulas:} ใส่สมการคณิตศาสตร์และเงื่อนไขขอบเขตอย่างชัดเจน เช่น $R_{\text{ชุด}} = \frac{r_1 r_2}{r_1 + r_2}$ และต้องทอนเป็นเศษส่วนอย่างต่ำด้วย Euclidean GCD
+    \item \textbf{A -- Architecture \& Technology Stack:} ระบุภาษาและไลบรารีที่ต้องการ เช่น Vanilla HTML5, Three.js, MediaPipe, CSS Glassmorphism ปราศจากการใช้ไลบรารีภายนอกที่หนักเกินจำเป็น
+    \item \textbf{R -- Robustness \& Constraints:} กฎเหล็กข้อห้าม เช่น ห้ามใช้ค่าสุ่มจำลอง ห้ามทับซ้อนเลย์เอาต์ และต้องได้ผลลัพธ์ 0 Errors / 0 Warnings
+\end{enumerate}
+
+\section{เทมเพลตคำสั่ง Master Prompt สำหรับสร้างห้องปฏิบัติการเสมือนจริง}
+
+\begin{aiprompt}{เทมเพลตคำสั่ง CLEAR Prompt สำหรับระบบวงจรไฟฟ้า 3D}
+คัดลอกและนำข้อความคำสั่งต่อไปนี้ไปสั่งการในโมเดลปัญญาประดิษฐ์:
+\begin{lstlisting}
+[ROLE & CONTEXT]:
+ทำหน้าที่เป็น Senior 3D Physics Simulation Architect พัฒนาระบบห้องปฏิบัติการเสมือนจริงสำหรับนักเรียนโอลิมปิกฟิสิกส์ มหาวิทยาลัยราชภัฏรำไพพรรณี
+
+[LEARNING OUTCOME]:
+นักเรียนสามารถเข้าใจการลดรูปวงจรไฟฟ้าตัวต้านทานรูปหกเหลี่ยมด้านเท่าที่มีขั้วต่อ a, b, c, d, e, f และสังเกตการไหลของกระแสไฟฟ้ารวม I และแรงดันคร่อมโพรบ V_PQ
+
+[PHYSICS & MATH CONSTRAINTS]:
+1. ตัวต้านทาน 6 ตัว: 1, 2, 3, 4, 5, 6 โอห์ม เรียงตามลำดับ ผลรวม 21 โอห์ม
+2. แหล่งจ่ายไฟ DC 10V และตัวต้านทานอนุกรมคงที่ 10 โอห์ม
+3. เมื่อเลือกคู่โพรบ P, Q วงแหวนต้องคลี่เป็น 2 กิ่งขนาน r1 และ r2 ทันที
+4. คำนวณ R_ชุด = (r1 * r2) / (r1 + r2) ด้วย Euclidean GCD เป็นเศษส่วนแท้
+5. คำนวณ I = 10 / (10 + R_ชุด) และ V_PQ = I * R_ชุด
+
+[TECH STACK & ARCHITECTURE]:
+- WebGL 3D ด้วย Three.js PBR Shaders
+- เอนจินวาดผังลดรูปวงจร 4 ขั้นตอนด้วยเวกเตอร์ SVG พลวัต
+- แผงควบคุม Glassmorphism ซ้าย-ขวา ย่อขยายและพับเก็บได้
+- โค้ดทั้งหมดต้องเป็น Standalone รันบนเบราว์เซอร์ได้ทันทีโดยไม่ต้อง Build
+\end{lstlisting}
+\end{aiprompt}
+
+\section{การตรวจสอบความถูกต้องและป้องกันปัญหาภาพหลอน (AI Hallucination)}
+ปัญหาที่พบบ่อยเมื่อใช้ AI สร้างโค้ดวิทยาศาสตร์ คือ AI มักประมาณค่าทศนิยม หรือสร้างฟังก์ชันจำลองที่มีลักษณะสุ่ม (Random) เพื่อให้เข็มมิเตอร์ขยับได้ โดยไม่ได้คำนวณจากกฎของฟิสิกส์จริง
+
+\begin{tipbox}{เทคนิคการตรวจสอบความถูกต้องทางฟิสิกส์ (Physics Sanity Check)}
+\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+    \item \textbf{ตรวจสอบกฎการอนุรักษ์พลังงานและประจุ (KCL \& KVL):} กระแสที่ไหลเข้าจุดต่อ $P$ ต้องเท่ากับผลรวมกระแสในกิ่งที่ 1 และกิ่งที่ 2 เสมอ ($I_{\text{รวม}} = I_1 + I_2$)
+    \item \textbf{ตรวจสอบกรณีสุดโต่ง (Boundary Conditions):} เมื่อสวิตช์เปิดอยู่ วงจรต้องมีค่า $I = 0\text{ A}$ และ $V_{PQ} = 0\text{ V}$ เสมอ
+    \item \textbf{ตรวจสอบการทอนเศษส่วน:} ตรวจสอบว่า $\frac{20}{21}$ โอห์ม เมื่อต่ออนุกรมกับ $10$ โอห์ม จะได้ $\frac{230}{21}$ โอห์ม ตรงตามทฤษฎีคณิตศาสตร์แท้จริงหรือไม่
+\end{itemize}
+\end{tipbox}
+
+\section*{คำถามทบทวนและใบงานปฏิบัติการท้ายบทที่ 2}
+\addcontentsline{toc}{section}{คำถามทบทวนและใบงานปฏิบัติการท้ายบทที่ 2}
+
+\begin{enumerate}[leftmargin=1.5em, itemsep=8pt]
+    \item จงอธิบายองค์ประกอบของกรอบ CLEAR Prompting และชี้แจงว่าเพราะเหตุใดขั้นตอน \textbf{E (Execution Logic)} จึงมีความสำคัญอย่างยิ่งยวดสำหรับสื่อการสอนวิทยาศาสตร์
+    \item หาก AI สร้างโค้ดคำนวณความต้านทานสมมูลแบบขนานมาเป็น $R = \frac{r_1 + r_2}{2}$ ท่านจะเขียนคำสั่ง Prompt อย่างไรเพื่อตักเตือนและชี้นำให้ AI แก้ไขเป็นสมการที่ถูกต้อง
+    \item \textbf{ใบงานปฏิบัติการ 2.1:} ให้นักศึกษาใช้กรอบ CLEAR Prompting ร่างคำสั่งฉบับสมบูรณ์สำหรับสร้างการทดลอง “การแกว่งของลูกตุ้มเพนดูลัมฮาร์มอนิกอย่างง่ายเพื่อหาค่าความเร่ง $g$” โดยต้องระบุสมการ $T = 2\pi\sqrt{L/g}$ และเงื่อนไขการวาดกราฟ $T^2$ กับ $L$ ด้วยวิธีกำลังสองน้อยที่สุด (OLS)
+\end{enumerate}

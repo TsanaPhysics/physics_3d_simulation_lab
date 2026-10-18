@@ -1,0 +1,156 @@
+% ==============================================================================
+% ch04_circuit_reduction_svg.tex — บทที่ 4
+% ==============================================================================
+\chapter{เอนจินลดรูปวงจรไฟฟ้าและคณิตศาสตร์เศษส่วนแท้}
+\label{chap:ch04}
+
+\begin{teachingplan}{แผนการบริหารการสอนประจำบทที่ 4}
+\noindent\textbf{หัวข้อเนื้อหาประจำบท}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item ทฤษฎีวงจรหกเหลี่ยมตามข้อสอบโอลิมปิกวิชาการ 20th IJSO รอบที่ 3
+    \item อัลกอริทึมการคลี่วงแหวนปิดออกเป็น 2 กิ่งขนานอิสระ
+    \item สถาปัตยกรรมเอนจินลดรูปวงจร 4 ขั้นตอนด้วยเวกเตอร์ SVG (Step-by-Step Reduction)
+    \item การแปลงค่าความต้านทานเป็นรหัส 4 แถบสีสากล (EIA Resistor Color Coding) แบบ Real-time
+    \item อัลกอริทึม Euclidean GCD สำหรับการรักษาค่าความต้านทานและกระแสเป็นเศษส่วนแท้
+    \item การสร้างหน้าปัดเข็มอนาล็อกพร้อมแถบกระจกเงากันคลาดเคลื่อน (Anti-Parallax Mirror)
+\end{enumerate}
+
+\noindent\textbf{วัตถุประสงค์เชิงพฤติกรรม (Behavioral Objectives)}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item ผู้เรียนสามารถอธิบายขั้นตอนการลดรูปวงจรไฟฟ้าจากวงแหวนสู่ตัวต้านทานสมมูลเดี่ยวได้อย่างเป็นระบบ
+    \item ผู้เรียนสามารถเขียนฟังก์ชันคำนวณรหัสแถบสี EIA 4 แถบจากค่าความต้านทานที่เป็นตัวเลขได้
+    \item ผู้เรียนสามารถประยุกต์ใช้อัลกอริทึม Euclidean GCD ในการจัดแสดงเศษส่วนอย่างต่ำบนเว็บแอปพลิเคชันได้
+    \item ผู้เรียนสามารถเขียนสคริปต์เรนเดอร์แผนภาพ SVG พลวัตตอบสนองการเลือกคู่จุดต่อได้
+\end{enumerate}
+
+\noindent\textbf{กิจกรรมการเรียนการสอน (Teaching-Learning Activities)}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item บรรยายการวิเคราะห์วงจรหกเหลี่ยม IJSO และพิสูจน์คู่จุดต่อที่ให้กระแสสูงสุด ($a-f$) (30 นาที)
+    \item ปฏิบัติการ: เขียนฟังก์ชันคำนวณฟิสิกส์วงจร \texttt{computeCircuitPhysics()} ใน \texttt{state.js} (45 นาที)
+    \item ปฏิบัติการ: ประกอบเอนจินสร้าง SVG 4 ขั้นตอน และทดสอบการเปลี่ยนค่าความต้านทานพลวัต (45 นาที)
+\end{enumerate}
+
+\noindent\textbf{สื่อการเรียนการสอน}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item เอกสารคู่มือบทที่ 4, โมดูล \texttt{ui-exp1.js}, \texttt{state.js}, ระบบ MathJax Typesetting
+\end{enumerate}
+
+\noindent\textbf{การวัดและประเมินผล}
+\begin{enumerate}[leftmargin=1.5em, itemsep=2pt]
+    \item ประเมินจากความถูกต้องของค่ากระแสและแรงดันที่คำนวณได้ทุกคู่จุดต่อ ($a-b$ ถึง $f-a$)
+    \item ประเมินจากความคมชัดและความสอดคล้องของแผนภาพ SVG กับค่าความต้านทานที่ผู้ใช้ป้อน
+\end{enumerate}
+\end{teachingplan}
+
+\newpage
+
+\section{การวิเคราะห์วงจรหกเหลี่ยม IJSO รอบที่ 3}
+โจทย์ข้อสอบคัดเลือกผู้แทนประเทศไทย 20th IJSO กำหนดให้มีตัวต้านทาน 6 ตัว ต่อเรียงกันเป็นวงปิดรูปหกเหลี่ยม มีจุดต่อ $a, b, c, d, e, f$ โดยมีค่าความต้านทานตามลำดับ $R_{ab}=1\,\Omega, R_{bc}=2\,\Omega, R_{cd}=3\,\Omega, R_{de}=4\,\Omega, R_{ef}=5\,\Omega, R_{fa}=6\,\Omega$ ผลรวมทั้งวงคือ $\sum R = 21\,\Omega$
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[scale=0.9, every node/.style={scale=0.9}]
+    % Hexagon Loop Coordinates
+    \coordinate (A) at (90:2.4cm);
+    \coordinate (B) at (30:2.4cm);
+    \coordinate (C) at (330:2.4cm);
+    \coordinate (D) at (270:2.4cm);
+    \coordinate (E) at (210:2.4cm);
+    \coordinate (F) at (150:2.4cm);
+
+    % Wires & Resistor Blocks
+    \draw[line width=1.5pt, rbruGold] (A) -- (B) node[midway, fill=rbruNavy, text=yellow, font=\scriptsize, draw=rbruGold, rounded corners=2pt] {$R_{ab}=1\,\Omega$};
+    \draw[line width=1.5pt, rbruGold] (B) -- (C) node[midway, fill=rbruNavy, text=yellow, font=\scriptsize, draw=rbruGold, rounded corners=2pt] {$R_{bc}=2\,\Omega$};
+    \draw[line width=1.5pt, rbruGold] (C) -- (D) node[midway, fill=rbruNavy, text=yellow, font=\scriptsize, draw=rbruGold, rounded corners=2pt] {$R_{cd}=3\,\Omega$};
+    \draw[line width=1.5pt, rbruGold] (D) -- (E) node[midway, fill=rbruNavy, text=yellow, font=\scriptsize, draw=rbruGold, rounded corners=2pt] {$R_{de}=4\,\Omega$};
+    \draw[line width=1.5pt, rbruGold] (E) -- (F) node[midway, fill=rbruNavy, text=yellow, font=\scriptsize, draw=rbruGold, rounded corners=2pt] {$R_{ef}=5\,\Omega$};
+    \draw[line width=1.5pt, rbruGold] (F) -- (A) node[midway, fill=rbruNavy, text=yellow, font=\scriptsize, draw=rbruGold, rounded corners=2pt] {$R_{fa}=6\,\Omega$};
+
+    % Brass Terminals
+    \foreach \pt/\lbl in {A/a, B/b, C/c, D/d, E/e, F/f} {
+        \fill[rbruGold] (\pt) circle (5pt);
+        \fill[white] (\pt) circle (2pt);
+        \node[above=4pt, font=\bfseries\color{rbruNavy}] at (\pt) {\lbl};
+    }
+\end{tikzpicture}
+\caption{ผังวงจรตัวต้านทาน 6 ตัวต่อเป็นวงแหวนหกเหลี่ยมปิด (20th IJSO Physics)}
+\label{fig:hex_circuit}
+\end{figure}
+
+เมื่อต่อโพรบวัด $P$ และ $Q$ เข้ากับจุดต่อใดๆ วงจรจะคลี่ออกเป็น 2 กิ่งขนานกันเสมอ:
+\begin{equation}
+R_{\text{ชุด}} = \frac{r_1 \cdot r_2}{r_1 + r_2} = \frac{r_1 (21 - r_1)}{21}
+\end{equation}
+
+เมื่อต่ออนุกรมกับตัวต้านทานมาตรฐาน $R_{\text{มาตรฐาน}} = 10\,\Omega$ และแรงดัน $V_s = 10\text{ V}$ กระแสรวมในวงจรคือ:
+\begin{equation}
+I = \frac{V_s}{R_{\text{รวม}}} = \frac{10}{10 + R_{\text{ชุด}}} = \frac{10}{\frac{210 + r_1(21-r_1)}{21}} = \frac{210}{210 + r_1(21 - r_1)}
+\end{equation}
+
+จากสมการ (4.2) จะเห็นได้ชัดเจนว่า กระแส $I$ จะมีค่าสูงสุดเมื่อ $r_1(21-r_1)$ มีค่าน้อยที่สุด ซึ่งเป็นจริงเมื่อ $r_1 = 1\,\Omega$ (คู่ $a-f$ หรือ $f-a$) ได้ $I = \frac{21}{23}\text{ A} \approx 0.913\text{ A}$ และความต่างศักย์ $V_{PQ} = \frac{20}{23}\text{ V} \approx 0.870\text{ V}$
+
+\section{สถาปัตยกรรมเอนจินลดรูปวงจร 4 ขั้นตอน (SVG Reduction Engine)}
+เพื่อให้นักเรียนเข้าใจกระบวนการคิดของนักฟิสิกส์ ระบบ Next Gen Lab จึงมีเอนจินวาดภาพ SVG แบบ Step-by-Step จำนวน 4 ลำดับขั้น:
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[scale=0.85, every node/.style={scale=0.85}]
+    % Step 1 Box
+    \draw[fill=blue!3, draw=rbruBlue, rounded corners=5pt] (0,3.6) rectangle (14,5.4);
+    \node[anchor=west, font=\bfseries\color{rbruNavy}] at (0.3,5.0) {ขั้นตอนที่ 1: คลี่วงแหวน 6 เหลี่ยมออกเป็น 2 สายขนาน (สายบน $r_1$ และสายล่าง $r_2$)};
+    \draw[thick, red] (1,4.3) -- (2.5,4.3) -- (3,4.7) -- (11,4.7) -- (11.5,4.3) -- (13,4.3);
+    \draw[thick, blue] (2.5,4.3) -- (3,3.9) -- (11,3.9) -- (11.5,4.3);
+    \fill[red] (1,4.3) circle (3pt) node[left] {P};
+    \fill[cyan] (13,4.3) circle (3pt) node[right] {Q};
+
+    % Step 2 Box
+    \draw[fill=cyan!3, draw=cyan!80!black, rounded corners=5pt] (0,1.8) rectangle (14,3.3);
+    \node[anchor=west, font=\bfseries\color{rbruNavy}] at (0.3,2.9) {ขั้นตอนที่ 2: ยุบอนุกรมในแต่ละกิ่ง ได้ $r_1 \parallel r_2$};
+    \draw[thick, gray] (1,2.4) -- (3,2.4) -- (3.5,2.7) -- (10.5,2.7) -- (11,2.4) -- (13,2.4);
+    \draw[thick, gray] (3,2.4) -- (3.5,2.1) -- (10.5,2.1) -- (11,2.4);
+    \node[draw=rbruGold, fill=rbruNavy, text=yellow, font=\scriptsize, rounded corners=2pt] at (7,2.7) {$r_1 = \sum R_{\text{บน}}$};
+    \node[draw=rbruGold, fill=rbruNavy, text=yellow, font=\scriptsize, rounded corners=2pt] at (7,2.1) {$r_2 = \sum R_{\text{ล่าง}}$};
+
+    % Step 3 Box
+    \draw[fill=green!3, draw=rbruEmerald, rounded corners=5pt] (0,0) rectangle (14,1.5);
+    \node[anchor=west, font=\bfseries\color{rbruNavy}] at (0.3,1.1) {ขั้นตอนที่ 3: ยุบขนานเป็นตัวต้านทานสมมูลชุดหกเหลี่ยมเดี่ยว $R_{\text{ชุด}} = \frac{r_1 r_2}{r_1 + r_2}$};
+    \draw[thick, gray] (1,0.5) -- (6,0.5);
+    \node[draw=cyan, fill=rbruNavy, text=cyan, font=\small\bfseries, rounded corners=3pt] at (7,0.5) {$R_{\text{ชุด}}$};
+    \draw[thick, gray] (8,0.5) -- (13,0.5);
+\end{tikzpicture}
+\caption{สถาปัตยกรรมแผนภาพการลดรูปวงจรทีละขั้นตอน (Step-by-Step Circuit Reduction)}
+\label{fig:svg_reduction}
+\end{figure}
+
+\section{อัลกอริทึมการคำนวณเศษส่วนแท้ Euclidean GCD}
+การใช้ตัวแปรทศนิยมของ JavaScript (IEEE 754) มักพบปัญหา เช่น $10 / (230/21) = 0.9130434782608696$ ซึ่งยากแก่นักเรียนในการเทียบเคียงกับเฉลยข้อสอบโอลิมปิก ($\frac{21}{23}\text{ A}$) ระบบจึงฝังฟังก์ชัน Euclidean GCD:
+
+\begin{lstlisting}[language=JavaScript, caption={ฟังก์ชัน Euclidean GCD และการจัดรูปเศษส่วนแท้ LaTeX}]
+function gcd(a, b) {
+  a = Math.round(Math.abs(a));
+  b = Math.round(Math.abs(b));
+  while (b > 0) {
+    const t = b;
+    b = a % b;
+    a = t;
+  }
+  return a || 1;
+}
+
+function toLatexFrac(num, den) {
+  if (den === 0) return '0';
+  const c = gcd(num, den);
+  num = Math.round(num / c);
+  den = Math.round(den / c);
+  return (den === 1) ? `${num}` : `\\frac{${num}}{${den}}`;
+}
+\end{lstlisting}
+
+\section*{คำถามทบทวนและใบงานปฏิบัติการท้ายบทที่ 4}
+\addcontentsline{toc}{section}{คำถามทบทวนและใบงานปฏิบัติการท้ายบทที่ 4}
+
+\begin{enumerate}[leftmargin=1.5em, itemsep=8pt]
+    \item จงคำนวณค่า $R_{\text{ชุด}}, R_{\text{รวม}}, I$ และ $V_{PQ}$ ของคู่จุดต่อ \textbf{$a-d$} (ขั้วตรงข้ามกัน) ในรูปเศษส่วนแท้อย่างต่ำ และทศนิยม 3 ตำแหน่ง พร้อมเปรียบเทียบกับคู่ $a-f$
+    \item จงอธิบายหลักการทำงานของฟังก์ชัน \texttt{getResistorBandColors(val)} ว่าสามารถแปลงค่า $47\,\Omega$ เป็นชุดสี 4 แถบ (เหลือง-ม่วง-ดำ-ทอง) ได้อย่างไร
+    \item \textbf{ใบงานปฏิบัติการ 4.1:} ให้นักศึกษาเปิดหน้าจอ Next Gen Lab แล้วทดลองปรับเปลี่ยนค่าตัวต้านทาน $R_1$ จาก $1\,\Omega$ เป็น $10\,\Omega$ ผ่านช่องป้อนตัวเลขโดยตรง สังเกตการเปลี่ยนสีแถบตัวต้านทานใน 3D และในแผนภาพ SVG บันทึกผลการสังเกต
+\end{enumerate}
