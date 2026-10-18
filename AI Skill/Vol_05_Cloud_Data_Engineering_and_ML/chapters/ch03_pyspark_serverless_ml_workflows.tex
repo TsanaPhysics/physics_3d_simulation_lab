@@ -1,0 +1,21 @@
+\chapter{การประมวลผล Big Data และโมเดลการเรียนรู้ของเครื่องด้วย Dataproc Serverless}
+
+สำหรับงานประมวลผลข้อมูลขนาดใหญ่ที่ไม่เหมาะกับโครงสร้างตารางเชิงสัมพันธ์ Apache Spark บน Dataproc Serverless มอบพลังการคำนวณแบบกระจายศูนย์โดยไม่ต้องเสียเวลาจัดการคลัสเตอร์เสมือน
+
+\section{สถาปัตยกรรม Apache Spark Serverless}
+
+ผู้ใช้งานเพียงส่งไฟล์สคริปต์ PySpark และกำหนดคุณลักษณะของทรัพยากร ระบบของ Google Cloud จะทำการจัดสรรหน่วยคำนวณและปิดระบบลงอัตโนมัติเมื่อประมวลผลเสร็จสิ้น (Just-in-Time Provisioning) ทำให้คิดค่าใช้จ่ายตามระยะเวลาการทำงานจริงระดับวินาที
+
+\section{การบริหารหน่วยความจำเพื่อป้องกันข้อผิดพลาด Out-Of-Memory}
+
+การจัดสรรหน่วยความจำของ Spark Executor ต้องคำนึงถึงสัดส่วนระหว่างพื้นที่จัดเก็บ (Storage Memory) และพื้นที่คำนวณ (Execution Memory):
+
+\begin{equation}
+\text{Total Executor Memory} = \text{Overhead} + \text{Off-Heap} + \text{On-Heap} (\text{Storage} + \text{Execution} + \text{User})
+\end{equation}
+
+การใช้คำสั่ง \texttt{repartition()} อย่างเหมาะสม ร่วมกับการหลีกเลี่ยงคำสั่ง \texttt{collect()} บนข้อมูลขนาดใหญ่ ช่วยให้การคำนวณไหลลื่นโดยไม่เกิดอาการ Driver Crash
+
+\section{การสร้างไปป์ไลน์ Machine Learning ด้วย Spark MLlib}
+
+การฝึกสอนโมเดลทำนาย เช่น การพยากรณ์ความชื้นในดินล่วงหน้าด้วย Random Forest Regressor สามารถรันบนคลัสเตอร์หลายร้อยคอร์พร้อมกัน ทำให้ลดเวลาการฝึกสอนโมเดลจากหลายชั่วโมงเหลือเพียงไม่กี่นาที

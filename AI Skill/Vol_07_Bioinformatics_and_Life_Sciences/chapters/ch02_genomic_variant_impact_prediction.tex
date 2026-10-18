@@ -1,0 +1,21 @@
+\chapter{การทำนายผลกระทบของการกลายพันธุ์ระดับจีโนมด้วย AlphaGenome}
+
+การกลายพันธุ์ของสารพันธุกรรมไม่ได้เกิดขึ้นเฉพาะในยีนที่สังเคราะห์โปรตีนเท่านั้น บริเวณนอนโค้ดดิ้ง (Non-coding Regions) ซึ่งคิดเป็นร้อยละ 98 ของจีโนมมนุษย์ มีบทบาทสำคัญในการควบคุมการแสดงออกของยีนและกลไกการเกิดโรค
+
+\section{การวิเคราะห์บริเวณควบคุมยีนด้วย Deep Learning}
+
+AlphaGenome อาศัยโครงข่ายประสาทเทียมชนิด Deep Convolutional Transformer เพื่อทำนายการเปลี่ยนแปลงของการแสดงออกของยีน (Gene Expression: RNA-seq) เมื่อเกิดการแทนที่เบสเดี่ยว (Single Nucleotide Variant: SNV)
+
+\section{การประเมินการเข้าถึงของโครมาติน}
+
+สัญญาณการเปิดของโครมาติน (Chromatin Accessibility) บ่งชี้ว่าปัจจัยควบคุมการถอดรหัส (Transcription Factors: TFs) สามารถเข้าจับกับดีเอ็นเอได้หรือไม่:
+
+\begin{equation}
+\Delta \text{Accessibility} = \mathcal{P}(\text{DNASE} \mid \text{Alt}) - \mathcal{P}(\text{DNASE} \mid \text{Ref})
+\end{equation}
+
+หากค่า $\Delta \text{Accessibility}$ มีค่าเป็นลบอย่างมีนัยสำคัญ แสดงว่าการกลายพันธุ์นั้นอาจทำลายตำแหน่งจับของปัจจัยควบคุม ส่งผลให้ยีนเป้าหมายหยุดการทำงาน
+
+\section{การจัดกลุ่มความรุนแรงของโรคด้วย Ensembl VEP และ ClinVar}
+
+การเชื่อมต่อกับ Ensembl Variant Effect Predictor (VEP) ช่วยให้นักวิจัยสามารถประเมินผลกระทบต่อโครงสร้างรหัสพันธุกรรม (Missense, Frameshift, Stop Gained) และเปรียบเทียบกับบันทึกประวัติทางคลินิกใน ClinVar ได้แบบอัตโนมัติ

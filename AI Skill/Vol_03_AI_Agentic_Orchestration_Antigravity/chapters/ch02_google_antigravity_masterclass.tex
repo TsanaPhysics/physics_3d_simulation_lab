@@ -1,0 +1,30 @@
+\chapter{มาสเตอร์คลาสการพัฒนาทักษะบน Google Antigravity}
+
+Google Antigravity มอบแพลตฟอร์มการสร้างระบบช่วยเขียนโค้ดและพัฒนานวัตกรรมระดับสูงผ่านระบบ Customization ซึ่งประกอบด้วย Skills, Rules, และ Model Context Protocol (MCP)
+
+\section{โครงสร้างการสืบค้นและลำดับความสำคัญของ Customization Root}
+
+ระบบของ Antigravity ทำการโหลดคุณสมบัติและทักษะจาก 3 ลำดับชั้น:
+\begin{enumerate}
+    \item \textbf{Global Customizations Root (\texttt{\textasciitilde/.gemini/config}):} ทักษะส่วนกลางที่เรียกใช้ได้ทุกโปรเจกต์
+    \item \textbf{Workspace Customizations Root (\texttt{.agents/}):} ทักษะเฉพาะโปรเจกต์ที่ผูกกับโฟลเดอร์ทำงาน
+    \item \textbf{Plugins Directory (\texttt{plugins/<name>/}):} ชุดรวมทักษะที่จัดหมวดหมู่พร้อม MCP Config
+\end{enumerate}
+
+\section{การสร้างไฟล์คำสั่ง SKILL.md คุณภาพสูง}
+
+ไฟล์คำสั่ง \texttt{SKILL.md} ต้องมีส่วนหัว (YAML Frontmatter) ที่ระบุชื่อและคำอธิบายกระชับ พร้อมคำแนะนำขั้นตอนวิธีที่เอเจนต์เข้าใจได้ทันที:
+
+\begin{lstlisting}[language=bash, caption={Structure of SKILL.md}]
+---
+name: custom-physics-sim-expert
+description: Expert skill for developing and validating 3D physics labs
+---
+# Instructions and Coding Standards
+1. Verify equation correctness before implementation
+2. Apply Three.js PBR Shaders for all physical meshes
+\end{lstlisting}
+
+\section{การเชื่อมโยงระบบผ่าน Model Context Protocol}
+
+การนำเข้าข้อมูลภายนอก เช่น ฐานข้อมูล BigQuery, โครงสร้างไฟล์ในเครื่อง, หรือหน้าต่างเบราว์เซอร์ ใช้โปรโตคอล MCP ซึ่งทำให้เอเจนต์มองเห็น Resource และเรียกใช้ Tool ได้อย่างปลอดภัยในสภาพแวดล้อม Sandbox

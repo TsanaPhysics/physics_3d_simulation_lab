@@ -1,0 +1,221 @@
+\ProvidesPackage{styles/rbru_book}[2026/10/18 RBRU Academic Textbook & Workshop Handbook Style]
+
+% 1. Paper Geometry (6 x 9 inches - Royal/Pocket 8vo Academic Standard)
+\usepackage[
+  paperwidth=6in,
+  paperheight=9in,
+  top=0.75in,
+  bottom=0.75in,
+  left=1.0in,
+  right=0.75in,
+  headheight=28pt,
+  footskip=0.45in
+]{geometry}
+
+% 2. Font & Thai Typography
+\usepackage{fontspec}
+\defaultfontfeatures{Mapping=tex-text}
+\setmainfont{Sarabun}[Scale=1.05]
+\setmonofont{Courier New}[Scale=0.90]
+
+\XeTeXlinebreaklocale "th"
+\XeTeXlinebreakskip = 0pt plus 0.2pt
+
+% 3. Color Palette (Academic & Modern Technology)
+\usepackage[table,xcdraw]{xcolor}
+\definecolor{rbruNavy}{HTML}{0A192F}
+\definecolor{rbruBlue}{HTML}{0284C7}
+\definecolor{rbruCyan}{HTML}{00F0FF}
+\definecolor{rbruGold}{HTML}{F59E0B}
+\definecolor{rbruEmerald}{HTML}{059669}
+\definecolor{rbruPurple}{HTML}{7C3AED}
+\definecolor{rbruRose}{HTML}{E11D48}
+\definecolor{amber}{HTML}{F59E0B}
+\definecolor{rbruGray}{HTML}{475569}
+\definecolor{rbruLightBg}{HTML}{F8FAFC}
+\definecolor{codeBg}{HTML}{0F172A}
+\definecolor{codeText}{HTML}{F8FAFC}
+
+% 4. Essential Math & Graphics Packages
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multicol}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{listings}
+\usepackage{microtype}
+\usepackage{hanging}
+
+% Define JavaScript language for listings
+\lstdefinelanguage{JavaScript}{
+  keywords={const, let, var, function, return, if, else, for, while, new, true, false, null, undefined, class, constructor},
+  sensitive=true,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]',
+  morestring=[b]"
+}
+
+% 5. TikZ & Drawing Libraries
+\usepackage{tikz}
+\usetikzlibrary{calc, shadows, positioning, backgrounds, shapes.geometric, decorations.pathmorphing, arrows.meta}
+
+% 6. TColorBox (Custom Callout Boxes)
+\usepackage[most]{tcolorbox}
+
+% 6.1 Teaching Plan Box (แผนการบริหารการสอนประจำบท)
+\newtcolorbox{teachingplan}[1]{
+  enhanced,
+  breakable,
+  colback=rbruLightBg,
+  colframe=rbruNavy,
+  coltitle=white,
+  fonttitle=\bfseries\large,
+  title={\textbf{[แผนการสอน]} #1},
+  arc=4mm,
+  boxrule=1.2pt,
+  left=12pt,
+  right=12pt,
+  top=10pt,
+  bottom=10pt,
+  shadow={2mm}{-2mm}{0mm}{black!15},
+  borderline west={4pt}{0pt}{rbruGold}
+}
+
+% 6.2 Physics Theory & Math Box
+\newtcolorbox{theoremlab}[1]{
+  enhanced,
+  breakable,
+  colback=blue!3!white,
+  colframe=rbruBlue!80!black,
+  coltitle=white,
+  fonttitle=\bfseries,
+  title={\textbf{[ทฤษฎีและสมการ]} #1},
+  arc=3mm,
+  boxrule=1pt,
+  left=10pt,
+  right=10pt,
+  top=8pt,
+  bottom=8pt,
+  borderline west={3.5pt}{0pt}{rbruBlue}
+}
+
+% 6.3 AI Prompt & Engineering Box
+\newtcolorbox{aiprompt}[1]{
+  enhanced,
+  breakable,
+  colback=purple!4!white,
+  colframe=rbruPurple!80!black,
+  coltitle=white,
+  fonttitle=\bfseries,
+  title={\textbf{[คำสั่ง AI Prompt]} #1},
+  arc=3mm,
+  boxrule=1pt,
+  left=10pt,
+  right=10pt,
+  top=8pt,
+  bottom=8pt,
+  borderline west={3.5pt}{0pt}{rbruPurple}
+}
+
+% 6.4 Hands-on Activity Box
+\newtcolorbox{activitybox}[1]{
+  enhanced,
+  breakable,
+  colback=green!4!white,
+  colframe=rbruEmerald!80!black,
+  coltitle=white,
+  fonttitle=\bfseries,
+  title={\textbf{[กิจกรรมปฏิบัติการ]} #1},
+  arc=3mm,
+  boxrule=1pt,
+  left=10pt,
+  right=10pt,
+  top=8pt,
+  bottom=8pt,
+  borderline west={3.5pt}{0pt}{rbruEmerald}
+}
+
+% 6.5 Warning & Best Practice Box
+\newtcolorbox{tipbox}[1]{
+  enhanced,
+  breakable,
+  colback=amber!5!white,
+  colframe=rbruGold!85!black,
+  coltitle=black,
+  fonttitle=\bfseries,
+  title={\textbf{[ข้อแนะนำทางเทคนิค]} #1},
+  arc=3mm,
+  boxrule=1pt,
+  left=10pt,
+  right=10pt,
+  top=8pt,
+  bottom=8pt,
+  borderline west={3.5pt}{0pt}{rbruGold}
+}
+
+% 7. Code Listings (Syntax Highlighting)
+\lstset{
+  backgroundcolor=\color{codeBg},
+  basicstyle=\ttfamily\footnotesize\color{codeText},
+  keywordstyle=\bfseries\color{rbruCyan},
+  commentstyle=\itshape\color{gray!70},
+  stringstyle=\color{rbruGold},
+  numberstyle=\tiny\color{gray!50},
+  numbers=left,
+  numbersep=8pt,
+  stepnumber=1,
+  breaklines=true,
+  breakatwhitespace=false,
+  frame=single,
+  rulecolor=\color{rbruNavy},
+  tabsize=2,
+  captionpos=b,
+  showstringspaces=false,
+  xleftmargin=12pt,
+  framexleftmargin=12pt
+}
+
+% 8. Headers & Footers
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE]{\small\color{rbruGray}\thepage\quad\textbar\quad\nouppercase{\leftmark}}
+\fancyhead[RO]{\small\color{rbruGray}\nouppercase{\rightmark}\quad\textbar\quad\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{rbruGray!40}\leaders\hrule height \headrulewidth\hfill}}
+
+\fancypagestyle{plain}{
+  \fancyhf{}
+  \fancyfoot[C]{\small\color{rbruGray}\thepage}
+  \renewcommand{\headrulewidth}{0pt}
+}
+
+% 9. Chapter & Section Titles (titlesec)
+\usepackage{titlesec}
+\titleformat{\chapter}[display]
+  {\normalfont\Large\bfseries\color{rbruNavy}}
+  {\filleft\fontsize{36}{42}\selectfont\color{rbruBlue!35}\textbf{บทที่ \thechapter}}
+  {1ex}
+  {\LARGE\bfseries\filright}
+  [\vspace{1ex}{\color{rbruGold}\hrule height 1.5pt}]
+
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{rbruNavy}}
+  {\thesection}{1em}{}
+
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{rbruBlue!90!black}}
+  {\thesubsection}{1em}{}
+
+% 10. Hyperlinks (hyperref)
+\usepackage[
+  colorlinks=true,
+  linkcolor=rbruNavy,
+  citecolor=rbruEmerald,
+  urlcolor=rbruBlue,
+  bookmarks=true,
+  bookmarksnumbered=true,
+  pdfstartview=FitH
+]{hyperref}

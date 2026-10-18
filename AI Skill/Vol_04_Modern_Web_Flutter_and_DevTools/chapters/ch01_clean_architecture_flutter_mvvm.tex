@@ -1,0 +1,22 @@
+\chapter{สถาปัตยกรรม Clean Architecture และการพัฒนาแอปพลิเคชัน Flutter}
+
+การพัฒนาแอปพลิเคชันโมบายล์ระดับวิชาชีพจำเป็นต้องมีโครงสร้างโค้ดที่สามารถขยายขนาดได้ง่าย (Scalability) บำรุงรักษาง่าย และแยกความรับผิดชอบของแต่ละส่วนออกจากกันอย่างชัดเจนตามหลัก Clean Architecture
+
+\section{การแบ่งเลเยอร์ตามหลักการออกแบบ Clean Architecture}
+
+โครงสร้างของระบบถูกแบ่งออกเป็น 3 เลเยอร์หลัก:
+\begin{enumerate}
+    \item \textbf{Presentation Layer:} จัดการหน้าจอ UI, วิดเจ็ต, และ ViewModel ที่เชื่อมต่อกับผู้ใช้
+    \item \textbf{Domain Layer:} แกนกลางของระบบที่บรรจุ Entity และ Use Case ทางธุรกิจ โดยไม่ขึ้นต่อเฟรมเวิร์กภายนอก
+    \item \textbf{Data Layer:} ติดต่อกับแหล่งข้อมูลภายนอก เช่น REST API, ฐานข้อมูลในเครื่อง SQLite หรือฮาร์ดแวร์บลูทูธ (BLE)
+\end{enumerate}
+
+\section{การจัดการสถานะด้วย Provider และ ChangeNotifier}
+
+การไหลของข้อมูลในแอปพลิเคชันใช้รูปแบบทางเดียว (Unidirectional Data Flow):
+
+\begin{equation}
+\text{User Action} \longrightarrow \text{ViewModel.execute()} \longrightarrow \text{State Mutation} \longrightarrow \text{UI Re-render}
+\end{equation}
+
+เมื่อสถานะภายในโมเดลเกิดการเปลี่ยนแปลง คำสั่ง \texttt{notifyListeners()} จะสั่งให้เฉพาะวิดเจ็ตที่มีการเรียกใช้ \texttt{Consumer} หรือ \texttt{context.watch()} เท่านั้นทำการเรนเดอร์ใหม่ ช่วยลดการสิ้นเปลืองทรัพยากร CPU ของสมาร์ทโฟน

@@ -1,0 +1,17 @@
+\chapter{สถาปัตยกรรมฐานข้อมูลเชิงสัมพันธ์ด้วย Firebase Data Connect}
+
+สำหรับแอปพลิเคชันที่มีโครงสร้างข้อมูลซับซ้อนและต้องการความถูกต้องแบบ ACID ฐานข้อมูล NoSQL แบบเดิมอาจไม่ตอบโจทย์ Firebase Data Connect เชื่อมโยงโลกของ Firebase เข้ากับ PostgreSQL อย่างสมบูรณ์แบบ
+
+\section{การเปลี่ยนผ่านสู่ Relational Database บนคลาวด์}
+
+Firebase Data Connect ใช้ฐานข้อมูล Cloud SQL for PostgreSQL เป็นพื้นที่จัดเก็บข้อมูลเบื้องหลัง โดยนักพัฒนาเขียนนิยามตารางและความสัมพันธ์ผ่านไฟล์ GraphQL Schema (\texttt{.gql})
+
+\section{การสร้าง Type-Safe SDK อัตโนมัติ}
+
+เมื่อนักพัฒนากำหนดคำสั่ง Query หรือ Mutation ผ่านไฟล์ \texttt{.gql} ระบบจะทำการคอมไพล์และสร้างโค้ด TypeScript หรือ Dart ที่มีประเภทข้อมูลเคร่งครัด (Type-Safe Code Generation):
+
+\begin{equation}
+\mathcal{Q}_{\text{gql}} \xrightarrow{\text{Data Connect Compiler}} \text{Generated SDK} (\text{Methods, Types, Validation})
+\end{equation}
+
+ทำให้นักพัฒนาตรวจพบข้อผิดพลาดของการเรียกใช้ข้อมูลได้ตั้งแต่ขั้นตอนการเขียนโค้ด (Compile Time) ขจัดปัญหาข้อผิดพลาดจากการสะกดชื่อฟิลด์ผิดในตอนรันแอปพลิเคชัน

@@ -1,0 +1,24 @@
+\chapter{การดีบั๊กขั้นสูงด้วย Chrome DevTools และการปรับแต่ง Core Web Vitals}
+
+การส่งมอบเว็บแอปพลิเคชันสู่สายตาผู้ใช้ จำเป็นต้องผ่านการตรวจสอบประสิทธิภาพเชิงลึกตามมาตรฐานของ Google Core Web Vitals และการตรวจสอบความถูกต้องของการเข้าถึง
+
+\section{การตรวจจับการรั่วไหลของหน่วยความจำใน JavaScript}
+
+การเกิดหน่วยความจำรั่วไหล (Memory Leak) มักเกิดจาก 3 สาเหตุหลัก:
+\begin{enumerate}
+    \item \textbf{Detached DOM Nodes:} องค์ประกอบที่ถูกลบออกจากหน้าจอแต่ยังมีตัวแปรอ้างอิงอยู่
+    \item \textbf{Uncleared Event Listeners:} ตัวดักจับอีเวนต์ที่ไม่ได้ทำการถอดออกเมื่อปิดคอมโพเนนต์
+    \item \textbf{Retained Closures:} ฟังก์ชันปิดผนึกที่เก็บข้อมูลขนาดใหญ่ไว้ในขอบเขตการทำงาน
+\end{enumerate}
+
+การใช้เครื่องมือ Heap Profiler ใน Chrome DevTools จะช่วยแสดงกราฟลำดับการอ้างอิง (Retainer Tree) ทำให้ชี้เป้าวัตถุต้นเหตุได้อย่างแม่นยำ
+
+\section{การปรับแต่งตัวชี้วัดความเร็ว Largest Contentful Paint}
+
+เกณฑ์ของ Core Web Vitals กำหนดว่าค่า LCP ต้องน้อยกว่า $2.5\,\text{วินาที}$:
+
+\begin{equation}
+\text{LCP} = T_{\text{TTFB}} + T_{\text{LoadDelay}} + T_{\text{LoadTime}} + T_{\text{RenderDelay}} < 2.5\,\text{s}
+\end{equation}
+
+การเพิ่มคุณสมบัติ \texttt{fetchpriority="high"} ให้กับภาพฮีโร่และฟอนต์หลัก ร่วมกับการใช้เทคนิค Resource Preloading ช่วยลดค่า LCP ได้มากกว่าร้อยละ 40
