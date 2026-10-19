@@ -1,0 +1,73 @@
+% ==============================================================================
+% cover.tex — Academic Book Cover Architecture (3D Pixar Semi-realistics & TikZ)
+% Standards: academic-book-cover-architect (Aspect Ratio 2:3, Full-Bleed 6x9 in)
+% ==============================================================================
+\begin{titlepage}
+\thispagestyle{empty}
+
+\begingroup
+\setlength{\XeTeXlinebreakskip}{0pt}
+
+\begin{tikzpicture}[remember picture, overlay]
+    % 1. Full-Bleed High-Resolution Artwork (figures/cover_art.jpg)
+    \node[anchor=center, inner sep=0pt] at (current page.center) {
+        \includegraphics[width=\paperwidth,height=\paperheight]{figures/cover_art.jpg}
+    };
+
+    % --------------------------------------------------------------------------
+    % 2. UPPER SKY ZONE: DUAL-LAYER MICRO DROP-SHADOW
+    % --------------------------------------------------------------------------
+    % 2.1 Category Badge
+    \node[anchor=north, align=center, text width=5.4in] 
+          at ([yshift=-0.42in]current page.north) {
+        {\fontsize{8.5}{11}\selectfont\bfseries\color{white}%
+        \colorbox{rbruNavy!90!black}{\quad SERIES OF AI SKILL \textbullet\ VOLUME 03: AGENTIC AI \& ANTIGRAVITY \quad}}
+    };
+
+    % 2.2 Main Title Line 1 & Line 2 (Layer 1: Deep Black Micro Drop-Shadow)
+    \node[anchor=north, align=center, text width=5.8in] 
+          at ([xshift=0.8pt, yshift=-0.76in]current page.north) {
+        {\fontsize{16.5}{21}\selectfont\bfseries\color{black} สถาปัตยกรรมระบบเอเจนต์อัจฉริยะ}\\[5pt]
+        {\fontsize{15.5}{20}\selectfont\bfseries\color{black} และการสร้าง Agentic AI ด้วย Google Antigravity}
+    };
+
+    % 2.3 Main Title Line 1 & Line 2 (Layer 2: Crisp Pure White & Accent Color)
+    \node[anchor=north, align=center, text width=5.8in] 
+          at ([yshift=-0.75in]current page.north) {
+        {\fontsize{16.5}{21}\selectfont\bfseries\color{white} สถาปัตยกรรมระบบเอเจนต์อัจฉริยะ}\\[5pt]
+        {\fontsize{15.5}{20}\selectfont\bfseries\color{cyan!90!white} และการสร้าง Agentic AI ด้วย Google Antigravity}
+    };
+
+    % 2.4 English Subtitle
+    \node[anchor=north, align=center, text width=5.6in] 
+          at ([yshift=-2.08in]current page.north) {
+        {\fontsize{7.5}{9.5}\selectfont\bfseries\color{rbruGold!95!white}%
+        AI AGENTIC ORCHESTRATION \& GOOGLE ANTIGRAVITY ARCHITECTURE}
+    };
+
+    % --------------------------------------------------------------------------
+    % 3. LOWER GROUND ZONE: DUAL-LAYER MICRO DROP-SHADOW (LIGHT TEXT ON DARK GROUND)
+    % --------------------------------------------------------------------------
+    % 3.1 Author & Affiliation Metadata (Layer 1: Deep Black Drop Shadow)
+    \node[anchor=south, align=center, text width=5.4in] 
+          at ([xshift=0.6pt, yshift=0.34in]current page.south) {
+        {\fontsize{13.5}{17}\selectfont\bfseries\color{black} ผู้ช่วยศาสตราจารย์ ดร.ชีวะ ทัศนา}\\[3pt]
+        {\fontsize{9}{12}\selectfont\color{black} สาขาวิชาฟิสิกส์ คณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยราชภัฏรำไพพรรณี}\\[4pt]
+        {\fontsize{8.5}{11}\selectfont\color{black} ศูนย์ความเป็นเลิศด้านสิ่งแวดล้อมและพลังงาน (LEQs) \textbullet\ พ.ศ. 2569}
+    };
+
+    % 3.2 Author & Affiliation Metadata (Layer 2: Crisp Pure White & Warm Gold)
+    \node[anchor=south, align=center, text width=5.4in] 
+          at ([yshift=0.35in]current page.south) {
+        {\fontsize{13.5}{17}\selectfont\bfseries\color{white} ผู้ช่วยศาสตราจารย์ ดร.ชีวะ ทัศนา}\\[3pt]
+        {\fontsize{9}{12}\selectfont\color{white!95} สาขาวิชาฟิสิกส์ คณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยราชภัฏรำไพพรรณี}\\[4pt]
+        {\fontsize{8.5}{11}\selectfont\color{yellow!90!white} ศูนย์ความเป็นเลิศด้านสิ่งแวดล้อมและพลังงาน (LEQs) \textbullet\ พ.ศ. 2569}
+    };
+
+\end{tikzpicture}
+
+\endgroup
+\end{titlepage}
+\clearpage
+\thispagestyle{empty}
+\null\clearpage

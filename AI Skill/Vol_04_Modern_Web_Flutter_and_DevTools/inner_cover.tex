@@ -1,0 +1,83 @@
+% ==============================================================================
+% inner_cover.tex — Academic Dark-Mode Vector Art Inner Title Page
+% Standards: academic-book-cover-architect (TikZ Bezier Curves & Pure Vector 100%)
+% ==============================================================================
+\begin{titlepage}
+\thispagestyle{empty}
+\pagecolor{black!95}
+
+\begingroup
+\setlength{\XeTeXlinebreakskip}{0pt}
+
+\begin{tikzpicture}[remember picture, overlay]
+    % 1. Subtle Cybernetic Background Grid
+    \draw[cyan!20!black, line width=0.4pt, step=0.4in] 
+         ([shift={(0.2in,0.2in)}]current page.south west) grid ([shift={(-0.2in,-0.2in)}]current page.north east);
+
+    % 2. Central Vector Holographic Rings (Pure TikZ)
+    \draw[rbruBlue!60!white, line width=1.5pt, opacity=0.4] 
+         ([yshift=0.1in]current page.center) circle (1.8in);
+    \draw[rbruGold!80!white, line width=0.8pt, opacity=0.5, dashed] 
+         ([yshift=0.1in]current page.center) circle (2.1in);
+    \draw[cyan!70!white, line width=0.6pt, opacity=0.3] 
+         ([yshift=0.1in]current page.center) circle (2.3in);
+
+    % Hexagonal Vector Accent
+    \draw[rbruGold, line width=1pt, opacity=0.7]
+         ([yshift=0.1in]current page.center) ++(0:1.8in)
+         -- ([yshift=0.1in]current page.center) ++(60:1.8in)
+         -- ([yshift=0.1in]current page.center) ++(120:1.8in)
+         -- ([yshift=0.1in]current page.center) ++(180:1.8in)
+         -- ([yshift=0.1in]current page.center) ++(240:1.8in)
+         -- ([yshift=0.1in]current page.center) ++(300:1.8in) -- cycle;
+
+    \foreach \i in {0,60,120,180,240,300} {
+        \draw[rbruBlue!80!white, fill=black, line width=1pt] 
+             ([yshift=0.1in]current page.center) ++(\i:1.8in) circle (4pt);
+    }
+
+    % Glowing Central Core Light
+    \fill[rbruBlue!40!white, opacity=0.15] ([yshift=0.1in]current page.center) circle (1.2in);
+
+    % 3. Header & Document Type
+    \node[anchor=north, align=center, text width=5.2in] 
+          at ([yshift=-0.7in]current page.north) {
+        {\fontsize{9}{11}\selectfont\color{rbruBlue!70!white}%
+        \textbf{SERIES OF AI SKILL \textbullet\ VOLUME 04: MODERN WEB \& FLUTTER}}\\[3pt]
+        {\fontsize{8}{10}\selectfont\color{gray!40}%
+        ศูนย์ความเป็นเลิศด้านสิ่งแวดล้อมและพลังงาน (LEQs) มหาวิทยาลัยราชภัฏรำไพพรรณี}
+    };
+
+    % 4. Main Title & Subtitle (Vector Typography)
+    \node[anchor=north, align=center, text width=5.6in] 
+          at ([yshift=-1.3in]current page.north) {
+        {\fontsize{17}{22}\selectfont\bfseries\color{white}%
+        ปัญญาประดิษฐ์กับการพัฒนาเว็บสมัยใหม่\\
+แอปพลิเคชันมือถือ Flutter และ DevTools}\\[8pt]
+        {\fontsize{8.5}{11}\selectfont\color{gray!30}%
+        AI FOR MODERN WEB, FLUTTER MOBILE \& HIGH-PERFORMANCE DEVTOOLS}
+    };
+
+    % 5. Author & Academic Information
+    \node[anchor=south, align=center, text width=5.2in] 
+          at ([yshift=0.7in]current page.south) {
+        {\fontsize{13}{16}\selectfont\bfseries\color{white}%
+        ผู้ช่วยศาสตราจารย์ ดร.ชีวะ ทัศนา}\\[4pt]
+        {\fontsize{9}{12}\selectfont\color{gray!30}%
+        สาขาวิชาฟิสิกส์ คณะวิทยาศาสตร์และเทคโนโลยี}\\[3pt]
+        {\fontsize{8.5}{11}\selectfont\color{gray!40}%
+        ศูนย์ความเป็นเลิศด้านสิ่งแวดล้อมและพลังงาน (LEQs) มหาวิทยาลัยราชภัฏรำไพพรรณี}\\[8pt]
+        {\color{gray!50}\rule{3.8in}{0.5pt}}\\[8pt]
+        {\fontsize{8}{10}\selectfont\color{rbruGold!80!white}%
+        โครงการจัดทำตำราวิชาการและชุดความรู้ปัญญาประดิษฐ์ \textbullet\ พ.ศ. 2569}
+    };
+
+\end{tikzpicture}
+
+\endgroup
+\end{titlepage}
+
+\pagecolor{white}
+\clearpage
+\thispagestyle{empty}
+\null\clearpage
