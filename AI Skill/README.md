@@ -89,3 +89,32 @@ cd "AI Skill/Vol_01_Virtual_Labs_3D_Simulations_AIoT"
 cd "../Vol_03_AI_Agentic_Orchestration_Antigravity"
 /Library/TeX/texbin/xelatex -interaction=nonstopmode main.tex
 ```
+
+---
+
+## 📦 5. คลังไฟล์ข้อกำหนดและรหัสต้นฉบับ SKILL.md (Skills Repository)
+
+ทุกเล่มได้รับการจัดเก็บไฟล์ข้อกำหนด `SKILL.md` ต้นฉบับและองค์ประกอบของสกิลทั้งหมดไว้ในโฟลเดอร์ `skills/` ประจำเล่ม ซึ่งสามารถเข้าถึงและนำไปติดตั้งในระบบ Agentic AI ได้ทันที:
+
+- **[เล่มที่ 1: Virtual Labs, 3D Simulations & AIoT (10 สกิล)](Vol_01_Virtual_Labs_3D_Simulations_AIoT/README.md#️-รายการสกิลต้นฉบับและไฟล์-skillmd-ประจำเล่ม-agent-skills-inventory)**
+  - โฟลเดอร์จัดเก็บ: [`Vol_01_Virtual_Labs_3D_Simulations_AIoT/skills/`](Vol_01_Virtual_Labs_3D_Simulations_AIoT/skills/)
+  - สกิลเด่น: `nextgen-physics-virtual-lab-architect`, `ar-simulation-builder`, `soil-pht-aiot-architect`
+- **[เล่มที่ 2: Academic Research & Synthesis (21 สกิล)](Vol_02_Academic_Research_and_Synthesis/README.md#️-รายการสกิลต้นฉบับและไฟล์-skillmd-ประจำเล่ม-agent-skills-inventory)**
+  - โฟลเดอร์จัดเก็บ: [`Vol_02_Academic_Research_and_Synthesis/skills/`](Vol_02_Academic_Research_and_Synthesis/skills/)
+  - สกิลเด่น: `anti-ai-slop`, `academic-content-architect`, `research-synthesis`, `modern-academic-textbook`
+- **[เล่มที่ 3: AI Agentic Orchestration & Antigravity (8 สกิล)](Vol_03_AI_Agentic_Orchestration_Antigravity/README.md#️-รายการสกิลต้นฉบับและไฟล์-skillmd-ประจำเล่ม-agent-skills-inventory)**
+  - โฟลเดอร์จัดเก็บ: [`Vol_03_AI_Agentic_Orchestration_Antigravity/skills/`](Vol_03_AI_Agentic_Orchestration_Antigravity/skills/)
+  - สกิลเด่น: `google-antigravity-sdk`, `agy-customizations`, `futuristic-agentic-ai-bot-architect`
+- **[เล่มที่ 4: Modern Web, Flutter & DevTools (32 สกิล)](Vol_04_Modern_Web_Flutter_and_DevTools/README.md#️-รายการสกิลต้นฉบับและไฟล์-skillmd-ประจำเล่ม-agent-skills-inventory)**
+  - โฟลเดอร์จัดเก็บ: [`Vol_04_Modern_Web_Flutter_and_DevTools/skills/`](Vol_04_Modern_Web_Flutter_and_DevTools/skills/)
+  - สกิลเด่น: `flutter-app-architect`, `modern-web-guidance`, `chrome-devtools`, `memory-leak-debugging`
+- **[เล่มที่ 5: Cloud Data Engineering & ML (19 สกิล)](Vol_05_Cloud_Data_Engineering_and_ML/README.md#️-รายการสกิลต้นฉบับและไฟล์-skillmd-ประจำเล่ม-agent-skills-inventory)**
+  - โฟลเดอร์จัดเก็บ: [`Vol_05_Cloud_Data_Engineering_and_ML/skills/`](Vol_05_Cloud_Data_Engineering_and_ML/skills/)
+  - สกิลเด่น: `bigquery-sql`, `dataform-bigquery`, `gcp-spark`, `ml-best-practices`
+- **[เล่มที่ 6: FullStack Cloud & Firebase (11 สกิล)](Vol_06_FullStack_Cloud_and_Firebase/README.md#️-รายการสกิลต้นฉบับและไฟล์-skillmd-ประจำเล่ม-agent-skills-inventory)**
+  - โฟลเดอร์จัดเก็บ: [`Vol_06_FullStack_Cloud_and_Firebase/skills/`](Vol_06_FullStack_Cloud_and_Firebase/skills/)
+  - สกิลเด่น: `firebase-ai-logic-basics`, `firebase-data-connect`, `firebase-security-rules-auditor`
+- **[เล่มที่ 7: Bioinformatics & Life Sciences (35 สกิล)](Vol_07_Bioinformatics_and_Life_Sciences/README.md#️-รายการสกิลต้นฉบับและไฟล์-skillmd-ประจำเล่ม-agent-skills-inventory)**
+  - โฟลเดอร์จัดเก็บ: [`Vol_07_Bioinformatics_and_Life_Sciences/skills/`](Vol_07_Bioinformatics_and_Life_Sciences/skills/)
+  - สกิลเด่น: `alphafold-database-fetch-and-analyze`, `alphagenome-single-variant-analysis`, `chembl-database`
+

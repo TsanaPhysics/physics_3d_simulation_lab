@@ -1,0 +1,51 @@
+% ==============================================================================
+% examples/cover_template.tex — หน้าปกนอก 3D Pixar Semi-realistics (Full-Bleed 6x9 in)
+% แม่แบบมาตรฐานจากทักษะ academic-book-cover-architect
+% ==============================================================================
+\begin{titlepage}
+\thispagestyle{empty}
+
+\begingroup
+% สำคัญมาก: ล็อคระยะช่องไฟพยางค์ภาษาไทยให้แนบชิดเป็นธรรมชาติ ป้องกันคำแตก
+\setlength{\XeTeXlinebreakskip}{0pt}
+
+\begin{tikzpicture}[remember picture, overlay]
+    % 1. ภาพอาร์ตเวิร์ก 3D Pixar แบบเต็มแผ่น (Full Bleed 6x9 in สัดส่วน 2:3)
+    \node[anchor=center, inner sep=0pt] at (current page.center) {
+        \includegraphics[width=\paperwidth,height=\paperheight]{figures/cover_art.jpg}
+    };
+
+    % 2. ข้อความชื่อเรื่องด้านบน (โปร่งใส ไร้กล่องทึบ พร้อมเงาสีขาวเรืองแสงเพื่อความคมชัดบนท้องฟ้า)
+    % เลเยอร์เงาสีขาวบางๆ ช่วยให้อ่านง่ายบนท้องฟ้าธรรมชาติ
+    \node[anchor=north, align=center, text width=5.2in] at ([xshift=0.6pt, yshift=-0.44in]current page.north) {
+        {\fontsize{8.5}{11}\selectfont\bfseries\color{white} [SERIES BADGE / หมวดหมู่หนังสือ]}\\[8pt]
+        {\fontsize{18}{22}\selectfont\bfseries\color{white} [ชื่อเรื่องภาษาไทย บรรทัดที่ 1]}\\[4pt]
+        {\fontsize{20}{25}\selectfont\bfseries\color{white} [ชื่อเรื่องภาษาไทย บรรทัดที่ 2 (เน้นสี)]}\\[6pt]
+        {\fontsize{8.5}{11}\selectfont\bfseries\color{white} [ENGLISH TITLE & SUBTITLE IN CAPITAL LETTERS]}
+    };
+    % เลเยอร์ตัวอักษรจริง (สีเข้มตัดกับท้องฟ้าสว่าง)
+    \node[anchor=north, align=center, text width=5.2in] at ([yshift=-0.45in]current page.north) {
+        {\fontsize{8.5}{11}\selectfont\bfseries\color{teal!80!black} [SERIES BADGE / หมวดหมู่หนังสือ]}\\[8pt]
+        {\fontsize{18}{22}\selectfont\bfseries\color{blue!45!black} [ชื่อเรื่องภาษาไทย บรรทัดที่ 1]}\\[4pt]
+        {\fontsize{20}{25}\selectfont\bfseries\color{green!45!black} [ชื่อเรื่องภาษาไทย บรรทัดที่ 2 (เน้นสี)]}\\[6pt]
+        {\fontsize{8.5}{11}\selectfont\bfseries\color{gray!85!black} [ENGLISH TITLE & SUBTITLE IN CAPITAL LETTERS]}
+    };
+
+    % 3. ข้อความข้อมูลผู้แต่งด้านล่าง (โปร่งใส วางบนชั้นผืนดินสีเข้มธรรมชาติ)
+    % เลเยอร์เงาดำ ช่วยขับให้อ่านชัดเจนแม้ทับซ้อนแนวแสงหรือรากพืช
+    \node[anchor=south, align=center, text width=5.2in] at ([xshift=0.6pt, yshift=0.09in]current page.south) {
+        {\fontsize{12}{15}\selectfont\bfseries\color{black} ผู้ช่วยศาสตราจารย์ ดร.ชีวะ ทัศนา}\\[2pt]
+        {\fontsize{8.5}{11}\selectfont\color{black} สาขาวิชาปัญญาประดิษฐ์เพื่อเกษตรดิจิทัลและสิ่งแวดล้อม คณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยราชภัฏรำไพพรรณี}\\[4pt]
+        {\fontsize{8}{10}\selectfont\color{black} เอกสารวิชาการ / ตำราเรียน พ.ศ. 2569}
+    };
+    % เลเยอร์ตัวอักษรจริงสีขาวสว่างและสีทอง
+    \node[anchor=south, align=center, text width=5.2in] at ([yshift=0.10in]current page.south) {
+        {\fontsize{12}{15}\selectfont\bfseries\color{white} ผู้ช่วยศาสตราจารย์ ดร.ชีวะ ทัศนา}\\[2pt]
+        {\fontsize{8.5}{11}\selectfont\color{white!95} สาขาวิชาปัญญาประดิษฐ์เพื่อเกษตรดิจิทัลและสิ่งแวดล้อม คณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยราชภัฏรำไพพรรณี}\\[4pt]
+        {\fontsize{8}{10}\selectfont\color{yellow!90!white} เอกสารวิชาการ / ตำราเรียน พ.ศ. 2569}
+    };
+\end{tikzpicture}
+
+\endgroup
+\end{titlepage}
+\cleardoublepage

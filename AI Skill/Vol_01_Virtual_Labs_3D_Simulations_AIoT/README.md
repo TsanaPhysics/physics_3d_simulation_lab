@@ -37,3 +37,18 @@
 ```bash
 /Library/TeX/texbin/xelatex -interaction=nonstopmode main.tex
 ```
+
+## 🛠️ รายการสกิลต้นฉบับและไฟล์ SKILL.md ประจำเล่ม (Agent Skills Inventory)
+
+| ลำดับ | ชื่อสกิล (Skill Name) | รายละเอียดและขอบเขตความสามารถ | ลิงก์ไฟล์ข้อกำหนด (SKILL.md) |
+| :---: | :--- | :--- | :--- |
+| 1 | `aiot-fullstack-latex-architect` | สถาปัตยกรรมและระบบอัตโนมัติสำหรับการสร้างเว็บแอปพลิเคชัน AIoT (Frontend Web Portal, Interactive Simulators, Virtual Lab), ระบบฐานข้อมูล SQLi... | [📄 ดูเนื้อหา SKILL.md](skills/aiot-fullstack-latex-architect/SKILL.md) |
+| 2 | `ar-simulation-builder` | Builds, optimizes, and reviews hyper-realistic web-based AR simulations (Physics, Chemistry, Biology, Math, AI Robotics) using MediaPipe Han... | [📄 ดูเนื้อหา SKILL.md](skills/ar-simulation-builder/SKILL.md) |
+| 3 | `digital-agri-mobile-latex-architect` | สถาปัตยกรรมและกระบวนการพัฒนาแอปพลิเคชันสมาร์ทโฟนเกษตรดิจิทัล (Flutter Mobile Edge AI & BLE Telemetry) จากชุดคำสั่ง Context Prompt สู่การสร้า... | [📄 ดูเนื้อหา SKILL.md](skills/digital-agri-mobile-latex-architect/SKILL.md) |
+| 4 | `globe2027-system-architect` | สถาปัตยกรรมและมาตรฐานการพัฒนาระบบนิเวศดิจิทัล LEQs-GLOBE มหาวิทยาลัยราชภัฏรำไพพรรณี ปีงบประมาณ 2570 (GLOBE2027 System Architect) ครอบคลุมการ... | [📄 ดูเนื้อหา SKILL.md](skills/globe2027-system-architect/SKILL.md) |
+| 5 | `interactive-3d-lab-builder` | Upgrades 2D HTML Canvas physics experiments into hyper-realistic 3D Virtual Labs using Three.js and A-Frame PBR shaders. Integrates Web Audi... | [📄 ดูเนื้อหา SKILL.md](skills/interactive-3d-lab-builder/SKILL.md) |
+| 6 | `motorcycle-3d-cad-architect` | สถาปัตยกรรมและการสร้างแบบจำลอง 3 มิติรถจักรยานยนต์สปอร์ตเรซซิ่งคลาสสิก (Yamaha TZR Series - TZR150 / TZR250) ครอบคลุมโครงสร้างเฟรมอลูมิเนียม... | [📄 ดูเนื้อหา SKILL.md](skills/motorcycle-3d-cad-architect/SKILL.md) |
+| 7 | `nextgen-physics-virtual-lab-architect` | สถาปัตยกรรมและมาตรฐานการพัฒนาห้องปฏิบัติการฟิสิกส์ 3 มิติเสมือนจริงและเทคโนโลยีตรวจจับมือไร้สัมผัส (NextGen 3D & AR MediaPipe Virtual Physic... | [📄 ดูเนื้อหา SKILL.md](skills/nextgen-physics-virtual-lab-architect/SKILL.md) |
+| 8 | `physics-course-visual-builder` | Builds, formats, and deploys high-contrast modern HTML5 & inline SVG infographics, interactive visual cards, vector math equations, and form... | [📄 ดูเนื้อหา SKILL.md](skills/physics-course-visual-builder/SKILL.md) |
+| 9 | `soil-pht-aiot-architect` | สถาปัตยกรรมและมาตรฐานการพัฒนาแอปพลิเคชันเครื่องวัด pH ดินและพารามิเตอร์ดินอัจฉริยะ (SoilpHTxAI & Soil Parameter Edge AI Architect) ครอบคลุมก... | [📄 ดูเนื้อหา SKILL.md](skills/soil-pht-aiot-architect/SKILL.md) |
+| 10 | `spectrometer-3d-chassis-architect` | สถาปัตยกรรมและการออกแบบโมเดล 3 มิติสำหรับเครื่องสเปกโทรโฟโตมิเตอร์ทางการเกษตรและห้องปฏิบัติการ ถอดรหัสจากต้นแบบวิศวกรรม SpectorV4.stl และผลง... | [📄 ดูเนื้อหา SKILL.md](skills/spectrometer-3d-chassis-architect/SKILL.md) |

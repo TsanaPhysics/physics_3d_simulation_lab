@@ -37,3 +37,16 @@
 ```bash
 /Library/TeX/texbin/xelatex -interaction=nonstopmode main.tex
 ```
+
+## 🛠️ รายการสกิลต้นฉบับและไฟล์ SKILL.md ประจำเล่ม (Agent Skills Inventory)
+
+| ลำดับ | ชื่อสกิล (Skill Name) | รายละเอียดและขอบเขตความสามารถ | ลิงก์ไฟล์ข้อกำหนด (SKILL.md) |
+| :---: | :--- | :--- | :--- |
+| 1 | `accidental-data-loss-prevention` | | **STOP AND VERIFY**: Before running any command or tool that results in irreversible data loss, you MUST obtain explicit user consent. Whe... | [📄 ดูเนื้อหา SKILL.md](skills/accidental-data-loss-prevention/SKILL.md) |
+| 2 | `agy-customizations` | Comprehensive guide and reference for the Antigravity Customization System. Use to explain how customizations work, their loading priority, ... | [📄 ดูเนื้อหา SKILL.md](skills/agy-customizations/SKILL.md) |
+| 3 | `antigravity-guide` | Provides a comprehensive guide, quick reference, and sitemap for Google Antigravity (AGY), including the Antigravity CLI (agy), Antigravity ... | [📄 ดูเนื้อหา SKILL.md](skills/antigravity-guide/SKILL.md) |
+| 4 | `credentials` | Instructions for handling API keys and credentials safely, verifying their presence, and prompting the user to add them if missing using a s... | [📄 ดูเนื้อหา SKILL.md](skills/credentials/SKILL.md) |
+| 5 | `futuristic-agentic-ai-bot-architect` | สถาปัตยกรรมและมาตรฐานการออกแบบ พัฒนา และสร้าง Agentic AI Bot และ Co-creation Copilot ล้ำยุค (สไตล์ Jarvis / Iron Man HUD Hologram) ครอบคลุมก... | [📄 ดูเนื้อหา SKILL.md](skills/futuristic-agentic-ai-bot-architect/SKILL.md) |
+| 6 | `google-antigravity-sdk` | "Design, implement, and debug autonomous AI agents and multi-agent systems using the Google Antigravity (AGY) SDK. ACTIVATE this skill when ... | [📄 ดูเนื้อหา SKILL.md](skills/google-antigravity-sdk/SKILL.md) |
+| 7 | `skill-repair` | | Use this to fix and re-install agent skills that have failed installation. This skill provides the necessary context and permissions to su... | [📄 ดูเนื้อหา SKILL.md](skills/skill-repair/SKILL.md) |
+| 8 | `workflow-skill-creator` | > Distills a completed user workflow or interaction into a reusable agent skill. Use when the user asks to turn their workflow, interaction,... | [📄 ดูเนื้อหา SKILL.md](skills/workflow-skill-creator/SKILL.md) |

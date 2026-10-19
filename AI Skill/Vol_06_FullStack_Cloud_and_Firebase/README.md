@@ -37,3 +37,19 @@
 ```bash
 /Library/TeX/texbin/xelatex -interaction=nonstopmode main.tex
 ```
+
+## 🛠️ รายการสกิลต้นฉบับและไฟล์ SKILL.md ประจำเล่ม (Agent Skills Inventory)
+
+| ลำดับ | ชื่อสกิล (Skill Name) | รายละเอียดและขอบเขตความสามารถ | ลิงก์ไฟล์ข้อกำหนด (SKILL.md) |
+| :---: | :--- | :--- | :--- |
+| 1 | `firebase-ai-logic-basics` | Official skill for integrating Firebase AI Logic (Gemini API) into web applications. Covers setup, multimodal inference, structured output, ... | [📄 ดูเนื้อหา SKILL.md](skills/firebase-ai-logic-basics/SKILL.md) |
+| 2 | `firebase-app-hosting-basics` | Deploy and manage web apps with Firebase App Hosting. Use this skill when deploying Next.js/Angular apps with backends. | [📄 ดูเนื้อหา SKILL.md](skills/firebase-app-hosting-basics/SKILL.md) |
+| 3 | `firebase-auth-basics` | Guide for setting up and using Firebase Authentication. Use this skill when the user's app requires user sign-in, user management, or secure... | [📄 ดูเนื้อหา SKILL.md](skills/firebase-auth-basics/SKILL.md) |
+| 4 | `firebase-basics` | Provides foundational setup, authentication, and project management workflows for Firebase using the Firebase CLI. Use when checking Firebas... | [📄 ดูเนื้อหา SKILL.md](skills/firebase-basics/SKILL.md) |
+| 5 | `firebase-crashlytics` | Comprehensive guide for Firebase Crashlytics, including provisioning and SDK usage. Use this skill when the user needs help setting up Crash... | [📄 ดูเนื้อหา SKILL.md](skills/firebase-crashlytics/SKILL.md) |
+| 6 | `firebase-data-connect` | Builds and deploys Firebase SQL Connect (aka Firebase Data Connect) backends with PostgreSQL securely. Use when designing schemas with table... | [📄 ดูเนื้อหา SKILL.md](skills/firebase-data-connect/SKILL.md) |
+| 7 | `firebase-firestore` | Sets up, manages, and executes queries against Cloud Firestore database instances. You MUST unconditionally activate this skill if you plan ... | [📄 ดูเนื้อหา SKILL.md](skills/firebase-firestore/SKILL.md) |
+| 8 | `firebase-hosting-basics` | Skill for working with Firebase Hosting (Classic). Use this when you want to deploy static web apps, Single Page Apps (SPAs), or simple micr... | [📄 ดูเนื้อหา SKILL.md](skills/firebase-hosting-basics/SKILL.md) |
+| 9 | `firebase-remote-config-basics` | Comprehensive guide for Firebase Remote Config, including template management and SDK usage. Use this skill when the user needs help setting... | [📄 ดูเนื้อหา SKILL.md](skills/firebase-remote-config-basics/SKILL.md) |
+| 10 | `firebase-security-rules-auditor` | A skill to evaluate how secure Firestore security rules are. Use this when Firestore security rules are updated to ensure that the generated... | [📄 ดูเนื้อหา SKILL.md](skills/firebase-security-rules-auditor/SKILL.md) |
+| 11 | `xcode-project-setup` | Safely modifies Xcode projects (.pbxproj) to add Swift Packages and link files. Use this skill whenever an iOS project needs dependencies in... | [📄 ดูเนื้อหา SKILL.md](skills/xcode-project-setup/SKILL.md) |

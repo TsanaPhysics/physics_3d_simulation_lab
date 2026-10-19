@@ -1,0 +1,133 @@
+<!-- RBRU MOOC Masterclass Page Activity Template -->
+<div class="rbru-mooc-page" style="font-family:'Sarabun', -apple-system, sans-serif; color:#1e293b; line-height:1.75; max-width:980px; margin:0 auto;">
+
+  <!-- Header Card -->
+  <div class="header-card" style="background:linear-gradient(135deg, #090e1a 0%, #1e293b 100%); color:#fff; border-radius:16px; padding:28px; margin-bottom:28px; border:1px solid #334155; box-shadow:0 8px 32px rgba(0,0,0,0.25);">
+    <div style="display:flex; gap:10px; align-items:center; margin-bottom:12px; flex-wrap:wrap;">
+      <span style="background:#0284c7; color:#fff; font-size:0.78rem; font-weight:700; padding:4px 12px; border-radius:20px; text-transform:uppercase;">บทที่ {{CHAPTER_NUM}}</span>
+      <span style="background:rgba(0,240,255,0.15); color:#00f0ff; border:1px solid rgba(0,240,255,0.3); font-size:0.78rem; font-weight:700; padding:4px 12px; border-radius:20px;">OBE LEARNING MODULE</span>
+      <span style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-size:0.78rem; font-weight:700; padding:4px 12px; border-radius:20px;">60 FPS VIRTUAL LAB</span>
+    </div>
+    <h1 style="color:#f8fafc; font-size:1.8rem; font-weight:700; margin:0 0 10px 0; line-height:1.3;">{{PAGE_TITLE}}</h1>
+    <p style="color:#94a3b8; font-size:0.95rem; margin:0;">{{CHAPTER_TITLE}} • มหาวิทยาลัยราชภัฏรำไพพรรณี</p>
+  </div>
+
+  <!-- Main Markdown/Academic Content -->
+  <div class="content">
+    {{PAGE_CONTENT_HTML}}
+
+    <!-- Interactive 60 FPS Real-Time Physics Simulator Widget -->
+    <div class="interactive-sim-container" style="background:#090e1a; border:1px solid #1e293b; border-radius:14px; padding:18px; margin:24px 0; box-shadow:0 8px 30px rgba(0,0,0,0.5);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #1e293b; padding-bottom:10px;">
+        <h3 style="margin:0; color:#00f0ff; font-size:1.15rem; display:flex; align-items:center; gap:8px;">
+          <span>🔬</span> <span>ห้องปฏิบัติการเสมือนจริง (60 FPS Real-Time Simulation)</span>
+        </h3>
+        <a href="https://{{GITHUB_USER}}.github.io/{{GITHUB_REPO}}/simulators/sim_{{PAGE_SLUG}}.html" target="_blank" style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; text-decoration:none; padding:6px 14px; border-radius:8px; font-size:0.82rem; font-weight:700; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 8px rgba(2,132,199,0.3);">
+          🚀 ขยายเต็มจอ ↗
+        </a>
+      </div>
+      <p style="color:#94a3b8; font-size:0.88rem; margin-bottom:12px;">ปรับเปลี่ยนตัวแปรและทดลองแบบเรียลไทม์ (60 FPS Interactive Dynamic Engine):</p>
+      <iframe src="https://{{GITHUB_USER}}.github.io/{{GITHUB_REPO}}/simulators/sim_{{PAGE_SLUG}}.html?v=2026" style="width:100%; height:520px; border:1px solid #1e293b; border-radius:10px; background:#020617;" allow="accelerometer; autoplay; camera; gyroscope;"></iframe>
+    </div>
+
+    <!-- Worked Example with Toggleable Hidden Solution -->
+    <div class="example-card" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:20px; margin:24px 0; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+        <h3 style="color:#0284c7; margin:0; font-size:1.15rem; display:flex; align-items:center; gap:8px;">
+          <span>📐</span> <span>{{EXAMPLE_TITLE}}</span>
+        </h3>
+        <span style="background:#e0f2fe; color:#0369a1; font-size:0.75rem; font-weight:700; padding:3px 10px; border-radius:20px;">WORKED EXAMPLE</span>
+      </div>
+      <div style="margin-bottom:16px; font-size:1rem; line-height:1.7; color:#334155;">
+        <b>โจทย์ตัวอย่าง:</b> {{EXAMPLE_PROBLEM}}
+      </div>
+      
+      <div class="solution-container">
+        <button type="button" class="btn-toggle-solution" onclick="toggleSolution('{{PAGE_ID}}')" id="btn-sol-{{PAGE_ID}}" style="background:linear-gradient(135deg, #0284c7, #0369a1); color:#ffffff; border:none; border-radius:8px; padding:9px 20px; font-size:0.92rem; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:all 0.2s; box-shadow:0 2px 6px rgba(2,132,199,0.25);">
+          <span id="btn-icon-{{PAGE_ID}}">👁️</span>
+          <span id="btn-text-{{PAGE_ID}}">คลิกเพื่อดูเฉลยและวิธีทำละเอียด</span>
+        </button>
+        <div class="solution-content" id="sol-content-{{PAGE_ID}}" style="display:none; margin-top:14px; padding:18px 22px; background:#ffffff; border-left:4px solid #0284c7; border-radius:10px; box-shadow:0 4px 15px rgba(0,0,0,0.06);">
+          <div style="font-weight:700; color:#0369a1; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+            <span>📝</span> เฉลยและขั้นตอนการคำนวณอย่างละเอียด:
+          </div>
+          <div style="line-height:1.8; color:#1e293b;">
+            {{EXAMPLE_SOLUTION}}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Concept Check Quiz Card -->
+    <div class="quiz-card" style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:20px; margin:24px 0; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #bbf7d0; padding-bottom:8px;">
+        <h3 style="color:#15803d; margin:0; font-size:1.15rem; display:flex; align-items:center; gap:8px;">
+          <span>💡</span> <span>คำถามทบทวนแนวคิด (Concept Check Quiz)</span>
+        </h3>
+        <span style="background:#dcfce7; color:#166534; font-size:0.75rem; font-weight:700; padding:3px 10px; border-radius:20px;">SELF-ASSESSMENT</span>
+      </div>
+      <p style="font-weight:600; color:#166534; margin-bottom:14px;">{{QUIZ_QUESTION}}</p>
+      <div class="quiz-options" style="display:flex; flex-direction:column; gap:8px;">
+        {{QUIZ_OPTIONS_HTML}}
+      </div>
+      <div id="quiz-fb-{{PAGE_ID}}" style="display:none; margin-top:12px; padding:12px 16px; border-radius:8px; font-weight:600; font-size:0.92rem;"></div>
+    </div>
+
+    <!-- AR / 3D Launcher Card -->
+    <div class="ar-launcher-card" style="background:linear-gradient(135deg, #090e1a 0%, #1e1b4b 100%); border:1px solid rgba(0,240,255,0.3); border-radius:14px; padding:20px; margin:28px 0; color:#fff; display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; box-shadow:0 10px 25px rgba(0,0,0,0.3);">
+      <div style="max-width:580px;">
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">
+          <span style="background:rgba(0,240,255,0.2); color:#00f0ff; font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:12px;">3D & AR EXPERIENCE</span>
+          <span style="color:#a5b4fc; font-size:0.82rem;">WebXR & MediaPipe</span>
+        </div>
+        <h4 style="color:#ffffff; margin:0 0 6px 0; font-size:1.1rem;">🚀 เปิดห้องปฏิบัติการเสมือนจริง 3D & AR แบบเต็มจอ</h4>
+        <p style="color:#94a3b8; font-size:0.85rem; margin:0;">ทดลองควบคุมตัวแปรด้วยมือเปล่าผ่านกล้องเว็บแคม หรือสำรวจโครงสร้างแบบ 3 มิติ 360 องศา</p>
+      </div>
+      <a href="https://{{GITHUB_USER}}.github.io/{{GITHUB_REPO}}/simulators/sim_{{PAGE_SLUG}}.html" target="_blank" style="background:linear-gradient(135deg, #00f0ff 0%, #0284c7 100%); color:#020617; font-weight:700; font-size:0.9rem; text-decoration:none; padding:10px 20px; border-radius:10px; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 15px rgba(0,240,255,0.4);">
+        <span>🔬</span> <span>เปิดห้องแล็บ AR ↗</span>
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function toggleSolution(pageId) {
+  const sol = document.getElementById("sol-content-" + pageId);
+  const btn = document.getElementById("btn-sol-" + pageId);
+  const txt = document.getElementById("btn-text-" + pageId);
+  const ico = document.getElementById("btn-icon-" + pageId);
+  if (!sol) return;
+  if (sol.style.display === "none" || sol.style.display === "") {
+    sol.style.display = "block";
+    if (txt) txt.textContent = "ซ่อนเฉลยและวิธีทำ";
+    if (ico) ico.textContent = "🙈";
+    if (btn) btn.style.background = "#475569";
+    if (window.MathJax && window.MathJax.typesetPromise) {
+      window.MathJax.typesetPromise([sol]);
+    }
+  } else {
+    sol.style.display = "none";
+    if (txt) txt.textContent = "คลิกเพื่อดูเฉลยและวิธีทำละเอียด";
+    if (ico) ico.textContent = "👁️";
+    if (btn) btn.style.background = "linear-gradient(135deg, #0284c7, #0369a1)";
+  }
+}
+
+function checkAnswer(pageId, isCorrect, explanation) {
+  const fb = document.getElementById("quiz-fb-" + pageId);
+  if (!fb) return;
+  fb.style.display = "block";
+  if (isCorrect) {
+    fb.style.background = "#dcfce7";
+    fb.style.color = "#166534";
+    fb.style.border = "1px solid #86efac";
+    fb.innerHTML = "✅ <b>ถูกต้องยอดเยี่ยม!</b> " + explanation;
+  } else {
+    fb.style.background = "#fee2e2";
+    fb.style.color = "#991b1b";
+    fb.style.border = "1px solid #fca5a5";
+    fb.innerHTML = "❌ <b>ยังไม่ถูกต้อง</b> ลองทบทวนเนื้อหาด้านบนและคำนวณใหม่อีกครั้งนะครับ!";
+  }
+}
+</script>

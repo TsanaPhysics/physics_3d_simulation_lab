@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RBRU STEM Lab: {{TOPIC_ID}} {{TOPIC_TITLE}}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #020617;
+      color: #f8fafc;
+      font-family: 'Sarabun', -apple-system, sans-serif;
+      margin: 0;
+      padding: 6px;
+      overflow-x: hidden;
+    }
+    .sim-card {
+      background: #090e1a;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 14px;
+      width: 100%;
+      max-width: 100%;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+    .sim-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+    .sim-title {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #00f0ff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge-fps {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #10b981;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      font-size: 0.70rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .control-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    @media (max-width: 540px) {
+      .control-grid { grid-template-columns: 1fr; }
+    }
+    .ctrl-box {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      padding: 6px 10px;
+      border-radius: 7px;
+    }
+    .ctrl-box label {
+      display: block;
+      font-size: 0.80rem;
+      color: #94a3b8;
+      margin-bottom: 3px;
+    }
+    .ctrl-box .val-display {
+      color: #00f0ff;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    input[type=range] {
+      width: 100%;
+      accent-color: #00f0ff;
+      cursor: pointer;
+    }
+    select {
+      width: 100%;
+      background: #090e1a;
+      color: #00f0ff;
+      border: 1px solid #334155;
+      padding: 5px 8px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-family: 'Sarabun', sans-serif;
+    }
+    .canvas-box {
+      position: relative;
+      width: 100%;
+      background: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 230px;
+    }
+    .readout-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .readout-card {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 7px;
+      padding: 6px 8px;
+      text-align: center;
+    }
+    .readout-val {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #00f0ff;
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 1px;
+    }
+    .readout-lbl {
+      font-size: 0.68rem;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sim-card">
+    <div class="sim-header">
+      <div class="sim-title">
+        <span>🔬</span> {{TOPIC_ID}} {{TOPIC_TITLE}}
+      </div>
+      <div class="badge-fps">● 60 FPS REAL-TIME</div>
+    </div>
+
+    <div class="control-grid">
+      <div class="ctrl-box">
+        <label>พารามิเตอร์การคำนวณ 1 (P1): <span id="val_p1" class="val-display">50</span></label>
+        <input type="range" id="slider_p1" min="1" max="100" value="50">
+      </div>
+      <div class="ctrl-box">
+        <label>พารามิเตอร์การคำนวณ 2 (P2): <span id="val_p2" class="val-display">1.0</span></label>
+        <input type="range" id="slider_p2" min="0.1" max="5.0" step="0.1" value="1.0">
+      </div>
+    </div>
+
+    <div class="canvas-box"><canvas id="simCanvas" width="640" height="230"></canvas></div>
+
+    <div class="readout-grid">
+      <div class="readout-card"><div class="readout-val" id="val_out1">100.0</div><div class="readout-lbl">ผลลัพธ์คำนวณ 1</div></div>
+      <div class="readout-card"><div class="readout-val" id="val_out2">50.0 %</div><div class="readout-lbl">ผลลัพธ์คำนวณ 2</div></div>
+      <div class="readout-card"><div class="readout-val" id="val_out3" style="color:#10b981;">Ready 60 FPS</div><div class="readout-lbl">สถานะการประมวลผล</div></div>
+    </div>
+  </div>
+
+  <script>
+    const cv = document.getElementById("simCanvas");
+    const ctx = cv.getContext("2d");
+    const slider1 = document.getElementById("slider_p1");
+    const slider2 = document.getElementById("slider_p2");
+    let tick = 0;
+
+    function animate() {
+      const p1 = +slider1.value;
+      const p2 = +slider2.value;
+
+      document.getElementById("val_p1").textContent = p1;
+      document.getElementById("val_p2").textContent = p2.toFixed(1);
+
+      document.getElementById("val_out1").textContent = (p1 * p2 * 2).toFixed(1);
+      document.getElementById("val_out2").textContent = p1.toFixed(1) + " %";
+
+      ctx.clearRect(0, 0, cv.width, cv.height);
+
+      // Coordinate Grid
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+      ctx.lineWidth = 1;
+      for(let x=40; 600 > x; x+=40) {
+        ctx.beginPath(); ctx.moveTo(x, 20); ctx.lineTo(x, 200); ctx.stroke();
+      }
+
+      // Live Wave/Physics Render Loop (Neon Cyan)
+      ctx.strokeStyle = "#00f0ff";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      for(let x=40; 600 >= x; x+=2) {
+        const norm = (x - 40) / 560;
+        const y = 110 + 45 * Math.sin(norm * Math.PI * 4 * p2 + tick*0.06) * Math.cos(norm * Math.PI * 2 * (p1/50));
+        if (x === 40) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // Moving Particles / Photons (Neon Amber)
+      for(let i=0; 8 > i; i++) {
+        const px = 40 + ((tick*3 + i*70) % 560);
+        const py = 110 + 35 * Math.sin(px*0.02 + tick*0.04);
+        ctx.fillStyle = "#f59e0b";
+        ctx.beginPath(); ctx.arc(px, py, 3.5, 0, Math.PI*2); ctx.fill();
+      }
+
+      ctx.fillStyle = "#94a3b8"; ctx.font = "11px sans-serif";
+      ctx.fillText("จำลองผลลัพธ์แบบเรียลไทม์ 60 FPS Engine", 50, 32);
+
+      tick++;
+      requestAnimationFrame(animate);
+    }
+    animate();
+  </script>
+</body>
+</html>
