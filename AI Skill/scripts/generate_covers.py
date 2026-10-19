@@ -5,399 +5,580 @@ from PIL import Image, ImageDraw, ImageFilter
 
 W, H = 1600, 2400
 
-def create_smooth_vertical_gradient(width, height, stops):
-    """
-    stops: list of (y_fraction, (R, G, B))
-    """
-    img = Image.new("RGB", (width, height))
+# ==============================================================================
+# 3D Math & Projection Utilities
+# ==============================================================================
+def project_3d(x, y, z, fov=1200, cx=W//2, cy=H//2):
+    # Perspective projection: Z is distance into screen (positive forward)
+    # Avoid division by zero or negative
+    dist = z + fov
+    if dist <= 10:
+        dist = 10
+    factor = fov / dist
+    sx = int(cx + x * factor)
+    sy = int(cy + y * factor)
+    return sx, sy, factor
+
+def rotate_y(x, y, z, angle_rad):
+    cos_a = math.cos(angle_rad)
+    sin_a = math.sin(angle_rad)
+    nx = x * cos_a + z * sin_a
+    nz = -x * sin_a + z * cos_a
+    return nx, y, nz
+
+def rotate_x(x, y, z, angle_rad):
+    cos_a = math.cos(angle_rad)
+    sin_a = math.sin(angle_rad)
+    ny = y * cos_a - z * sin_a
+    nz = y * sin_a + z * cos_a
+    return x, ny, nz
+
+# ==============================================================================
+# Multi-Pass Volumetric Bloom & Glow Engine
+# ==============================================================================
+def apply_volumetric_bloom(base_img, draw_glow_fn):
+    # Create isolated high-intensity glow canvas
+    glow_canvas = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d_glow = ImageDraw.Draw(glow_canvas)
+    draw_glow_fn(d_glow)
+    
+    # 3-Pass Gaussian Bloom: Tight Core, Mid Corona, Broad Volumetric Halo
+    pass1 = glow_canvas.filter(ImageFilter.GaussianBlur(8))
+    pass2 = glow_canvas.filter(ImageFilter.GaussianBlur(25))
+    pass3 = glow_canvas.filter(ImageFilter.GaussianBlur(65))
+    
+    # Additive blend of blooms
+    bloom = Image.alpha_composite(pass3, pass2)
+    bloom = Image.alpha_composite(bloom, pass1)
+    bloom = Image.alpha_composite(bloom, glow_canvas)
+    
+    # Merge onto base image
+    return Image.alpha_composite(base_img.convert("RGBA"), bloom).convert("RGB")
+
+# ==============================================================================
+# Base Atmospheric Background (Cinematic Deep Space / Cyber Lab)
+# ==============================================================================
+def create_atmospheric_background(primary_glow_col, horizon_col, base_col=(5, 8, 20)):
+    img = Image.new("RGB", (W, H))
     draw = ImageDraw.Draw(img)
     
-    stops = sorted(stops, key=lambda x: x[0])
-    
-    for y in range(height):
-        frac = y / (height - 1)
-        # Find enclosing stops
-        idx = 0
-        for i in range(len(stops) - 1):
-            if stops[i][0] <= frac <= stops[i+1][0]:
-                idx = i
-                break
+    # Top 35% is dark, clean negative space for white title typography
+    for y in range(H):
+        t = y / (H - 1)
+        if t < 0.35:
+            # Deep dark upper sky with very subtle atmospheric gradient
+            f = t / 0.35
+            r = int(base_col[0] * (1 - f) + (base_col[0] + 8) * f)
+            g = int(base_col[1] * (1 - f) + (base_col[1] + 12) * f)
+            b = int(base_col[2] * (1 - f) + (base_col[2] + 25) * f)
+        elif t < 0.65:
+            # Midground volumetric aura zone
+            f = (t - 0.35) / 0.30
+            r = int((base_col[0] + 8) * (1 - f) + horizon_col[0] * f * 0.4)
+            g = int((base_col[1] + 12) * (1 - f) + horizon_col[1] * f * 0.4)
+            b = int((base_col[2] + 25) * (1 - f) + horizon_col[2] * f * 0.4)
         else:
-            idx = len(stops) - 2
-            
-        f0, c0 = stops[idx]
-        f1, c1 = stops[idx+1]
+            # Lower ground canvas with perspective depth
+            f = (t - 0.65) / 0.35
+            r = int((horizon_col[0] * 0.4) * (1 - f) + base_col[0] * 0.6 * f)
+            g = int((horizon_col[1] * 0.4) * (1 - f) + base_col[1] * 0.6 * f)
+            b = int((horizon_col[2] * 0.4) * (1 - f) + base_col[2] * 0.6 * f)
+        draw.line([(0, y), (W, y)], fill=(r, g, b))
         
-        t = (frac - f0) / (f1 - f0) if f1 > f0 else 0
-        t = max(0.0, min(1.0, t))
-        # smoothstep
-        t = t * t * (3 - 2 * t)
-        
-        r = int(c0[0] * (1 - t) + c1[0] * t)
-        g = int(c0[1] * (1 - t) + c1[1] * t)
-        b = int(c0[2] * (1 - t) + c1[2] * t)
-        draw.line([(0, y), (width, y)], fill=(r, g, b))
-        
-    return img
-
-def draw_perspective_cyber_grid(img, color=(0, 240, 255, 35), horizon_y=1100):
+    # Draw perspective 3D cyber grid floor in lower 40%
     overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    d = ImageDraw.Draw(overlay)
+    d_ov = ImageDraw.Draw(overlay)
+    horizon_y = 1350
+    vanish_x = W // 2
     
     # Radiating perspective lines
-    horizon_x = W // 2
-    for x in range(-W, 2 * W, 70):
-        d.line([(horizon_x, horizon_y), (x, H)], fill=color, width=2)
+    grid_col = (primary_glow_col[0], primary_glow_col[1], primary_glow_col[2], 25)
+    for x in range(-W, 2 * W, 80):
+        d_ov.line([(vanish_x, horizon_y), (x, H)], fill=grid_col, width=2)
         
-    # Horizontal grid lines
-    curr_y = horizon_y + 15
-    spacing = 6.0
+    # Transverse perspective lines with geometric expansion
+    curr_y = horizon_y + 12
+    step = 5.0
     while curr_y < H:
-        alpha = int(min(60, 20 + (curr_y - horizon_y) / (H - horizon_y) * 45))
+        alpha = int(min(55, 15 + (curr_y - horizon_y) / (H - horizon_y) * 40))
+        c = (primary_glow_col[0], primary_glow_col[1], primary_glow_col[2], alpha)
+        d_ov.line([(0, int(curr_y)), (W, int(curr_y))], fill=c, width=1)
+        curr_y += step
+        step *= 1.13
+        
+    return Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
+
+# ==============================================================================
+# Helper: 3D Holographic Ring with Nodes
+# ==============================================================================
+def draw_3d_holographic_ring(d, center_x, center_y, radius, tilt_rad, color, node_count=12):
+    points_3d = []
+    for i in range(100):
+        a = 2 * math.pi * i / 100
+        x = radius * math.cos(a)
+        y = radius * math.sin(a)
+        # Tilt around X axis
+        x_rot, y_rot, z_rot = rotate_x(x, y, 0, tilt_rad)
+        sx, sy, factor = project_3d(x_rot, y_rot, z_rot, fov=1000, cx=center_x, cy=center_y)
+        points_3d.append((sx, sy, factor))
+        
+    for i in range(len(points_3d)):
+        p1 = points_3d[i]
+        p2 = points_3d[(i + 1) % len(points_3d)]
+        w = max(1, int(3 * p1[2]))
+        alpha = int(min(255, 140 * p1[2]))
         c = (color[0], color[1], color[2], alpha)
-        d.line([(0, int(curr_y)), (W, int(curr_y))], fill=c, width=2)
-        curr_y += spacing
-        spacing *= 1.12
+        d.line([(p1[0], p1[1]), (p2[0], p2[1])], fill=c, width=w)
         
-    img.paste(Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB"))
+    # Nodes along ring
+    for i in range(node_count):
+        idx = int(i * (len(points_3d) / node_count))
+        p = points_3d[idx]
+        r = max(3, int(8 * p[2]))
+        d.ellipse([p[0]-r, p[1]-r, p[0]+r, p[1]+r], fill=(255, 255, 255), outline=color)
 
-def draw_pixar_glow_sphere(draw, center, radius, body_col, highlight_col, rim_col):
-    cx, cy = center
+# ==============================================================================
+# Helper: 3D Shaded Crystalline Cube
+# ==============================================================================
+def draw_3d_cube(d, cx, cy, size, rot_x, rot_y, col_top, col_front, col_side):
+    s = size / 2
+    vertices = [
+        (-s, -s, -s), (s, -s, -s), (s, s, -s), (-s, s, -s), # Back: 0,1,2,3
+        (-s, -s, s), (s, -s, s), (s, s, s), (-s, s, s)       # Front: 4,5,6,7
+    ]
     
-    # Outer soft rim glow
-    for dr in range(30, 0, -3):
-        alpha = int(40 * (1 - dr / 30))
-        glow_r = radius + dr
-        draw.ellipse([cx - glow_r, cy - glow_r, cx + glow_r, cy + glow_r], 
-                     outline=(rim_col[0], rim_col[1], rim_col[2]), width=2)
+    proj = []
+    for vx, vy, vz in vertices:
+        rx, ry, rz = rotate_y(vx, vy, vz, rot_y)
+        rx, ry, rz = rotate_x(rx, ry, rz, rot_x)
+        sx, sy, factor = project_3d(rx, ry, rz, fov=1200, cx=cx, cy=cy)
+        proj.append((sx, sy))
+        
+    # Faces: Top (0,1,5,4), Front (4,5,6,7), Right (1,2,6,5)
+    d.polygon([proj[0], proj[1], proj[5], proj[4]], fill=col_top, outline=(255, 255, 255))
+    d.polygon([proj[4], proj[5], proj[6], proj[7]], fill=col_front, outline=(255, 255, 255))
+    d.polygon([proj[1], proj[2], proj[6], proj[5]], fill=col_side, outline=(255, 255, 255))
+    
+    # Glowing edge highlight
+    d.line([proj[4], proj[5]], fill=(255, 255, 255), width=2)
+    d.line([proj[5], proj[6]], fill=(255, 255, 255), width=2)
+
+# ==============================================================================
+# Helper: Sci-Fi Telemetry & HUD Reticle
+# ==============================================================================
+def draw_hud_elements(d, cx, cy, radius, color):
+    # Outer dashed reticle
+    for a_deg in range(0, 360, 20):
+        rad1 = math.radians(a_deg)
+        rad2 = math.radians(a_deg + 12)
+        x1, y1 = cx + radius * math.cos(rad1), cy + radius * math.sin(rad1)
+        x2, y2 = cx + radius * math.cos(rad2), cy + radius * math.sin(rad2)
+        d.line([(x1, y1), (x2, y2)], fill=color, width=2)
+        
+    # Corner target brackets
+    bw, bl = 60, 25
+    d.line([(cx - radius - bw, cy - radius), (cx - radius - bw + bl, cy - radius)], fill=color, width=2)
+    d.line([(cx - radius - bw, cy - radius), (cx - radius - bw, cy - radius + bl)], fill=color, width=2)
+    
+    d.line([(cx + radius + bw, cy - radius), (cx + radius + bw - bl, cy - radius)], fill=color, width=2)
+    d.line([(cx + radius + bw, cy - radius), (cx + radius + bw, cy - radius + bl)], fill=color, width=2)
+    
+    d.line([(cx - radius - bw, cy + radius), (cx - radius - bw + bl, cy + radius)], fill=color, width=2)
+    d.line([(cx - radius - bw, cy + radius), (cx - radius - bw, cy + radius - bl)], fill=color, width=2)
+    
+    d.line([(cx + radius + bw, cy + radius), (cx + radius + bw - bl, cy + radius)], fill=color, width=2)
+    d.line([(cx + radius + bw, cy + radius), (cx + radius + bw, cy + radius - bl)], fill=color, width=2)
+
+
+# ==============================================================================
+# VOLUME 1: Virtual Labs, 3D Physics Simulation & AIoT
+# ==============================================================================
+def render_cover_vol01(out_path):
+    print("Rendering Master 3D Cover: Vol 01 - Virtual Labs & AIoT...")
+    base = create_atmospheric_background((0, 240, 255), (10, 80, 160))
+    
+    def draw_scene(d):
+        cx, cy = W // 2, 1260
+        
+        # 1. Floating 3D Hexagonal Resistor Loop
+        hex_r = 230
+        hex_pts = []
+        for i in range(6):
+            a = math.radians(60 * i - 30)
+            hx = hex_r * math.cos(a)
+            hy = hex_r * math.sin(a) * 0.7  # tilted perspective
+            sx, sy, _ = project_3d(hx, hy - 40, 0, fov=1000, cx=cx, cy=cy)
+            hex_pts.append((sx, sy))
+            
+        for i in range(6):
+            p1 = hex_pts[i]
+            p2 = hex_pts[(i + 1) % 6]
+            d.line([p1, p2], fill=(0, 240, 255), width=8)
+            # Golden Resistor Cylinder in midpoint
+            mx = (p1[0] + p2[0]) // 2
+            my = (p1[1] + p2[1]) // 2
+            d.ellipse([mx - 22, my - 22, mx + 22, my + 22], fill=(245, 158, 11), outline=(255, 255, 255))
+            
+        for pt in hex_pts:
+            d.ellipse([pt[0]-16, pt[1]-16, pt[0]+16, pt[1]+16], fill=(255, 255, 255), outline=(0, 240, 255))
+            
+        # 2. 3D Laser Prism with Rainbow Dispersion on Left
+        prism_cx, prism_cy = cx - 420, cy - 220
+        d.polygon([(prism_cx, prism_cy - 120), (prism_cx - 100, prism_cy + 80), (prism_cx + 100, prism_cy + 80)],
+                  fill=(15, 45, 95), outline=(0, 240, 255))
+        # White laser beam in
+        d.line([(prism_cx - 240, prism_cy + 20), (prism_cx - 40, prism_cy + 20)], fill=(255, 255, 255), width=6)
+        # Rainbow beams out
+        colors = [(239, 68, 68), (249, 115, 22), (234, 179, 8), (34, 197, 94), (6, 182, 212), (168, 85, 247)]
+        for idx, col in enumerate(colors):
+            dy = (idx - 2.5) * 18
+            d.line([(prism_cx + 35, prism_cy + 15), (prism_cx + 260, prism_cy - 40 + dy)], fill=col, width=4)
+            
+        # 3. 3D Swinging Harmonic Pendulum on Right
+        pivot_x, pivot_y = cx + 420, cy - 340
+        bob_x, bob_y = cx + 330, cy + 40
+        d.line([(pivot_x, pivot_y), (bob_x, bob_y)], fill=(200, 230, 255), width=4)
+        d.ellipse([bob_x - 48, bob_y - 48, bob_x + 48, bob_y + 48], fill=(239, 68, 68), outline=(255, 255, 255))
+        d.ellipse([bob_x - 18, bob_y - 24, bob_x - 6, bob_y - 12], fill=(255, 255, 255)) # specular
+        
+        # 4. Touchless MediaPipe 21-Joint AR Hand Skeleton (Bottom Center)
+        wrist = (cx, cy + 320)
+        fingers = [
+            [(cx - 130, cy + 240), (cx - 170, cy + 180), (cx - 190, cy + 140)], # Thumb
+            [(cx - 70, cy + 200), (cx - 85, cy + 130), (cx - 95, cy + 70)],     # Index
+            [(cx - 10, cy + 190), (cx - 10, cy + 110), (cx - 10, cy + 40)],     # Middle
+            [(cx + 50, cy + 200), (cx + 60, cy + 130), (cx + 65, cy + 70)],     # Ring
+            [(cx + 110, cy + 220), (cx + 130, cy + 160), (cx + 140, cy + 110)]  # Pinky
+        ]
+        for f_chain in fingers:
+            curr = wrist
+            for joint in f_chain:
+                d.line([curr, joint], fill=(0, 240, 255), width=4)
+                d.ellipse([joint[0]-7, joint[1]-7, joint[0]+7, joint[1]+7], fill=(255, 255, 255), outline=(0, 240, 255))
+                curr = joint
+                
+        # Central HUD Ring
+        draw_hud_elements(d, cx, cy - 40, 360, (0, 240, 255))
+        
+    final_img = apply_volumetric_bloom(base, draw_scene)
+    final_img.save(out_path, format="JPEG", quality=96, dpi=(300, 300))
+    print(f"Saved: {out_path}")
+
+
+# ==============================================================================
+# VOLUME 2: Academic Research, Literature Synthesis & Scholarly Writing
+# ==============================================================================
+def render_cover_vol02(out_path):
+    print("Rendering Master 3D Cover: Vol 02 - Academic Research & Synthesis...")
+    base = create_atmospheric_background((245, 158, 11), (30, 60, 140), base_col=(8, 12, 28))
+    
+    def draw_scene(d):
+        cx, cy = W // 2, 1260
+        
+        # 1. Majestic 3D Floating Knowledge Tome / Open Book
+        bw, bh = 340, 200
+        # Left page
+        d.polygon([(cx, cy + 60), (cx - bw, cy - 20), (cx - bw, cy + bh - 20), (cx, cy + bh + 40)],
+                  fill=(24, 38, 85), outline=(245, 158, 11))
+        # Right page
+        d.polygon([(cx, cy + 60), (cx + bw, cy - 20), (cx + bw, cy + bh - 20), (cx, cy + bh + 40)],
+                  fill=(30, 50, 110), outline=(245, 158, 11))
+                  
+        # Gold spine glow
+        d.line([(cx, cy + 60), (cx, cy + bh + 40)], fill=(255, 255, 255), width=5)
+        
+        # Golden text streams on pages
+        for row in range(7):
+            y_off = cy + 40 + row * 22
+            d.line([(cx - bw + 40, y_off - 10), (cx - 30, y_off)], fill=(245, 158, 11), width=3)
+            d.line([(cx + 30, y_off), (cx + bw - 40, y_off - 10)], fill=(245, 158, 11), width=3)
+            
+        # 2. Floating 3D 7-Column Synthesis Matrix Holographic Grid
+        m_w, m_h = 560, 220
+        grid_top = cy - 320
+        d.rounded_rectangle([cx - m_w//2, grid_top, cx + m_w//2, grid_top + m_h], radius=15,
+                            fill=(15, 25, 60), outline=(245, 158, 11), width=3)
+        # 7 Column Lines
+        col_w = m_w / 7
+        for c in range(1, 7):
+            lx = int(cx - m_w//2 + c * col_w)
+            d.line([(lx, grid_top), (lx, grid_top + m_h)], fill=(59, 130, 246), width=2)
+            
+        # 3. Celestial Spherical Constellation Network hovering above
+        draw_3d_holographic_ring(d, cx, cy - 350, 320, tilt_rad=math.radians(65), color=(245, 158, 11), node_count=14)
+        draw_3d_holographic_ring(d, cx, cy - 350, 250, tilt_rad=math.radians(-40), color=(59, 130, 246), node_count=10)
+        
+        # Floating Golden Quill / Stylus Hologram
+        d.line([(cx + 260, cy - 80), (cx + 340, cy - 240)], fill=(245, 158, 11), width=6)
+        d.ellipse([cx + 255, cy - 85, cx + 265, cy - 75], fill=(255, 255, 255))
+        
+    final_img = apply_volumetric_bloom(base, draw_scene)
+    final_img.save(out_path, format="JPEG", quality=96, dpi=(300, 300))
+    print(f"Saved: {out_path}")
+
+
+# ==============================================================================
+# VOLUME 3: AI Agentic Orchestration & Google Antigravity Architecture
+# ==============================================================================
+def render_cover_vol03(out_path):
+    print("Rendering Master 3D Cover: Vol 03 - Agentic AI & Antigravity...")
+    base = create_atmospheric_background((6, 182, 212), (50, 20, 110), base_col=(6, 8, 22))
+    
+    def draw_scene(d):
+        cx, cy = W // 2, 1260
+        
+        # 1. Massive 3D Arc-Reactor Quantum Core in Center
+        core_r = 140
+        for dr in range(core_r, 0, -8):
+            t = dr / core_r
+            r = int(6 * (1 - t) + 255 * t)
+            g = int(182 * (1 - t) + 255 * t)
+            b = int(212 * (1 - t) + 255 * t)
+            d.ellipse([cx - dr, cy - dr, cx + dr, cy + dr], fill=(r, g, b))
+            
+        # Outer Mechanical Arc-Reactor Segments
+        for a_deg in range(0, 360, 45):
+            rad = math.radians(a_deg)
+            px = cx + int(core_r * 1.35 * math.cos(rad))
+            py = cy + int(core_r * 1.35 * math.sin(rad))
+            d.ellipse([px - 22, py - 22, px + 22, py + 22], fill=(139, 92, 246), outline=(255, 255, 255))
+            
+        # 2. Orbiting Multi-Agent Subagent Spheres in 3D Space
+        draw_3d_holographic_ring(d, cx, cy, 380, tilt_rad=math.radians(70), color=(6, 182, 212), node_count=8)
+        draw_3d_holographic_ring(d, cx, cy, 320, tilt_rad=math.radians(-60), color=(139, 92, 246), node_count=6)
+        
+        # 3. Real-Time Telemetry DSP Audio Waveform Ring
+        for deg in range(0, 360, 6):
+            rad = math.radians(deg)
+            # modulate height
+            h = int(35 * math.sin(deg * 0.12) * math.cos(deg * 0.08))
+            r_inner = 250
+            r_outer = r_inner + abs(h) + 10
+            x1 = cx + int(r_inner * math.cos(rad))
+            y1 = cy + int(r_inner * math.sin(rad))
+            x2 = cx + int(r_outer * math.cos(rad))
+            y2 = cy + int(r_outer * math.sin(rad))
+            d.line([(x1, y1), (x2, y2)], fill=(6, 182, 212), width=3)
+            
+        # Sci-Fi Corner Brackets & HUD
+        draw_hud_elements(d, cx, cy, 460, (6, 182, 212))
+        
+    final_img = apply_volumetric_bloom(base, draw_scene)
+    final_img.save(out_path, format="JPEG", quality=96, dpi=(300, 300))
+    print(f"Saved: {out_path}")
+
+
+# ==============================================================================
+# VOLUME 4: Modern Web, Flutter Mobile & High-Performance DevTools
+# ==============================================================================
+def render_cover_vol04(out_path):
+    print("Rendering Master 3D Cover: Vol 04 - Modern Web & Flutter...")
+    base = create_atmospheric_background((2, 132, 199), (15, 60, 110), base_col=(5, 12, 25))
+    
+    def draw_scene(d):
+        cx, cy = W // 2, 1260
+        
+        # 1. Two 3D Floating Bezel-less Curved Smartphones
+        def draw_perspective_phone(px, py, w, h, tilt_angle, app_col):
+            # 3D tilted phone frame
+            corners = [(-w//2, -h//2), (w//2, -h//2), (w//2, h//2), (-w//2, h//2)]
+            proj = []
+            for vx, vy in corners:
+                rx, ry, rz = rotate_y(vx, vy, 0, tilt_angle)
+                sx, sy, _ = project_3d(rx, ry, rz, fov=1200, cx=px, cy=py)
+                proj.append((sx, sy))
+                
+            # Body
+            d.polygon(proj, fill=(15, 23, 42), outline=(2, 132, 199))
+            
+            # Inner UI Cards
+            card_top = (proj[0][1] + proj[3][1]) // 2 + 30
+            card_h = 100
+            for i in range(3):
+                y0 = card_top + i * 110
+                d.rounded_rectangle([px - w//3, y0, px + w//3, y0 + card_h], radius=14,
+                                    fill=app_col, outline=(255, 255, 255))
+                                    
+        # Left Phone (Tilted Left)
+        draw_perspective_phone(cx - 260, cy - 80, 280, 520, math.radians(22), (2, 132, 199))
+        # Right Phone (Tilted Right)
+        draw_perspective_phone(cx + 260, cy - 80, 280, 520, math.radians(-22), (20, 184, 166))
+        
+        # 2. Modern 60 FPS Core Web Vitals Performance Dial in Center
+        draw_3d_holographic_ring(d, cx, cy - 260, 140, tilt_rad=math.radians(35), color=(20, 184, 166), node_count=8)
+        d.ellipse([cx - 45, cy - 260 - 45, cx + 45, cy - 260 + 45], fill=(20, 184, 166), outline=(255, 255, 255))
+        
+        # 3. Responsive Container Layout Wireframe Grid behind
+        for grid_r in [380, 480]:
+            draw_3d_holographic_ring(d, cx, cy, grid_r, tilt_rad=math.radians(72), color=(2, 132, 199), node_count=12)
+            
+    final_img = apply_volumetric_bloom(base, draw_scene)
+    final_img.save(out_path, format="JPEG", quality=96, dpi=(300, 300))
+    print(f"Saved: {out_path}")
+
+
+# ==============================================================================
+# VOLUME 5: Cloud Data Engineering, BigQuery & Machine Learning
+# ==============================================================================
+def render_cover_vol05(out_path):
+    print("Rendering Master 3D Cover: Vol 05 - Cloud Data & Machine Learning...")
+    base = create_atmospheric_background((29, 78, 216), (16, 120, 90), base_col=(4, 10, 24))
+    
+    def draw_scene(d):
+        cx, cy = W // 2, 1260
+        
+        # 1. 3D Isometric Crystalline Data Cubes (BigQuery Lakehouse Layers)
+        # Central Big Hypercube (Gold/Emerald)
+        draw_3d_cube(d, cx, cy - 140, 160, rot_x=math.radians(30), rot_y=math.radians(45),
+                     col_top=(16, 185, 129), col_front=(5, 150, 105), col_side=(4, 120, 87))
                      
-    # Solid 3D spherical gradient
-    for r in range(radius, 0, -2):
-        t = (radius - r) / radius
-        # Offset toward top-left for 3D depth
-        lx = cx - int(radius * 0.32 * (1 - t))
-        ly = cy - int(radius * 0.35 * (1 - t))
+        # Satellite Cubes
+        satellites = [
+            (cx - 320, cy - 300, 100, (59, 130, 246), (37, 99, 235), (29, 78, 216)), # Bronze Raw
+            (cx + 320, cy - 300, 100, (245, 158, 11), (217, 119, 6), (180, 83, 9)),   # Silver Cleaned
+            (cx - 280, cy + 120, 90, (139, 92, 246), (124, 58, 237), (109, 40, 217)), # Dataproc
+            (cx + 280, cy + 120, 90, (236, 72, 153), (219, 39, 119), (190, 24, 93))   # ML Model
+        ]
         
-        red = int(body_col[0] * (1 - t) + highlight_col[0] * t)
-        green = int(body_col[1] * (1 - t) + highlight_col[1] * t)
-        blue = int(body_col[2] * (1 - t) + highlight_col[2] * t)
-        draw.ellipse([lx - r, ly - r, lx + r, ly + r], fill=(red, green, blue))
+        for scx, scy, sz, c1, c2, c3 in satellites:
+            # Laser data streaming conduit to central cube
+            d.line([(scx, scy), (cx, cy - 140)], fill=c1, width=4)
+            draw_3d_cube(d, scx, scy, sz, rot_x=math.radians(25), rot_y=math.radians(-35),
+                         col_top=c1, col_front=c2, col_side=c3)
+                         
+        # 2. Orbital Quantum Data Rings
+        draw_3d_holographic_ring(d, cx, cy - 140, 420, tilt_rad=math.radians(65), color=(59, 130, 246), node_count=16)
+        draw_3d_holographic_ring(d, cx, cy - 140, 350, tilt_rad=math.radians(-55), color=(16, 185, 129), node_count=12)
         
-    # Primary Specular glint
-    glint_x = cx - int(radius * 0.35)
-    glint_y = cy - int(radius * 0.38)
-    glint_r = max(4, int(radius * 0.20))
-    draw.ellipse([glint_x - glint_r, glint_y - glint_r, glint_x + glint_r, glint_y + glint_r], fill=(255, 255, 255))
-    
-    # Secondary micro-specular glint
-    glint2_x = glint_x + int(radius * 0.16)
-    glint2_y = glint_y + int(radius * 0.16)
-    glint2_r = max(2, int(radius * 0.08))
-    draw.ellipse([glint2_x - glint2_r, glint2_y - glint2_r, glint2_x + glint2_r, glint2_y + glint2_r], fill=(255, 255, 255))
+    final_img = apply_volumetric_bloom(base, draw_scene)
+    final_img.save(out_path, format="JPEG", quality=96, dpi=(300, 300))
+    print(f"Saved: {out_path}")
 
-def draw_pixar_robot(draw, cx, cy, scale=1.0, eye_color=(0, 240, 255), accent_color=(245, 158, 11)):
-    # Cute 3D Pixar AI Companion Bot
-    # 1. Body
-    body_r = int(170 * scale)
-    draw_pixar_glow_sphere(draw, (cx, cy + int(140 * scale)), body_r, 
-                           (235, 242, 250), (255, 255, 255), eye_color)
-    
-    # Chest Arc Reactor / Core
-    core_r = int(45 * scale)
-    draw_pixar_glow_sphere(draw, (cx, cy + int(140 * scale)), core_r,
-                           eye_color, (255, 255, 255), (255, 255, 255))
-                           
-    # 2. Head
-    head_r = int(140 * scale)
-    draw_pixar_glow_sphere(draw, (cx, cy - int(60 * scale)), head_r,
-                           (240, 245, 252), (255, 255, 255), eye_color)
-                           
-    # Cute Eyes Visor (Black Glossy Screen)
-    visor_w = int(180 * scale)
-    visor_h = int(80 * scale)
-    visor_box = [cx - visor_w//2, cy - int(85 * scale), cx + visor_w//2, cy - int(85 * scale) + visor_h]
-    draw.rounded_rectangle(visor_box, radius=int(35 * scale), fill=(15, 23, 42), outline=eye_color, width=int(4 * scale))
-    
-    # Two Friendly Glowing Eyes
-    eye_offset = int(45 * scale)
-    eye_r = int(22 * scale)
-    # Left eye
-    draw_pixar_glow_sphere(draw, (cx - eye_offset, cy - int(45 * scale)), eye_r, eye_color, (255, 255, 255), eye_color)
-    # Right eye
-    draw_pixar_glow_sphere(draw, (cx + eye_offset, cy - int(45 * scale)), eye_r, eye_color, (255, 255, 255), eye_color)
-    
-    # Cute Antenna
-    draw.line([(cx, cy - int(200 * scale)), (cx, cy - int(240 * scale))], fill=(180, 195, 210), width=int(6 * scale))
-    draw_pixar_glow_sphere(draw, (cx, cy - int(248 * scale)), int(16 * scale), accent_color, (255, 255, 255), accent_color)
-    
-    # Floating Shoulder Orbs (Cute magnetic floating hands)
-    hand_r = int(50 * scale)
-    draw_pixar_glow_sphere(draw, (cx - int(220 * scale), cy + int(120 * scale)), hand_r, (230, 240, 250), (255, 255, 255), eye_color)
-    draw_pixar_glow_sphere(draw, (cx + int(220 * scale), cy + int(120 * scale)), hand_r, (230, 240, 250), (255, 255, 255), eye_color)
 
-def render_volume_cover(vol_num, title_en, out_path, custom_draw_fn):
-    print(f"Rendering Cover for Volume {vol_num}: {title_en}...")
+# ==============================================================================
+# VOLUME 6: Full-Stack Cloud & Firebase Intelligent Backend
+# ==============================================================================
+def render_cover_vol06(out_path):
+    print("Rendering Master 3D Cover: Vol 06 - Full-Stack Cloud & Firebase...")
+    base = create_atmospheric_background((249, 115, 22), (60, 25, 80), base_col=(10, 8, 22))
     
-    # Negative space engineering:
-    # 0.0 - 0.35: Expansive airy pastel sky / digital glow (Clean Negative Space for Title)
-    # 0.35 - 0.75: Midground action & 3D Pixar subject
-    # 0.75 - 1.00: Deep dark canvas (Negative Space for Author Metadata)
+    def draw_scene(d):
+        cx, cy = W // 2, 1260
+        
+        # 1. Majestic 3D Radiant Firebase Crystal Core
+        core_pts = [
+            (cx, cy - 320), (cx + 120, cy - 140), (cx + 80, cy + 60),
+            (cx - 80, cy + 60), (cx - 120, cy - 140)
+        ]
+        # Multi-layered crystal facets
+        d.polygon(core_pts, fill=(249, 115, 22), outline=(255, 255, 255))
+        d.polygon([(cx, cy - 320), (cx, cy + 60), (cx + 80, cy + 60), (cx + 120, cy - 140)],
+                  fill=(251, 146, 60), outline=(255, 255, 255))
+        d.polygon([(cx, cy - 320), (cx, cy + 60), (cx - 80, cy + 60), (cx - 120, cy - 140)],
+                  fill=(234, 88, 12), outline=(255, 255, 255))
+                  
+        # Inner white fire nucleus
+        d.ellipse([cx - 45, cy - 130, cx + 45, cy - 40], fill=(255, 255, 255))
+        
+        # 2. Floating Relational Database Schema Cubes (PostgreSQL Data Connect)
+        db_positions = [
+            (cx - 360, cy - 200, (56, 189, 248)), # Auth node
+            (cx + 360, cy - 200, (37, 99, 235)),  # Postgres SQL
+            (cx - 280, cy + 180, (168, 85, 247)), # Storage bucket
+            (cx + 280, cy + 180, (234, 179, 8))   # Firestore NoSQL
+        ]
+        
+        for dbx, dby, col in db_positions:
+            d.line([(cx, cy - 80), (dbx, dby)], fill=col, width=4)
+            # 3D database node
+            d.rounded_rectangle([dbx - 60, dby - 40, dbx + 60, dby + 40], radius=15,
+                                fill=(15, 23, 42), outline=col, width=3)
+            d.ellipse([dbx - 20, dby - 12, dbx + 20, dby + 12], fill=col)
+            
+        # 3. Concentric Security Shield Rings (Zero-Trust)
+        draw_3d_holographic_ring(d, cx, cy - 80, 440, tilt_rad=math.radians(65), color=(249, 115, 22), node_count=16)
+        
+    final_img = apply_volumetric_bloom(base, draw_scene)
+    final_img.save(out_path, format="JPEG", quality=96, dpi=(300, 300))
+    print(f"Saved: {out_path}")
+
+
+# ==============================================================================
+# VOLUME 7: Bioinformatics, Genomics & Computational Life Sciences
+# ==============================================================================
+def render_cover_vol07(out_path):
+    print("Rendering Master 3D Cover: Vol 07 - Bioinformatics & Life Sciences...")
+    base = create_atmospheric_background((5, 150, 105), (10, 75, 75), base_col=(3, 14, 18))
     
-    # Base palette
-    sky_colors = [
-        # Vol 1
-        [(0.0, (190, 230, 255)), (0.35, (130, 195, 245)), (0.55, (20, 50, 90)), (0.80, (8, 18, 38)), (1.0, (4, 10, 22))],
-        # Vol 2
-        [(0.0, (235, 240, 255)), (0.35, (175, 200, 245)), (0.55, (30, 45, 95)), (0.80, (12, 18, 42)), (1.0, (5, 8, 24))],
-        # Vol 3
-        [(0.0, (220, 245, 255)), (0.35, (140, 215, 245)), (0.55, (25, 30, 75)), (0.80, (8, 12, 35)), (1.0, (4, 6, 20))],
-        # Vol 4
-        [(0.0, (225, 245, 255)), (0.35, (150, 215, 250)), (0.55, (15, 60, 95)), (0.80, (8, 25, 45)), (1.0, (4, 12, 25))],
-        # Vol 5
-        [(0.0, (230, 240, 255)), (0.35, (160, 190, 245)), (0.55, (20, 40, 85)), (0.80, (6, 16, 40)), (1.0, (3, 8, 20))],
-        # Vol 6
-        [(0.0, (255, 240, 230)), (0.35, (250, 195, 160)), (0.55, (60, 30, 75)), (0.80, (20, 10, 35)), (1.0, (10, 5, 18))],
-        # Vol 7
-        [(0.0, (225, 252, 245)), (0.35, (150, 235, 210)), (0.55, (15, 65, 65)), (0.80, (4, 28, 30)), (1.0, (2, 14, 16))]
+    def draw_scene(d):
+        cx, cy = W // 2, 1260
+        
+        # 1. 3D Spiraling DNA Double Helix with Volumetric Depth
+        helix_h = 580
+        for t in range(-helix_h // 2, helix_h // 2, 10):
+            rad = t * 0.024
+            # Strand 1 (X1, Y1, Z1)
+            x1 = 200 * math.sin(rad)
+            y1 = t
+            z1 = 200 * math.cos(rad)
+            
+            # Strand 2 opposite (X2, Y2, Z2)
+            x2 = -x1
+            y2 = t
+            z2 = -z1
+            
+            sx1, sy1, f1 = project_3d(x1, y1, z1, fov=1100, cx=cx, cy=cy - 100)
+            sx2, sy2, f2 = project_3d(x2, y2, z2, fov=1100, cx=cx, cy=cy - 100)
+            
+            # Draw base-pair rung connecting both strands
+            alpha = int(min(255, 120 + 100 * (f1 + f2) / 2))
+            d.line([(sx1, sy1), (sx2, sy2)], fill=(139, 92, 246, alpha), width=max(1, int(4 * f1)))
+            
+            # Strand 1 Sphere (Bio-Emerald)
+            r1 = max(4, int(15 * f1))
+            d.ellipse([sx1 - r1, sy1 - r1, sx1 + r1, sy1 + r1], fill=(5, 150, 105), outline=(255, 255, 255))
+            
+            # Strand 2 Sphere (Cyan / Turquoise)
+            r2 = max(4, int(15 * f2))
+            d.ellipse([sx2 - r2, sy2 - r2, sx2 + r2, sy2 + r2], fill=(6, 182, 212), outline=(255, 255, 255))
+            
+        # 2. AlphaFold 3D Protein Ribbon Splines orbiting DNA
+        draw_3d_holographic_ring(d, cx, cy - 100, 380, tilt_rad=math.radians(60), color=(5, 150, 105), node_count=14)
+        draw_3d_holographic_ring(d, cx, cy - 100, 320, tilt_rad=math.radians(-50), color=(139, 92, 246), node_count=10)
+        
+        # 3. Chemical Ligand Molecules (ChEMBL / PubChem Ball-and-Stick)
+        ligands = [
+            (cx - 360, cy - 120, (239, 68, 68)),
+            (cx + 360, cy - 120, (245, 158, 11)),
+            (cx - 240, cy + 220, (59, 130, 246)),
+            (cx + 240, cy + 220, (168, 85, 247))
+        ]
+        for lx, ly, lcol in ligands:
+            d.ellipse([lx - 32, ly - 32, lx + 32, ly + 32], fill=lcol, outline=(255, 255, 255))
+            # covalent bonds
+            d.line([(lx, ly), (lx + 45, ly - 30)], fill=(255, 255, 255), width=3)
+            d.ellipse([lx + 45 - 16, ly - 30 - 16, lx + 45 + 16, ly - 30 + 16], fill=lcol)
+            
+    final_img = apply_volumetric_bloom(base, draw_scene)
+    final_img.save(out_path, format="JPEG", quality=96, dpi=(300, 300))
+    print(f"Saved: {out_path}")
+
+
+# ==============================================================================
+# Master Execution: Render All 7 Covers
+# ==============================================================================
+if __name__ == "__main__":
+    covers = [
+        ("AI Skill/Vol_01_Virtual_Labs_3D_Simulations_AIoT/figures/cover_art.jpg", render_cover_vol01),
+        ("AI Skill/Vol_02_Academic_Research_and_Synthesis/figures/cover_art.jpg", render_cover_vol02),
+        ("AI Skill/Vol_03_AI_Agentic_Orchestration_Antigravity/figures/cover_art.jpg", render_cover_vol03),
+        ("AI Skill/Vol_04_Modern_Web_Flutter_and_DevTools/figures/cover_art.jpg", render_cover_vol04),
+        ("AI Skill/Vol_05_Cloud_Data_Engineering_and_ML/figures/cover_art.jpg", render_cover_vol05),
+        ("AI Skill/Vol_06_FullStack_Cloud_and_Firebase/figures/cover_art.jpg", render_cover_vol06),
+        ("AI Skill/Vol_07_Bioinformatics_and_Life_Sciences/figures/cover_art.jpg", render_cover_vol07)
     ]
     
-    stops = sky_colors[vol_num - 1]
-    img = create_smooth_vertical_gradient(W, H, stops)
-    
-    # Add subtle futuristic perspective digital grid
-    draw_perspective_cyber_grid(img, color=(0, 240, 255, 28), horizon_y=1120)
-    
-    # Custom thematic visual elements
-    d = ImageDraw.Draw(img)
-    custom_draw_fn(d, img)
-    
-    # Save high-res JPEG (300 DPI, Quality 96%)
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    img.save(out_path, format="JPEG", quality=96, dpi=(300, 300))
-    print(f"Saved: {out_path} ({os.path.getsize(out_path) // 1024} KB)")
-
-# ==============================================================================
-# Volume 1: Virtual Labs, 3D Physics Simulation & AIoT
-# ==============================================================================
-def draw_vol01(d, img):
-    # 3D Pixar Robot with Hexagonal Circuit & Pendulum
-    cx, cy = W // 2, 1340
-    draw_pixar_robot(d, cx, cy, scale=1.1, eye_color=(0, 240, 255), accent_color=(245, 158, 11))
-    
-    # Floating Holographic Hexagonal Circuit
-    hex_cx, hex_cy = cx, cy - 280
-    hex_r = 170
-    points = []
-    for i in range(6):
-        angle = math.radians(60 * i - 30)
-        px = hex_cx + int(hex_r * math.cos(angle))
-        py = hex_cy + int(hex_r * math.sin(angle))
-        points.append((px, py))
-    
-    # Draw glowing circuit loop
-    for i in range(6):
-        p1 = points[i]
-        p2 = points[(i + 1) % 6]
-        d.line([p1, p2], fill=(0, 240, 255), width=6)
-        # Resistor zigzag or dot
-        mid_x = (p1[0] + p2[0]) // 2
-        mid_y = (p1[1] + p2[1]) // 2
-        draw_pixar_glow_sphere(d, (mid_x, mid_y), 16, (245, 158, 11), (255, 255, 255), (245, 158, 11))
+    for path, render_fn in covers:
+        render_fn(path)
         
-    for p in points:
-        draw_pixar_glow_sphere(d, p, 20, (0, 240, 255), (255, 255, 255), (0, 240, 255))
-        
-    # Swinging Harmonic Pendulum on Right
-    pivot_x, pivot_y = cx + 450, cy - 350
-    bob_x, bob_y = cx + 380, cy - 50
-    d.line([(pivot_x, pivot_y), (bob_x, bob_y)], fill=(180, 210, 230), width=4)
-    draw_pixar_glow_sphere(d, (bob_x, bob_y), 55, (235, 70, 70), (255, 200, 200), (245, 158, 11))
-
-# ==============================================================================
-# Volume 2: Academic Research, Literature Synthesis & Scholarly Writing
-# ==============================================================================
-def draw_vol02(d, img):
-    # 3D Pixar Scholar Bot with Knowledge Constellation
-    cx, cy = W // 2, 1340
-    draw_pixar_robot(d, cx, cy, scale=1.05, eye_color=(245, 158, 11), accent_color=(59, 130, 246))
-    
-    # Floating Holographic Open Book with 7-Column Grid
-    book_cx, book_cy = cx, cy - 270
-    bw, bh = 220, 130
-    
-    # Book pages
-    d.polygon([(book_cx, book_cy), (book_cx - bw, book_cy - 40), (book_cx - bw, book_cy + bh), (book_cx, book_cy + bh + 30)],
-              fill=(30, 58, 138), outline=(245, 158, 11))
-    d.polygon([(book_cx, book_cy), (book_cx + bw, book_cy - 40), (book_cx + bw, book_cy + bh), (book_cx, book_cy + bh + 30)],
-              fill=(37, 99, 235), outline=(245, 158, 11))
-              
-    # Constellation Network Nodes hovering above
-    nodes = [
-        (cx - 380, cy - 420), (cx - 200, cy - 530), (cx, cy - 480),
-        (cx + 220, cy - 540), (cx + 390, cy - 410), (cx - 100, cy - 350), (cx + 120, cy - 340)
-    ]
-    for i in range(len(nodes) - 1):
-        d.line([nodes[i], nodes[i+1]], fill=(245, 158, 11, 180), width=3)
-    d.line([nodes[0], nodes[5]], fill=(59, 130, 246), width=2)
-    d.line([nodes[4], nodes[6]], fill=(59, 130, 246), width=2)
-    
-    for nd in nodes:
-        draw_pixar_glow_sphere(d, nd, 22, (245, 158, 11), (255, 255, 255), (255, 255, 255))
-
-# ==============================================================================
-# Volume 3: AI Agentic Orchestration & Google Antigravity Architecture
-# ==============================================================================
-def draw_vol03(d, img):
-    # Mr. Deep_xAI / J.A.R.V.I.S. High-Tech Cyber Bot
-    cx, cy = W // 2, 1330
-    draw_pixar_robot(d, cx, cy, scale=1.15, eye_color=(6, 182, 212), accent_color=(139, 92, 246))
-    
-    # Orbiting Multi-Agent Subagent Spheres
-    orbit_r = 380
-    for idx, angle_deg in enumerate([30, 90, 150, 210, 270, 330]):
-        rad = math.radians(angle_deg)
-        ox = cx + int(orbit_r * math.cos(rad))
-        oy = cy - int(orbit_r * 0.45 * math.sin(rad)) - 100
-        # Orbit line
-        d.ellipse([cx - orbit_r, cy - 100 - int(orbit_r*0.45), cx + orbit_r, cy - 100 + int(orbit_r*0.45)],
-                  outline=(6, 182, 212), width=1)
-        sub_col = (139, 92, 246) if idx % 2 == 0 else (6, 182, 212)
-        draw_pixar_glow_sphere(d, (ox, oy), 28, sub_col, (255, 255, 255), (255, 255, 255))
-        
-    # Audio Waveform telemetry ring
-    wave_y = cy + 320
-    for x in range(cx - 350, cx + 350, 18):
-        h = int(35 * math.sin((x - cx) * 0.05) * math.cos((x - cx) * 0.02))
-        d.line([(x, wave_y - h), (x, wave_y + h)], fill=(6, 182, 212), width=4)
-
-# ==============================================================================
-# Volume 4: Modern Web, Flutter Mobile & High-Performance DevTools
-# ==============================================================================
-def draw_vol04(d, img):
-    # 3D Pixar Builder Robot with Floating Mobile Mockups
-    cx, cy = W // 2, 1350
-    draw_pixar_robot(d, cx, cy, scale=1.08, eye_color=(2, 132, 199), accent_color=(20, 184, 166))
-    
-    # Floating Smartphone Hologram in Center
-    phone_w, phone_h = 240, 420
-    phone_x = cx - phone_w // 2
-    phone_y = cy - 460
-    
-    # Glassmorphism phone body
-    d.rounded_rectangle([phone_x, phone_y, phone_x + phone_w, phone_y + phone_h],
-                        radius=35, fill=(15, 23, 42), outline=(2, 132, 199), width=5)
-    # Screen inner content
-    d.rounded_rectangle([phone_x + 15, phone_y + 25, phone_x + phone_w - 15, phone_y + phone_h - 25],
-                        radius=20, fill=(30, 41, 59))
-    # Flutter UI Cards inside phone
-    d.rounded_rectangle([phone_x + 30, phone_y + 50, phone_x + phone_w - 30, phone_y + 130],
-                        radius=12, fill=(2, 132, 199))
-    d.rounded_rectangle([phone_x + 30, phone_y + 150, phone_x + phone_w - 30, phone_y + 230],
-                        radius=12, fill=(20, 184, 166))
-    d.rounded_rectangle([phone_x + 30, phone_y + 250, phone_x + phone_w - 30, phone_y + 360],
-                        radius=12, fill=(51, 65, 85))
-                        
-    # 60 FPS Speed Badge
-    badge_x, badge_y = cx + 220, cy - 250
-    draw_pixar_glow_sphere(d, (badge_x, badge_y), 45, (20, 184, 166), (255, 255, 255), (20, 184, 166))
-
-# ==============================================================================
-# Volume 5: Cloud Data Engineering, BigQuery & Machine Learning
-# ==============================================================================
-def draw_vol05(d, img):
-    # 3D Pixar Data Architect Bot with Floating BigQuery Cubes
-    cx, cy = W // 2, 1340
-    draw_pixar_robot(d, cx, cy, scale=1.1, eye_color=(29, 78, 216), accent_color=(16, 185, 129))
-    
-    # Floating Crystalline Data Cubes in 3D Isometric View
-    def draw_iso_cube(center, size, col_top, col_left, col_right):
-        x, y = center
-        dx = int(size * 0.866)
-        dy = int(size * 0.5)
-        # Top
-        d.polygon([(x, y - size), (x + dx, y - dy), (x, y), (x - dx, y - dy)], fill=col_top, outline=(255, 255, 255))
-        # Left
-        d.polygon([(x - dx, y - dy), (x, y), (x, y + size), (x - dx, y + dy)], fill=col_left, outline=(255, 255, 255))
-        # Right
-        d.polygon([(x, y), (x + dx, y - dy), (x + dx, y + dy), (x, y + size)], fill=col_right, outline=(255, 255, 255))
-        
-    cubes = [
-        ((cx - 280, cy - 350), 45, (59, 130, 246), (37, 99, 235), (29, 78, 216)),
-        ((cx, cy - 460), 60, (16, 185, 129), (5, 150, 105), (4, 120, 87)),
-        ((cx + 280, cy - 350), 45, (245, 158, 11), (217, 119, 6), (180, 83, 9))
-    ]
-    for c_pos, sz, c_top, c_left, c_right in cubes:
-        draw_iso_cube(c_pos, sz, c_top, c_left, c_right)
-        
-    # Data Stream Flow Lines
-    d.line([(cx - 280, cy - 305), (cx, cy - 400)], fill=(59, 130, 246), width=4)
-    d.line([(cx + 280, cy - 305), (cx, cy - 400)], fill=(245, 158, 11), width=4)
-
-# ==============================================================================
-# Volume 6: Full-Stack Cloud & Firebase Intelligent Backend
-# ==============================================================================
-def draw_vol06(d, img):
-    # 3D Pixar Cloud Engineer Bot with Glowing Firebase Gem
-    cx, cy = W // 2, 1340
-    draw_pixar_robot(d, cx, cy, scale=1.1, eye_color=(249, 115, 22), accent_color=(56, 189, 248))
-    
-    # Glowing Firebase Gem / Flame in center above
-    gem_cx, gem_cy = cx, cy - 280
-    
-    # Amber crystal flame
-    gem_pts = [
-        (gem_cx, gem_cy - 120), (gem_cx + 70, gem_cy - 30),
-        (gem_cx + 45, gem_cy + 70), (gem_cx - 45, gem_cy + 70),
-        (gem_cx - 70, gem_cy - 30)
-    ]
-    d.polygon(gem_pts, fill=(249, 115, 22), outline=(255, 255, 255))
-    draw_pixar_glow_sphere(d, (gem_cx, gem_cy), 45, (254, 215, 170), (255, 255, 255), (249, 115, 22))
-    
-    # Relational Database Nodes orbiting
-    db_nodes = [(cx - 280, cy - 220), (cx + 280, cy - 220), (cx - 200, cy - 450), (cx + 200, cy - 450)]
-    for n in db_nodes:
-        d.line([(gem_cx, gem_cy), n], fill=(56, 189, 248), width=3)
-        draw_pixar_glow_sphere(d, n, 26, (37, 99, 235), (255, 255, 255), (56, 189, 248))
-
-# ==============================================================================
-# Volume 7: Bioinformatics, Genomics & Computational Life Sciences
-# ==============================================================================
-def draw_vol07(d, img):
-    # 3D Pixar Bio-Scientist Bot with AlphaFold 3D Ribbon & DNA Helix
-    cx, cy = W // 2, 1340
-    draw_pixar_robot(d, cx, cy, scale=1.08, eye_color=(5, 150, 105), accent_color=(139, 92, 246))
-    
-    # Majestic Glowing DNA Double Helix above
-    helix_cy = cy - 360
-    h_len = 360
-    for t in range(-h_len, h_len, 12):
-        angle = t * 0.035
-        x1 = cx + int(140 * math.sin(angle))
-        y1 = helix_cy + t
-        x2 = cx - int(140 * math.sin(angle))
-        y2 = helix_cy + t
-        
-        # Base pair rung
-        d.line([(x1, y1), (x2, y2)], fill=(139, 92, 246, 150), width=3)
-        # Strand 1 sphere
-        draw_pixar_glow_sphere(d, (x1, y1), 12, (5, 150, 105), (255, 255, 255), (5, 150, 105))
-        # Strand 2 sphere
-        draw_pixar_glow_sphere(d, (x2, y2), 12, (6, 182, 212), (255, 255, 255), (6, 182, 212))
-
-# ==============================================================================
-# Main Execution: Generate All 7 Covers
-# ==============================================================================
-vol_configs = [
-    (1, "Virtual Labs, 3D Physics Simulation & AIoT", "AI Skill/Vol_01_Virtual_Labs_3D_Simulations_AIoT/figures/cover_art.jpg", draw_vol01),
-    (2, "Academic Research, Literature Synthesis & Scholarly Writing", "AI Skill/Vol_02_Academic_Research_and_Synthesis/figures/cover_art.jpg", draw_vol02),
-    (3, "AI Agentic Orchestration & Google Antigravity Architecture", "AI Skill/Vol_03_AI_Agentic_Orchestration_Antigravity/figures/cover_art.jpg", draw_vol03),
-    (4, "Modern Web, Flutter Mobile & High-Performance DevTools", "AI Skill/Vol_04_Modern_Web_Flutter_and_DevTools/figures/cover_art.jpg", draw_vol04),
-    (5, "Cloud Data Engineering, BigQuery & Machine Learning", "AI Skill/Vol_05_Cloud_Data_Engineering_and_ML/figures/cover_art.jpg", draw_vol05),
-    (6, "Full-Stack Cloud & Firebase Intelligent Backend", "AI Skill/Vol_06_FullStack_Cloud_and_Firebase/figures/cover_art.jpg", draw_vol06),
-    (7, "Bioinformatics, Genomics & Computational Life Sciences", "AI Skill/Vol_07_Bioinformatics_and_Life_Sciences/figures/cover_art.jpg", draw_vol07)
-]
-
-for vol_num, title, out_path, fn in vol_configs:
-    render_volume_cover(vol_num, title, out_path, fn)
-
-print("All 7 Volume Covers Rendered Successfully!")
+    print("\nALL 7 MASTER 3D COVERS RENDERED WITH FULL BLOOM & PBR VOLUMETRIC AESTHETIC!")
